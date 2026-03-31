@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, Gamepad2, Play, Music, Film, CircleDollarSign } from 'lucide-react';
 
@@ -111,7 +111,7 @@ const Products: React.FC = () => {
     if (!confirm(`Xác nhận mua ${product.title} với giá ${product.displayPrice}?`)) return;
 
     try {
-      await axios.post('http://localhost:3001/api/orders/create', {
+      await api.post('/orders/create', {
         productId: product.id.toString(),
         productName: product.title,
         price: product.price,

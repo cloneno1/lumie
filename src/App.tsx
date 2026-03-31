@@ -11,6 +11,7 @@ import OrdersHistory from './pages/user/OrdersHistory';
 import TopUpHistory from './pages/user/TopUpHistory';
 import AccountSettings from './pages/user/AccountSettings';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import Products from './pages/Products';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
@@ -307,6 +308,7 @@ function AppContent() {
       <main style={{ minHeight: 'calc(100vh - 80px)', paddingTop: '80px' }}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
           <Route path="/products/discord" element={<Discord />} />
           <Route path="/nap-tien" element={<TopUp />} />
           <Route path="/login" element={<Login />} />
