@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from './api/axios';
 import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, ChevronDown, Sparkles, CircleDollarSign, Play, Music, Film, ChevronRight, Menu, X } from 'lucide-react';
 import Home from './pages/Home';
 import TopUp from './pages/TopUp';
@@ -29,7 +29,7 @@ function AppContent() {
   const fetchNotifications = async () => {
     if (!user) return;
     try {
-      const res = await axios.get('http://localhost:3001/api/user/notifications');
+      const res = await api.get('/user/notifications');
       setNotifications(res.data);
     } catch (err) {
       console.error('Lỗi tải thông báo:', err);
@@ -48,7 +48,7 @@ function AppContent() {
 
   const handleMarkRead = async () => {
     try {
-      await axios.post('http://localhost:3001/api/user/notifications/read');
+      await api.post('/user/notifications/read');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (err) {
       console.error(err);

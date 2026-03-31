@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 
@@ -11,7 +11,7 @@ const OrdersHistory: React.FC = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/user/orders');
+        const response = await api.get('/user/orders');
         setOrders(response.data);
       } catch (err) {
         console.error('Lỗi tải đơn hàng:', err);

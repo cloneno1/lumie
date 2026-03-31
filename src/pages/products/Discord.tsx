@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Zap, Sparkles } from 'lucide-react';
 
@@ -22,7 +22,7 @@ const Discord: React.FC = () => {
     if (!confirm(`Xác nhận mua ${product.title}?`)) return;
 
     try {
-      await axios.post('http://localhost:3001/api/orders/create', {
+      await api.post('/orders/create', {
         productId: product.id,
         productName: product.title,
         price: product.price,

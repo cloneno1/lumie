@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CreditCard, Wallet, Landmark, Copy, CheckCircle2, Ticket, Loader2, AlertTriangle } from 'lucide-react';
+import api from '../api/axios';
 
 const VALID_AMOUNTS = [
   { value: '10000', label: '10,000đ' },
@@ -42,18 +43,14 @@ function TopUp() {
     setResult(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/topup-card', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telco,
-          amount,
-          serial: serial.trim(),
-          code: code.trim()
-        })
+      const response = await api.post('/topup-card', {
+        telco,
+        amount,
+        serial: serial.trim(),
+        code: code.trim()
       });
 
-      const data = await response.json();
+      const data = response.data;
       
       if (data.status === 99) {
         setResult({ 

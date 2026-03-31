@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Settings, User, Package, Camera, Lock, Save, Loader2, XCircle } from 'lucide-react';
 
@@ -30,7 +30,7 @@ const AccountSettings: React.FC = () => {
     setLoading(true);
     setMessage(null);
     try {
-      const response = await axios.post('http://localhost:3001/api/user/upload-avatar', formData, {
+      const response = await api.post('/user/upload-avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setAvatar(response.data.avatar);
@@ -61,7 +61,7 @@ const AccountSettings: React.FC = () => {
     setMessage(null);
 
     try {
-      await axios.post('http://localhost:3001/api/user/update-profile', {
+      await api.post('/user/update-profile', {
         username,
         email,
         currentPassword,
@@ -87,7 +87,7 @@ const AccountSettings: React.FC = () => {
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:3001/api/user/delete-account', { password });
+      await api.post('/user/delete-account', { password });
       alert('Tài khoản của bạn đã được xóa.');
       window.location.href = '/';
     } catch (err: any) {

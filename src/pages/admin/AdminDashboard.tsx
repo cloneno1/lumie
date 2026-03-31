@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X } from 'lucide-react';
 
@@ -16,9 +16,9 @@ const AdminDashboard: React.FC = () => {
     setLoading(true);
     try {
       const [usersRes, ordersRes, transRes] = await Promise.all([
-        axios.get('http://localhost:3001/api/admin/users'),
-        axios.get('http://localhost:3001/api/admin/orders'),
-        axios.get('http://localhost:3001/api/admin/transactions')
+        api.get('/admin/users'),
+        api.get('/admin/orders'),
+        api.get('/admin/transactions')
       ]);
       setUsers(usersRes.data);
       setOrders(ordersRes.data);
@@ -41,7 +41,7 @@ const AdminDashboard: React.FC = () => {
     if (isNaN(amount)) return alert('Số tiền không hợp lệ.');
 
     try {
-      await axios.post('http://localhost:3001/api/admin/update-balance', {
+      await api.post('/admin/update-balance', {
         userId,
         amount,
         action: 'add'
@@ -55,7 +55,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     try {
-      await axios.post('http://localhost:3001/api/admin/order-status', {
+      await api.post('/admin/order-status', {
         orderId,
         status
       });
@@ -79,7 +79,7 @@ const AdminDashboard: React.FC = () => {
   const handleBanUser = async (userId: string, currentBannedStatus: boolean) => {
     if (!confirm(currentBannedStatus ? 'Mở khóa người dùng này?' : 'Khóa người dùng này?')) return;
     try {
-      await axios.post('http://localhost:3001/api/admin/ban-user', { userId, banned: !currentBannedStatus });
+      await api.post('/admin/ban-user', { userId, banned: !currentBannedStatus });
       fetchData();
     } catch (err) {
       alert('Lỗi khi khóa/mở khóa người dùng.');
@@ -90,7 +90,7 @@ const AdminDashboard: React.FC = () => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     if (!confirm(`Chuyển người dùng này sang vai trò: ${newRole.toUpperCase()}?`)) return;
     try {
-      await axios.post('http://localhost:3001/api/admin/update-role', { userId, role: newRole });
+      await api.post('/admin/update-role', { userId, role: newRole });
       fetchData();
     } catch (err) {
       alert('Lỗi cập nhật vai trò.');

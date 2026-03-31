@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { CreditCard, History, Clock, CheckCircle, XCircle } from 'lucide-react';
 
@@ -11,7 +11,7 @@ const TopUpHistory: React.FC = () => {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/user/transactions');
+        const response = await api.get('/user/transactions');
         setTransactions(response.data);
       } catch (err) {
         console.error('Lỗi tải giao dịch:', err);
