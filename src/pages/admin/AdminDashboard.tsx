@@ -15,10 +15,13 @@ const AdminDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Security: Constructing secret paths to avoid simple string scrapers
+      const a_b = '/internal' + '-sys-' + 'mz9';
+      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
       const [usersRes, ordersRes, transRes] = await Promise.all([
-        api.get('/admin/users'),
-        api.get('/admin/orders'),
-        api.get('/admin/transactions')
+        api.get(`${a_b}/u-list-s`, adminHeaders),
+        api.get(`${a_b}/o-list-s`, adminHeaders),
+        api.get(`${a_b}/t-list-s`, adminHeaders)
       ]);
       setUsers(usersRes.data);
       setOrders(ordersRes.data);
@@ -41,11 +44,13 @@ const AdminDashboard: React.FC = () => {
     if (isNaN(amount)) return alert('Số tiền không hợp lệ.');
 
     try {
-      await api.post('/admin/update-balance', {
+      const a_b = '/internal' + '-sys-' + 'mz9';
+      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+      await api.post(`${a_b}/b-up-s`, {
         userId,
         amount,
         action: 'add'
-      });
+      }, adminHeaders);
       alert('Cập nhật số dư thành công!');
       fetchData();
     } catch (err) {
@@ -55,10 +60,12 @@ const AdminDashboard: React.FC = () => {
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     try {
-      await api.post('/admin/order-status', {
+      const a_b = '/internal' + '-sys-' + 'mz9';
+      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+      await api.post(`${a_b}/o-stat-s`, {
         orderId,
         status
-      });
+      }, adminHeaders);
       fetchData();
     } catch (err) {
       alert('Lỗi cập nhật trạng thái đơn hàng.');
@@ -79,7 +86,9 @@ const AdminDashboard: React.FC = () => {
   const handleBanUser = async (userId: string, currentBannedStatus: boolean) => {
     if (!confirm(currentBannedStatus ? 'Mở khóa người dùng này?' : 'Khóa người dùng này?')) return;
     try {
-      await api.post('/admin/ban-user', { userId, banned: !currentBannedStatus });
+      const a_b = '/internal' + '-sys-' + 'mz9';
+      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+      await api.post(`${a_b}/ban-u-s`, { userId, banned: !currentBannedStatus }, adminHeaders);
       fetchData();
     } catch (err) {
       alert('Lỗi khi khóa/mở khóa người dùng.');
@@ -90,7 +99,9 @@ const AdminDashboard: React.FC = () => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     if (!confirm(`Chuyển người dùng này sang vai trò: ${newRole.toUpperCase()}?`)) return;
     try {
-      await api.post('/admin/update-role', { userId, role: newRole });
+      const a_b = '/internal' + '-sys-' + 'mz9';
+      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+      await api.post(`${a_b}/u-role-s`, { userId, role: newRole }, adminHeaders);
       fetchData();
     } catch (err) {
       alert('Lỗi cập nhật vai trò.');

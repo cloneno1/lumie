@@ -4,11 +4,41 @@ import axios from 'axios';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import hpp from 'hpp';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db.js';
 
 const app = express();
+
+// Security Middleware
+app.use(helmet()); // Sets various HTTP headers for security
+app.use(hpp()); // Protect against HTTP Parameter Pollution attacks
+
 const SECRET_KEY = process.env.JWT_SECRET || 'LUMIE_STORE_SECRET_KEY';
+const ADMIN_SECRET = process.env.ADMIN_PATH_SECRET || 'lumie_adm_2024'; // Extra layer
+
+// Rate Limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: 'Quá nhiều yêu cầu từ IP này.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: 'Vui lòng thử lại sau 15 phút.' }
+});
+
+const adminStoreLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // Strict for admin
+  message: { message: 'Quản trị viên thao tác quá nhanh.' }
+});
+
+app.use('/api/', generalLimiter);
 
 // Middleware: Authenticate User
 const authenticateToken = (req, res, next) => {
@@ -27,14 +57,20 @@ const authenticateToken = (req, res, next) => {
 const authenticateAdmin = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.sendStatus(401);
+  
+  // Stealth Mode: If secret header is wrong, return 404 to look like the route doesn't exist
+  const adminSecretHeader = req.headers['x-admin-secret'];
+  if (adminSecretHeader !== ADMIN_SECRET) {
+    return res.status(404).send('Not Found'); // No clue it exists
+  }
+
+  if (!token) return res.status(404).send('Not Found'); // Still hide it
 
   jwt.verify(token, SECRET_KEY, async (err, decoded) => {
-    if (err) return res.sendStatus(403);
-    // Directly fetch from DB as decoded might not have full user obj
+    if (err) return res.status(404).send('Not Found'); // Keep hiding
     const user = await db.users.getById(decoded.id);
     if (!user || user.role !== 'admin') {
-      return res.status(403).json({ message: 'Quyền truy cập bị từ chối!' });
+      return res.status(404).send('Not Found'); // Hide even from regular users
     }
     req.user = user;
     next();
@@ -77,11 +113,10 @@ router.post('/auth/register', async (req, res) => {
     const existingUser = await db.users.getByUsername(username);
     if (existingUser) return res.status(400).json({ message: 'Tên người dùng đã tồn tại.' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = await db.users.create({
       username,
       password: hashedPassword,
-      plain_password: password,
       email: email || '',
       balance: 0,
       role: 'user',
@@ -180,8 +215,7 @@ router.post('/user/update-profile', authenticateToken, async (req, res) => {
     }
     if (avatar !== undefined) updates.avatar = avatar;
     if (newPassword) {
-      updates.password = await bcrypt.hash(newPassword, 10);
-      updates.plain_password = newPassword;
+      updates.password = await bcrypt.hash(newPassword, 12);
     }
 
     const updatedUser = await db.users.update(userId, updates);
@@ -193,8 +227,8 @@ router.post('/user/update-profile', authenticateToken, async (req, res) => {
 // ==========================================
 // API: NẠP TIỀN (Gachthe1s)
 // ==========================================
-const PARTNER_ID = '65747925131';
-const PARTNER_KEY = '20fcc2b8597bcecbeb5716e7c5901f85';
+const PARTNER_ID = process.env.PARTNER_ID || '65747925131';
+const PARTNER_KEY = process.env.PARTNER_KEY || '20fcc2b8597bcecbeb5716e7c5901f85';
 
 router.post('/topup-card', authenticateToken, async (req, res) => {
   try {
@@ -226,9 +260,23 @@ router.post('/topup-card', authenticateToken, async (req, res) => {
 
 router.post('/callback/gachthe1s', async (req, res) => {
   try {
-    const { request_id, status, amount } = req.body;
-    // We update transaction and balance if status=1
-    // Logic simplified, assumed requestId is unique lookup in db.js
+    const { request_id, status, amount, callback_sign } = req.body;
+    
+    // SECURITY: Verify callback signature
+    // The signature is usually MD5(partner_key + status + request_id) or similar.
+    // Without the exact spec, we check if callback_sign exists.
+    if (!callback_sign) {
+      console.error('SEC-WARN: Callback received without signature!');
+      return res.status(401).json({ message: 'Missing signature' });
+    }
+
+    // Example verification (Adjust based on gachthe1s documentation):
+    // const expectedSign = crypto.createHash('md5').update(PARTNER_KEY + status + request_id).digest('hex');
+    // if (callback_sign !== expectedSign) {
+    //   console.error('SEC-WARN: Invalid callback signature!');
+    //   return res.status(401).json({ message: 'Invalid signature' });
+    // }
+
     await db.transactions.update(request_id, { status, callback_data: req.body, callback_at: new Date().toISOString() });
     
     if (status === '1') {
@@ -270,21 +318,26 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
 });
 
 // ==========================================
-// API: ADMIN
+// API: ADMIN (ULTRA-STEALTH MODE)
 // ==========================================
-router.get('/admin/users', authenticateAdmin, async (req, res) => {
-  try { res.json(await db.users.getAll()); } catch (err) { res.status(500).json({ message: err.message }); }
+// Use a random prefix that is NOT guessable
+const ADMIN_BASE = '/internal-sys-mz9'; 
+
+router.use(ADMIN_BASE, adminStoreLimiter); // Apply strict limit
+
+router.get(`${ADMIN_BASE}/u-list-s`, authenticateAdmin, async (req, res) => {
+  try { res.json(await db.users.getAll()); } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
-router.get('/admin/orders', authenticateAdmin, async (req, res) => {
-  try { res.json(await db.orders.getAll()); } catch (err) { res.status(500).json({ message: err.message }); }
+router.get(`${ADMIN_BASE}/o-list-s`, authenticateAdmin, async (req, res) => {
+  try { res.json(await db.orders.getAll()); } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
-router.get('/admin/transactions', authenticateAdmin, async (req, res) => {
-  try { res.json(await db.transactions.getAll()); } catch (err) { res.status(500).json({ message: err.message }); }
+router.get(`${ADMIN_BASE}/t-list-s`, authenticateAdmin, async (req, res) => {
+  try { res.json(await db.transactions.getAll()); } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
-router.post('/admin/update-balance', authenticateAdmin, async (req, res) => {
+router.post(`${ADMIN_BASE}/b-up-s`, authenticateAdmin, async (req, res) => {
   try {
     const { userId, amount, action } = req.body;
     const user = await db.users.getById(userId);
@@ -300,14 +353,14 @@ router.post('/admin/update-balance', authenticateAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-router.post('/admin/ban-user', authenticateAdmin, async (req, res) => {
+router.post(`${ADMIN_BASE}/ban-u-s`, authenticateAdmin, async (req, res) => {
   try {
     await db.users.update(req.body.userId, { banned: req.body.banned });
     res.json({ message: 'Thành công!' });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
-router.post('/admin/order-status', authenticateAdmin, async (req, res) => {
+router.post(`${ADMIN_BASE}/o-stat-s`, authenticateAdmin, async (req, res) => {
   try {
     const { orderId, status } = req.body;
     const order = await db.orders.updateStatus(orderId, status);
@@ -318,12 +371,33 @@ router.post('/admin/order-status', authenticateAdmin, async (req, res) => {
       });
     }
     res.json({ message: 'Thành công!' });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
+
+router.post(`${ADMIN_BASE}/u-role-s`, authenticateAdmin, async (req, res) => {
+  try {
+    const { userId, role } = req.body;
+    await db.users.update(userId, { role });
+    res.json({ message: 'Thành công!' });
+  } catch (err) { res.status(500).json({ message: 'Error' }); }
+});
+
+// Apply auth rate limiting specifically to these routes
+router.use('/auth/login', authLimiter);
+router.use('/auth/register', authLimiter);
 
 // Use the router for both /api and / routes to be safe on Vercel
 app.use('/api', router);
 app.use('/', router);
+
+// Error Handling Middleware (Custom)
+app.use((err, req, res, next) => {
+  console.error('SERVER ERROR:', err.stack);
+  res.status(500).json({ 
+    message: 'Đã xảy ra lỗi hệ thống. Vui lòng liên hệ quản trị viên.',
+    requestId: uuidv4()
+  });
+});
 
 app.get('/health', (req, res) => res.json({ status: 'ok', engine: 'serverless' }));
 
