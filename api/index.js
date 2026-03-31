@@ -8,7 +8,14 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
 import { v4 as uuidv4 } from 'uuid';
+import multer from 'multer';
 import { db } from '../db.js';
+
+// Multer config for avatar uploads (memory storage)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit
+});
 
 const app = express();
 
@@ -222,6 +229,33 @@ router.post('/user/update-profile', authenticateToken, async (req, res) => {
     const { password: _, ...userData } = updatedUser;
     res.json({ message: 'Cập nhật tài khoản thành công!', user: userData });
   } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.post('/user/upload-avatar', authenticateToken, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Không tìm thấy file tải lên.' });
+    
+    // Convert to Base64 to store in DB (simpler than S3 for now)
+    const base64Avatar = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    
+    await db.users.update(req.user.id, { avatar: base64Avatar });
+    res.json({ message: 'Tải ảnh lên thành công!', avatar: base64Avatar });
+  } catch (err) { res.status(500).json({ message: 'Lỗi tải ảnh lên hệ thống.' }); }
+});
+
+router.post('/user/delete-account', authenticateToken, async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await db.users.getById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Không tìm thấy user.' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Mật khẩu không chính xác.' });
+
+    // Note: You should filter if need special deletion logic
+    await db.users.delete(req.user.id); 
+    res.json({ message: 'Tài khoản đã được xóa thành công.' });
+  } catch (err) { res.status(500).json({ message: 'Lỗi khi xóa tài khoản.' }); }
 });
 
 // ==========================================

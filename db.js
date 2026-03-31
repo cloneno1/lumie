@@ -40,6 +40,10 @@ export const db = {
       const { data, error } = await supabase.from('users').update(updates).eq('id', id).select().single();
       if (error) throw error;
       return data;
+    },
+    delete: async (id) => {
+      const { error } = await supabase.from('users').delete().eq('id', id);
+      if (error) throw error;
     }
   },
   orders: {
