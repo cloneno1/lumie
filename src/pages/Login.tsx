@@ -25,7 +25,8 @@ const Login: React.FC = () => {
       login(response.data.token, response.data.user);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng nhập thất bại.');
+      const message = err.response?.data?.message || err.message || 'Không thể kết nối đến máy chủ!';
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -32,7 +32,7 @@ export const db = {
     },
     getByUsername: async (username) => {
       const users = await readData('users');
-      return users.find((u) => u.username === username);
+      return users.find((u) => u.username.toLowerCase() === username.toLowerCase());
     },
     create: async (user) => {
       const users = await readData('users');

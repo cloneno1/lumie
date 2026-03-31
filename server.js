@@ -57,7 +57,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
@@ -66,7 +66,23 @@ const upload = multer({
   }
 });
 
-app.use(cors());
+const FRONTEND_URLS = [
+  'lumiestore.uk', // Add your production domains here
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (FRONTEND_URLS.indexOf(origin) !== -1 || origin.includes('vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed for this origin'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -85,10 +101,10 @@ app.post('/api/user/upload-avatar', authenticateToken, (req, res, next) => {
 }, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Vui lòng chọn ảnh!' });
-    
+
     // Construct public URL
     const avatarUrl = `http://localhost:3001/uploads/${req.file.filename}`;
-    
+
     // Update user in DB
     const updatedUser = await db.users.update(req.user.id, { avatar: avatarUrl });
     const { password: _, ...userData } = updatedUser;
@@ -269,7 +285,7 @@ app.post('/api/topup-card', authenticateToken, async (req, res) => {
       4: 'Hệ thống đang bảo trì.'
     };
 
-    return res.json({ 
+    return res.json({
       status: response.data.status,
       request_id: request_id,
       message: statusMessages[response.data.status] || response.data.message || 'Phản hồi không xác định.'
@@ -284,26 +300,26 @@ app.post('/api/topup-card', authenticateToken, async (req, res) => {
 app.post('/callback/gachthe1s', async (req, res) => {
   const data = req.body;
   const { request_id, status, amount } = data;
-  
+
   const transactions = await db.transactions.getAll();
   const tx = transactions.find(t => t.request_id === request_id);
-  
+
   if (tx && tx.status === 99) {
     await db.transactions.update(request_id, { status, callback_data: data, callback_at: new Date().toISOString() });
-    
-      if (status === '1') {
-        const user = await db.users.getById(tx.userId);
-        if (user) {
-          await db.users.update(user.id, { balance: user.balance + parseInt(amount) });
-          // Notification
-          await db.notifications.create({
-            userId: user.id,
-            title: 'Nạp thẻ thành công',
-            content: `Thẻ ${tx.telco} ${parseInt(amount).toLocaleString()}đ của bạn đã được xử lý thành công!`,
-            type: 'topup'
-          });
-        }
+
+    if (status === '1') {
+      const user = await db.users.getById(tx.userId);
+      if (user) {
+        await db.users.update(user.id, { balance: user.balance + parseInt(amount) });
+        // Notification
+        await db.notifications.create({
+          userId: user.id,
+          title: 'Nạp thẻ thành công',
+          content: `Thẻ ${tx.telco} ${parseInt(amount).toLocaleString()}đ của bạn đã được xử lý thành công!`,
+          type: 'topup'
+        });
       }
+    }
   }
 
   res.status(200).json({ status: 'OK' });
@@ -363,7 +379,7 @@ app.post('/api/admin/update-balance', authenticateAdmin, async (req, res) => {
   const { userId, amount, action } = req.body; // action: 'add' or 'set'
   const user = await db.users.getById(userId);
   if (!user) return res.status(440).json({ message: 'User not found' });
-  
+
   let newBalance = action === 'add' ? user.balance + amount : amount;
   await db.users.update(userId, { balance: newBalance });
   // Notification

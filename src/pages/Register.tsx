@@ -33,7 +33,8 @@ const Register: React.FC = () => {
       setSuccess(true);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại. Tên đăng nhập có thể đã tồn tại.');
+      const message = err.response?.data?.message || err.message || 'Không thể kết nối đến máy chủ!';
+      setError(message);
     } finally {
       setLoading(false);
     }
