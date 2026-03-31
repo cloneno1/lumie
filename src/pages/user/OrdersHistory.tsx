@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Package } from 'lucide-react';
 
 const OrdersHistory: React.FC = () => {
   const { user } = useAuth();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Camera, Calendar, Shield, CreditCard, ShoppingBag } from 'lucide-react';
+import { User, Camera, CreditCard, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Profile: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { CreditCard, History, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { History } from 'lucide-react';
 
 const TopUpHistory: React.FC = () => {
   const { user } = useAuth();
