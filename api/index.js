@@ -63,10 +63,13 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Create a router for API routes
+const router = express.Router();
+
 // ==========================================
 // API: AUTH
 // ==========================================
-app.post('/api/auth/register', async (req, res) => {
+router.post('/auth/register', async (req, res) => {
   try {
     const { username, password, email } = req.body;
     if (!username || !password) return res.status(400).json({ message: 'Vui lòng cung cấp username và password.' });
@@ -92,7 +95,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+router.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await db.users.getByUsername(username);
@@ -110,7 +113,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-app.get('/api/auth/me', authenticateToken, async (req, res) => {
+router.get('/auth/me', authenticateToken, async (req, res) => {
   try {
     const user = await db.users.getById(req.user.id);
     if (!user) return res.status(404).json({ message: 'Không tìm thấy user.' });
@@ -124,35 +127,35 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 // ==========================================
 // API: USER DATA
 // ==========================================
-app.get('/api/user/orders', authenticateToken, async (req, res) => {
+router.get('/user/orders', authenticateToken, async (req, res) => {
   try {
     const orders = await db.orders.getByUserId(req.user.id);
     res.json(orders);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.get('/api/user/transactions', authenticateToken, async (req, res) => {
+router.get('/user/transactions', authenticateToken, async (req, res) => {
   try {
     const transactions = await db.transactions.getByUserId(req.user.id);
     res.json(transactions);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.get('/api/user/notifications', authenticateToken, async (req, res) => {
+router.get('/user/notifications', authenticateToken, async (req, res) => {
   try {
     const notifications = await db.notifications.getByUserId(req.user.id);
     res.json(notifications);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/user/notifications/read', authenticateToken, async (req, res) => {
+router.post('/user/notifications/read', authenticateToken, async (req, res) => {
   try {
     await db.notifications.markAsRead(req.user.id);
     res.json({ message: 'Marked as read' });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/user/update-profile', authenticateToken, async (req, res) => {
+router.post('/user/update-profile', authenticateToken, async (req, res) => {
   try {
     const { username, email, currentPassword, newPassword, avatar } = req.body;
     const userId = req.user.id;
@@ -193,7 +196,7 @@ app.post('/api/user/update-profile', authenticateToken, async (req, res) => {
 const PARTNER_ID = '65747925131';
 const PARTNER_KEY = '20fcc2b8597bcecbeb5716e7c5901f85';
 
-app.post('/api/topup-card', authenticateToken, async (req, res) => {
+router.post('/topup-card', authenticateToken, async (req, res) => {
   try {
     const { telco, amount, serial, code } = req.body;
     const userId = req.user.id;
@@ -221,7 +224,7 @@ app.post('/api/topup-card', authenticateToken, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/callback/gachthe1s', async (req, res) => {
+router.post('/callback/gachthe1s', async (req, res) => {
   try {
     const { request_id, status, amount } = req.body;
     // We update transaction and balance if status=1
@@ -248,7 +251,7 @@ app.post('/api/callback/gachthe1s', async (req, res) => {
 // ==========================================
 // API: ORDERS (SHOPPING)
 // ==========================================
-app.post('/api/orders/create', authenticateToken, async (req, res) => {
+router.post('/orders/create', authenticateToken, async (req, res) => {
   try {
     const { productId, productName, price, amount, options } = req.body;
     const userId = req.user.id;
@@ -269,19 +272,19 @@ app.post('/api/orders/create', authenticateToken, async (req, res) => {
 // ==========================================
 // API: ADMIN
 // ==========================================
-app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
+router.get('/admin/users', authenticateAdmin, async (req, res) => {
   try { res.json(await db.users.getAll()); } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.get('/api/admin/orders', authenticateAdmin, async (req, res) => {
+router.get('/admin/orders', authenticateAdmin, async (req, res) => {
   try { res.json(await db.orders.getAll()); } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.get('/api/admin/transactions', authenticateAdmin, async (req, res) => {
+router.get('/admin/transactions', authenticateAdmin, async (req, res) => {
   try { res.json(await db.transactions.getAll()); } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/admin/update-balance', authenticateAdmin, async (req, res) => {
+router.post('/admin/update-balance', authenticateAdmin, async (req, res) => {
   try {
     const { userId, amount, action } = req.body;
     const user = await db.users.getById(userId);
@@ -297,14 +300,14 @@ app.post('/api/admin/update-balance', authenticateAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/admin/ban-user', authenticateAdmin, async (req, res) => {
+router.post('/admin/ban-user', authenticateAdmin, async (req, res) => {
   try {
     await db.users.update(req.body.userId, { banned: req.body.banned });
     res.json({ message: 'Thành công!' });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/admin/order-status', authenticateAdmin, async (req, res) => {
+router.post('/admin/order-status', authenticateAdmin, async (req, res) => {
   try {
     const { orderId, status } = req.body;
     const order = await db.orders.updateStatus(orderId, status);
@@ -318,6 +321,10 @@ app.post('/api/admin/order-status', authenticateAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', engine: 'serverless' }));
+// Use the router for both /api and / routes to be safe on Vercel
+app.use('/api', router);
+app.use('/', router);
+
+app.get('/health', (req, res) => res.json({ status: 'ok', engine: 'serverless' }));
 
 export default app;
