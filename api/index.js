@@ -229,7 +229,7 @@ app.post('/api/callback/gachthe1s', async (req, res) => {
     await db.transactions.update(request_id, { status, callback_data: req.body, callback_at: new Date().toISOString() });
     
     if (status === '1') {
-      const tx = (await db.transactions.getAll()).find(t => t.request_id === request_id);
+      const tx = await db.transactions.getByRequestId(request_id);
       if (tx) {
         const user = await db.users.getById(tx.user_id);
         if (user) {

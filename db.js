@@ -4,7 +4,8 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use Service Role Key for backend
 
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase credentials missing. Database operations will fail.');
+  console.error('CRITICAL: Supabase environment variables are MISSING!');
+  console.error('Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
@@ -83,6 +84,11 @@ export const db = {
         user_id: transaction.userId
       }]).select().single();
       if (error) throw error;
+      return data;
+    },
+    getByRequestId: async (requestId) => {
+      const { data, error } = await supabase.from('transactions').select('*').eq('request_id', requestId).single();
+      if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
     update: async (requestId, updates) => {
