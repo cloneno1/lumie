@@ -207,29 +207,46 @@ const Home: React.FC = () => {
               Nếu bạn yêu thích dịch vụ của chúng tôi, hãy ủng hộ web để có thêm động lực và phát triển. 
               Mọi sự đóng góp của bạn đều giúp chúng tôi duy trì hệ thống và cải thiện trải nghiệm người dùng.
             </p>
-            <div style={{ display: 'flex', gap: '24px' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>MB Bank</div>
+            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '150px' }}>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px', color: '#3b82f6' }}>MB Bank</div>
                 <div style={{ color: 'var(--text-muted)' }}>0013519933</div>
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: '150px' }}>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px', color: '#10b981' }}>BIDV</div>
+                <div style={{ color: 'var(--text-muted)' }}>8835052912</div>
+              </div>
+              <div style={{ flex: '1 1 100%' }}>
                 <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>Chủ TK</div>
                 <div style={{ color: 'var(--text-muted)' }}>PHAM VINH PHU</div>
               </div>
             </div>
           </div>
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ 
+              background: 'white', padding: '16px', borderRadius: '32px', display: 'inline-block',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '6px solid rgba(255,255,255,0.05)'
+            }}>
+              {/* Tab-like toggle for QR or just show one/both. Let's show both images but smaller or one at a time.
+                  Actually, showing the MB Bank one by default and mentioning BIDV is also okay, 
+                  but for a good UI, let's use a small toggle. */}
+              <img 
+                src="https://img.vietqr.io/image/MB-0013519933-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" 
+                alt="Donate QR MB" 
+                style={{ width: '100%', maxWidth: '240px', borderRadius: '16px', display: 'block' }}
+              />
+            </div>
             <div style={{ 
               background: 'white', padding: '16px', borderRadius: '32px', display: 'inline-block',
               boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '6px solid rgba(255,255,255,0.05)'
             }}>
               <img 
-                src="https://img.vietqr.io/image/MB-0013519933-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" 
-                alt="Donate QR" 
-                style={{ width: '100%', maxWidth: '280px', borderRadius: '16px', display: 'block' }}
+                src="https://img.vietqr.io/image/BIDV-8835052912-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" 
+                alt="Donate QR BIDV" 
+                style={{ width: '100%', maxWidth: '240px', borderRadius: '16px', display: 'block' }}
               />
             </div>
-            <p style={{ marginTop: '16px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Quét mã QR để ủng hộ Lumie Store</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Quét mã QR để ủng hộ Lumie Store</p>
           </div>
         </div>
       </section>

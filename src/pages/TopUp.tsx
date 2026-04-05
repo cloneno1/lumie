@@ -11,14 +11,20 @@ const VALID_AMOUNTS = [
   { value: '100000', label: '100,000đ' },
   { value: '200000', label: '200,000đ' },
   { value: '300000', label: '300,000đ' },
-  { value: '500000', label: '500,000đ' },
+  { value: '500000', label: '50,000đ' },
   { value: '1000000', label: '1,000,000đ' },
 ];
+
+const BANKS = {
+  MB: { name: 'MB Bank (Quân Đội)', number: '0013519933', bin: 'MB', accountName: 'PHAM VINH PHU' },
+  BIDV: { name: 'BIDV (Đầu tư & Phát triển)', number: '8835052912', bin: 'BIDV', accountName: 'PHAM VINH PHU' }
+};
 
 function TopUp() {
   const { user } = useAuth();
   const [amount, setAmount] = useState('100000');
   const [method, setMethod] = useState<'card' | 'bank'>('card');
+  const [selectedBank, setSelectedBank] = useState<'MB' | 'BIDV'>('MB');
   const [copied, setCopied] = useState(false);
 
   // Card form state
@@ -282,8 +288,22 @@ function TopUp() {
             </div>
             <div>
               <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản Ngân hàng</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Hệ thống tự động cộng tiền qua QR</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Chọn ngân hàng để lấy mã QR tự động</p>
             </div>
+          </div>
+
+          {/* Bank Selector */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+             {Object.entries(BANKS).map(([key, bank]) => (
+               <button 
+                 key={key}
+                 className={`category-btn ${selectedBank === key ? 'active' : ''}`}
+                 onClick={() => setSelectedBank(key as any)}
+                 style={{ flex: 1, justifyContent: 'center' }}
+               >
+                 {bank.name}
+               </button>
+             ))}
           </div>
           
           {/* Amount Select for QR */}
@@ -314,17 +334,17 @@ function TopUp() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Ngân hàng</span>
-                  <strong style={{ color: '#3b82f6' }}>MB Bank (Quân Đội)</strong>
+                  <strong style={{ color: '#3b82f6' }}>{BANKS[selectedBank].name}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Chủ tài khoản</span>
-                  <strong style={{ letterSpacing: '0.5px' }}>PHAM VINH PHU</strong>
+                  <strong style={{ letterSpacing: '0.5px' }}>{BANKS[selectedBank].accountName}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Số tài khoản</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <strong style={{ fontSize: '1.1rem', letterSpacing: '1px', color: 'var(--accent-primary)' }}>0013519933</strong>
-                    <button onClick={() => handleCopy('0013519933')} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
+                    <strong style={{ fontSize: '1.1rem', letterSpacing: '1px', color: 'var(--accent-primary)' }}>{BANKS[selectedBank].number}</strong>
+                    <button onClick={() => handleCopy(BANKS[selectedBank].number)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
                       {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
@@ -350,7 +370,7 @@ function TopUp() {
                 border: '1px solid rgba(239, 68, 68, 0.1)',
                 lineHeight: 1.6
               }}>
-                <strong>Lưu ý:</strong> Hệ thống sử dụng công nghệ nhận diện nội dung tự động. Quý khách vui lòng <strong>ghi đúng nội dung chuyển khoản</strong> để được cộng tiền ngay lập tức.
+                <strong>Lưu ý:</strong> Quý khách vui lòng <strong>ghi đúng nội dung chuyển khoản</strong> để được hệ thống tự động nhận diện và cộng tiền ngay lập tức.
               </div>
             </div>
 
@@ -365,7 +385,7 @@ function TopUp() {
                 marginBottom: '16px'
               }}>
                 <img 
-                  src={`https://img.vietqr.io/image/MB-0013519933-compact2.png?amount=${amount}&addInfo=LUMIE ${user?.username || 'USERNAME'}&accountName=PHAM VINH PHU`}
+                  src={`https://img.vietqr.io/image/${BANKS[selectedBank].bin}-${BANKS[selectedBank].number}-compact2.png?amount=${amount}&addInfo=LUMIE ${user?.username || 'USERNAME'}&accountName=${BANKS[selectedBank].accountName}`}
                   alt="VietQR Payment"
                   style={{ width: '100%', maxWidth: '240px', borderRadius: '12px', display: 'block' }}
                 />
