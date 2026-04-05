@@ -120,5 +120,27 @@ export const db = {
       const { error } = await supabase.from('notifications').update({ read: true }).eq('user_id', userId);
       if (error) throw error;
     }
+  },
+  feedbacks: {
+    getAll: async () => {
+      const { data, error } = await supabase.from('feedbacks').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    getByOrderId: async (orderId) => {
+      const { data, error } = await supabase.from('feedbacks').select('*').eq('order_id', orderId).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    create: async (feedback) => {
+      const { data, error } = await supabase.from('feedbacks').insert([{
+        ...feedback,
+        user_id: feedback.userId,
+        order_id: feedback.orderId,
+        product_name: feedback.productName
+      }]).select().single();
+      if (error) throw error;
+      return data;
+    }
   }
 };

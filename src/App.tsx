@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import api from './api/axios';
-import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, ChevronDown, Sparkles, CircleDollarSign, Play, Music, Film, ChevronRight, Menu, X } from 'lucide-react';
+import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, ChevronDown, Sparkles, CircleDollarSign, Play, Music, Film, ChevronRight, Menu, X, Headset } from 'lucide-react';
 import Home from './pages/Home';
 import TopUp from './pages/TopUp';
 import Login from './pages/Login';
@@ -278,9 +278,14 @@ function AppContent() {
                       
                       <div style={{ margin: '8px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}></div>
                       
-                      {user.role === 'admin' && (
-                        <Link to="/admin" className="dropdown-item" style={{ color: '#f59e0b' }} onClick={() => setShowUserMenu(false)}>
-                          <ShieldCheck size={18} /> <span>Trang quản trị</span>
+                      {/* Support Item */}
+                      <a href="https://discord.gg/lumie" target="_blank" rel="noreferrer" className="dropdown-item" onClick={() => setShowUserMenu(false)}>
+                        <Headset size={18} /> <span>Hỗ trợ (Discord)</span>
+                      </a>
+
+                      {(user.role === 'admin' || user.role === 'staff') && (
+                        <Link to={user.role === 'admin' ? "/admin" : "/staff"} className="dropdown-item" style={{ color: '#f59e0b' }} onClick={() => setShowUserMenu(false)}>
+                          <ShieldCheck size={18} /> <span>{user.role === 'admin' ? 'Trang quản trị' : 'Quản lý nhân viên'}</span>
                         </Link>
                       )}
 
@@ -318,6 +323,7 @@ function AppContent() {
           <Route path="/profile/topups" element={<TopUpHistory />} />
           <Route path="/profile/settings" element={<AccountSettings />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/staff" element={<AdminDashboard />} /> {/* Use same for now or separate later */}
         </Routes>
       </main>
 

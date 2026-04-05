@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CreditCard, Wallet, Landmark, Copy, CheckCircle2, Ticket, Loader2, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const VALID_AMOUNTS = [
   { value: '10000', label: '10,000đ' },
@@ -15,8 +16,9 @@ const VALID_AMOUNTS = [
 ];
 
 function TopUp() {
+  const { user } = useAuth();
   const [amount, setAmount] = useState('100000');
-  const [method, setMethod] = useState('card');
+  const [method, setMethod] = useState<'card' | 'bank'>('card');
   const [copied, setCopied] = useState(false);
 
   // Card form state
@@ -274,57 +276,104 @@ function TopUp() {
       {/* Bank Transfer */}
       {method === 'bank' && (
         <div className="glass-panel animate-fade-in delay-2" style={{ padding: '32px', marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Wallet size={24} style={{ color: 'var(--accent-primary)' }} />
-            Chuyển khoản Ngân hàng
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+            <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '10px', borderRadius: '12px' }}>
+              <Wallet size={28} style={{ color: '#3b82f6', display: 'block' }} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản Ngân hàng</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Hệ thống tự động cộng tiền qua QR</p>
+            </div>
+          </div>
           
-          <div style={{ 
-            background: 'rgba(16, 185, 129, 0.05)', 
-            border: '1px solid rgba(16, 185, 129, 0.2)', 
-            borderRadius: '12px', 
-            padding: '24px' 
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Ngân hàng</span>
-                <strong>MB Bank (Quân Đội)</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Chủ tài khoản</span>
-                <strong>PHAM VINH PHU</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Số tài khoản</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <strong style={{ fontSize: '1.15rem', letterSpacing: '1px' }}>0013519933</strong>
-                  <button onClick={() => handleCopy('0013519933')} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer' }}>
-                    {copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}
-                  </button>
+          {/* Amount Select for QR */}
+          <div className="form-group" style={{ marginBottom: '32px' }}>
+            <label className="form-label">Chọn số tiền muốn nạp</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+              {VALID_AMOUNTS.slice(0, 7).map((item) => (
+                <button
+                  type="button"
+                  key={item.value}
+                  className={`category-btn ${amount === item.value ? 'active' : ''}`}
+                  onClick={() => setAmount(item.value)}
+                  style={{ justifyContent: 'center', fontSize: '0.9rem' }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '32px', alignItems: 'start' }} className="bank-content-grid">
+            <div style={{ 
+              background: 'rgba(255, 255, 255, 0.02)', 
+              border: '1px solid var(--glass-border)', 
+              borderRadius: '20px', 
+              padding: '24px' 
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Ngân hàng</span>
+                  <strong style={{ color: '#3b82f6' }}>MB Bank (Quân Đội)</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Chủ tài khoản</span>
+                  <strong style={{ letterSpacing: '0.5px' }}>PHAM VINH PHU</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Số tài khoản</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <strong style={{ fontSize: '1.1rem', letterSpacing: '1px', color: 'var(--accent-primary)' }}>0013519933</strong>
+                    <button onClick={() => handleCopy('0013519933')} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
+                      {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Nội dung CK</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <strong style={{ color: '#f87171', fontSize: '1.1rem', textTransform: 'uppercase' }}>LUMIE {user?.username || 'USERNAME'}</strong>
+                    <button onClick={() => handleCopy(`LUMIE ${user?.username || 'USERNAME'}`)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
+                      <Copy size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Nội dung CK</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <strong style={{ color: '#f87171', fontSize: '1.15rem' }}>LUMIE username</strong>
-                  <button onClick={() => handleCopy('LUMIE username')} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer' }}>
-                    <Copy size={18} />
-                  </button>
-                </div>
+
+              <div style={{ 
+                marginTop: '32px', 
+                padding: '16px', 
+                background: 'rgba(239, 68, 68, 0.05)', 
+                borderRadius: '12px', 
+                color: '#f87171', 
+                fontSize: '0.85rem',
+                border: '1px solid rgba(239, 68, 68, 0.1)',
+                lineHeight: 1.6
+              }}>
+                <strong>Lưu ý:</strong> Hệ thống sử dụng công nghệ nhận diện nội dung tự động. Quý khách vui lòng <strong>ghi đúng nội dung chuyển khoản</strong> để được cộng tiền ngay lập tức.
               </div>
             </div>
 
-            <div style={{ 
-              marginTop: '20px', 
-              padding: '14px 16px', 
-              background: 'rgba(239, 68, 68, 0.08)', 
-              borderRadius: '8px', 
-              color: '#f87171', 
-              fontSize: '0.85rem',
-              border: '1px solid rgba(239, 68, 68, 0.15)'
-            }}>
-              <strong>Lưu ý:</strong> Bắt buộc điền đúng nội dung chuyển khoản (thay "username" bằng tên tài khoản của bạn) 
-              để hệ thống tự động cộng tiền. Tối thiểu 10,000đ.
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
+                background: 'white', 
+                padding: '12px', 
+                borderRadius: '24px', 
+                display: 'inline-block',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                border: '4px solid rgba(59, 130, 246, 0.3)',
+                marginBottom: '16px'
+              }}>
+                <img 
+                  src={`https://img.vietqr.io/image/MB-0013519933-compact2.png?amount=${amount}&addInfo=LUMIE ${user?.username || 'USERNAME'}&accountName=PHAM VINH PHU`}
+                  alt="VietQR Payment"
+                  style={{ width: '100%', maxWidth: '240px', borderRadius: '12px', display: 'block' }}
+                />
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Quét mã QR để thanh toán nhanh<br/>
+                Số tiền: <strong>{parseInt(amount).toLocaleString()}đ</strong>
+              </p>
             </div>
           </div>
         </div>

@@ -7,7 +7,7 @@ interface User {
   email: string;
   avatar?: string;
   balance: number;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'staff';
   created_at: string;
 }
 

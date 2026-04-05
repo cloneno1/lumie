@@ -416,6 +416,135 @@ router.post(`${ADMIN_BASE}/u-role-s`, authenticateAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
+// Middleware: Authenticate Staff/Admin
+const authenticateStaff = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, SECRET_KEY, async (err, decoded) => {
+    if (err) return res.sendStatus(403);
+    const user = await db.users.getById(decoded.id);
+    if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
+      return res.sendStatus(403);
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// ==========================================
+// API: FEEDBACKS
+// ==========================================
+router.post('/orders/:id/feedback', authenticateToken, async (req, res) => {
+  try {
+    const { rating, comment, productName } = req.body;
+    const orderId = req.params.id;
+    const userId = req.user.id;
+
+    // Check if order exists and belongs to user
+    const orders = await db.orders.getByUserId(userId);
+    const order = orders.find(o => o.id === parseInt(orderId) || o.id === orderId);
+    if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
+    if (order.status !== 'completed') return res.status(400).json({ message: 'Bạn chỉ có thể đánh giá đơn hàng đã hoàn thành.' });
+
+    // Check if feedback already exists
+    const existing = await db.feedbacks.getByOrderId(orderId);
+    if (existing) return res.status(400).json({ message: 'Bạn đã đánh giá đơn hàng này rồi.' });
+
+    const feedback = await db.feedbacks.create({
+      userId, orderId, rating, comment, 
+      productName: productName || order.product_name || order.productName,
+      username: req.user.username
+    });
+
+    res.json({ message: 'Cảm ơn bạn đã đánh giá!', feedback });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/stats/top-rechargers', async (req, res) => {
+  try {
+    // Get all successful transactions, group by user, sum amount
+    const transactions = await db.transactions.getAll();
+    const successfulTx = transactions.filter(tx => tx.status === '1' || tx.status === 1);
+    
+    const userTotals = {};
+    for (const tx of successfulTx) {
+      if (!userTotals[tx.user_id]) userTotals[tx.user_id] = 0;
+      userTotals[tx.user_id] += tx.amount;
+    }
+
+    const sortedUsers = await Promise.all(
+      Object.entries(userTotals)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(async ([userId, total]) => {
+          const user = await db.users.getById(userId);
+          return {
+            id: userId,
+            username: user?.username || 'Ẩn danh',
+            avatar: user?.avatar,
+            total
+          };
+        })
+    );
+
+    res.json(sortedUsers);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/stats/recent-activity', async (req, res) => {
+  try {
+    const [orders, feedbacks] = await Promise.all([
+      db.orders.getAll(),
+      db.feedbacks.getAll()
+    ]);
+
+    const activity = [
+      ...orders.slice(0, 5).map(o => ({ 
+        type: 'order', 
+        username: o.username, 
+        productName: o.product_name || o.productName, 
+        created_at: o.created_at 
+      })),
+      ...feedbacks.slice(0, 5).map(f => ({ 
+        type: 'feedback', 
+        username: f.username, 
+        productName: f.product_name || f.productName, 
+        rating: f.rating,
+        created_at: f.created_at 
+      }))
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    res.json(activity.slice(0, 10));
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/feedbacks', async (req, res) => {
+  try {
+    const feedbacks = await db.feedbacks.getAll();
+    res.json(feedbacks);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/stats', async (req, res) => {
+  try {
+    const feedbacks = await db.feedbacks.getAll();
+    const count = feedbacks.length;
+    res.json({ totalFeedbacks: 5000 + count }); // Static base + real count
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ==========================================
+// API: STAFF PANEL
+// ==========================================
+router.get('/staff/orders', authenticateStaff, async (req, res) => {
+  try {
+    const orders = await db.orders.getAll();
+    res.json(orders);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // Apply auth rate limiting specifically to these routes
 router.use('/auth/login', authLimiter);
 router.use('/auth/register', authLimiter);
