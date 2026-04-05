@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Wallet, Landmark, Copy, CheckCircle2, Ticket, Loader2, AlertTriangle } from 'lucide-react';
+import { CreditCard, Landmark, Copy, CheckCircle2, Ticket, Loader2, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,20 +11,18 @@ const VALID_AMOUNTS = [
   { value: '100000', label: '100,000đ' },
   { value: '200000', label: '200,000đ' },
   { value: '300000', label: '300,000đ' },
-  { value: '500000', label: '50,000đ' },
+  { value: '500000', label: '500,000đ' },
   { value: '1000000', label: '1,000,000đ' },
 ];
 
 const BANKS = {
-  MB: { name: 'MB Bank (Quân Đội)', number: '0013519933', bin: 'MB', accountName: 'PHAM VINH PHU' },
-  BIDV: { name: 'BIDV (Đầu tư & Phát triển)', number: '8835052912', bin: 'BIDV', accountName: 'PHAM VINH PHU' }
+  BIDV: { name: 'BIDV (Ngân hàng Đầu tư và Phát triển Việt Nam)', number: '8835052912', bin: 'BIDV', accountName: 'PHAM VINH PHU' }
 };
 
 function TopUp() {
   const { user } = useAuth();
   const [amount, setAmount] = useState('100000');
   const [method, setMethod] = useState<'card' | 'bank'>('card');
-  const [selectedBank, setSelectedBank] = useState<'MB' | 'BIDV'>('MB');
   const [copied, setCopied] = useState(false);
 
   // Card form state
@@ -98,7 +96,7 @@ function TopUp() {
           Nạp Tiền Vào <span className="gradient-text">Tài Khoản</span>
         </h1>
         <p style={{ color: 'var(--text-muted)' }}>
-          Giao dịch hoàn toàn tự động 24/7. Hỗ trợ nạp thẻ cào và chuyển khoản ngân hàng.
+          Hệ thống nạp tiền tự động 24/7. Bạn có thể chọn nạp qua Thẻ cào hoặc Chuyển khoản ngân hàng.
         </p>
       </div>
 
@@ -124,7 +122,7 @@ function TopUp() {
             style={{ flex: 1, minWidth: '180px', justifyContent: 'center', display: 'flex', gap: '8px' }}
           >
             <Landmark size={20} />
-            Ngân hàng
+            Chuyển khoản (BIDV)
           </button>
         </div>
       </div>
@@ -137,8 +135,8 @@ function TopUp() {
               <Ticket size={28} style={{ color: 'var(--accent-primary)', display: 'block' }} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Nạp Thẻ Cào Tự Động</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Xử lý nhanh chóng từ 1-5 phút</p>
+              <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Nạp Thẻ Cào</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Hệ thống duyệt thẻ tự động sau 1-5 phút</p>
             </div>
           </div>
 
@@ -167,7 +165,7 @@ function TopUp() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Nhà mạng</label>
+              <label className="form-label">Chọn nhà mạng</label>
               <select className="form-control" value={telco} onChange={(e) => setTelco(e.target.value)}>
                 <option value="VIETTEL">Viettel</option>
                 <option value="VINAPHONE">Vinaphone</option>
@@ -183,7 +181,7 @@ function TopUp() {
               <input 
                 type="text" 
                 className="form-control"
-                placeholder="Nhập số seri..." 
+                placeholder="Nhập số seri nằm trên thẻ..." 
                 value={serial}
                 onChange={(e) => setSerial(e.target.value)}
               />
@@ -196,7 +194,7 @@ function TopUp() {
               <input 
                 type="text" 
                 className="form-control"
-                placeholder="Nhập mã thẻ..." 
+                placeholder="Nhập mã thẻ sau lớp cào..." 
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
               />
@@ -212,7 +210,7 @@ function TopUp() {
 
           {/* Amount Select */}
           <div className="form-group">
-            <label className="form-label">Chọn mệnh giá</label>
+            <label className="form-label">Chọn mệnh giá thẻ</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {VALID_AMOUNTS.map((item) => (
                 <button
@@ -243,8 +241,8 @@ function TopUp() {
           }}>
             <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--accent-red)' }} />
             <span style={{ lineHeight: 1.5 }}>
-              <strong style={{ color: 'white', display: 'block', marginBottom: '2px' }}>Lưu ý quan trọng:</strong> 
-              Bạn phải chọn <strong>ĐÚNG MỆNH GIÁ</strong> của thẻ. Nếu chọn sai mệnh giá hệ thống sẽ không cộng tiền và bạn sẽ mất thẻ.
+              <strong style={{ color: 'white', display: 'block', marginBottom: '2px' }}>Lưu ý đặc biệt:</strong> 
+              Quý khách vui lòng chọn <strong>đúng mệnh giá</strong>. Nếu chọn sai hệ thống sẽ không hỗ trợ hoàn tiền hoặc cộng tiền.
             </span>
           </div>
 
@@ -267,7 +265,7 @@ function TopUp() {
             {loading ? (
               <>
                 <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                Đang xử lý giao dịch...
+                Đang gửi yêu cầu...
               </>
             ) : (
               <>
@@ -284,26 +282,12 @@ function TopUp() {
         <div className="glass-panel animate-fade-in delay-2" style={{ padding: '32px', marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
             <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '10px', borderRadius: '12px' }}>
-              <Wallet size={28} style={{ color: '#3b82f6', display: 'block' }} />
+              <Landmark size={28} style={{ color: '#3b82f6', display: 'block' }} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản Ngân hàng</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Chọn ngân hàng để lấy mã QR tự động</p>
+              <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản Ngân hàng (BIDV)</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Hệ thống tự động quét và cộng tiền qua QR</p>
             </div>
-          </div>
-
-          {/* Bank Selector */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
-             {Object.entries(BANKS).map(([key, bank]) => (
-               <button 
-                 key={key}
-                 className={`category-btn ${selectedBank === key ? 'active' : ''}`}
-                 onClick={() => setSelectedBank(key as any)}
-                 style={{ flex: 1, justifyContent: 'center' }}
-               >
-                 {bank.name}
-               </button>
-             ))}
           </div>
           
           {/* Amount Select for QR */}
@@ -334,25 +318,25 @@ function TopUp() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Ngân hàng</span>
-                  <strong style={{ color: '#3b82f6' }}>{BANKS[selectedBank].name}</strong>
+                  <strong style={{ color: '#3b82f6' }}>{BANKS.BIDV.name}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Chủ tài khoản</span>
-                  <strong style={{ letterSpacing: '0.5px' }}>{BANKS[selectedBank].accountName}</strong>
+                  <strong style={{ letterSpacing: '0.5px' }}>{BANKS.BIDV.accountName}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Số tài khoản</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <strong style={{ fontSize: '1.1rem', letterSpacing: '1px', color: 'var(--accent-primary)' }}>{BANKS[selectedBank].number}</strong>
-                    <button onClick={() => handleCopy(BANKS[selectedBank].number)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
+                    <strong style={{ fontSize: '1.2rem', letterSpacing: '1px', color: 'var(--accent-primary)' }}>{BANKS.BIDV.number}</strong>
+                    <button onClick={() => handleCopy(BANKS.BIDV.number)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
                       {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Nội dung CK</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Nội dung chuyển khoản</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <strong style={{ color: '#f87171', fontSize: '1.1rem', textTransform: 'uppercase' }}>LUMIE {user?.username || 'USERNAME'}</strong>
+                    <strong style={{ color: '#f87171', fontSize: '1.2rem', textTransform: 'uppercase' }}>LUMIE {user?.username || 'USERNAME'}</strong>
                     <button onClick={() => handleCopy(`LUMIE ${user?.username || 'USERNAME'}`)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
                       <Copy size={16} />
                     </button>
@@ -366,11 +350,11 @@ function TopUp() {
                 background: 'rgba(239, 68, 68, 0.05)', 
                 borderRadius: '12px', 
                 color: '#f87171', 
-                fontSize: '0.85rem',
+                fontSize: '0.9rem',
                 border: '1px solid rgba(239, 68, 68, 0.1)',
                 lineHeight: 1.6
               }}>
-                <strong>Lưu ý:</strong> Quý khách vui lòng <strong>ghi đúng nội dung chuyển khoản</strong> để được hệ thống tự động nhận diện và cộng tiền ngay lập tức.
+                <strong>Lưu ý quan trọng:</strong> Quý khách phải <strong>GHI ĐÚNG NỘI DUNG</strong> như trên để hệ thống tự động nhận diện và cộng tiền trong vài giây.
               </div>
             </div>
 
@@ -385,12 +369,12 @@ function TopUp() {
                 marginBottom: '16px'
               }}>
                 <img 
-                  src={`https://img.vietqr.io/image/${BANKS[selectedBank].bin}-${BANKS[selectedBank].number}-compact2.png?amount=${amount}&addInfo=LUMIE ${user?.username || 'USERNAME'}&accountName=${BANKS[selectedBank].accountName}`}
-                  alt="VietQR Payment"
+                  src={`https://img.vietqr.io/image/BIDV-${BANKS.BIDV.number}-compact2.png?amount=${amount}&addInfo=LUMIE ${user?.username || 'USERNAME'}&accountName=${BANKS.BIDV.accountName}`}
+                  alt="VietQR Payment BIDV"
                   style={{ width: '100%', maxWidth: '240px', borderRadius: '12px', display: 'block' }}
                 />
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                 Quét mã QR để thanh toán nhanh<br/>
                 Số tiền: <strong>{parseInt(amount).toLocaleString()}đ</strong>
               </p>

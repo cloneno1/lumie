@@ -208,34 +208,17 @@ const Home: React.FC = () => {
               Mọi sự đóng góp của bạn đều giúp chúng tôi duy trì hệ thống và cải thiện trải nghiệm người dùng.
             </p>
             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px', color: '#3b82f6' }}>MB Bank</div>
-                <div style={{ color: 'var(--text-muted)' }}>0013519933</div>
-              </div>
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px', color: '#10b981' }}>BIDV</div>
-                <div style={{ color: 'var(--text-muted)' }}>8835052912</div>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '4px', color: '#3b82f6' }}>BIDV (Ngân hàng Đầu tư & Phát triển)</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '1.1rem', letterSpacing: '1px' }}>8835052912</div>
               </div>
               <div style={{ flex: '1 1 100%' }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>Chủ TK</div>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>Chủ Tài Khoản</div>
                 <div style={{ color: 'var(--text-muted)' }}>PHAM VINH PHU</div>
               </div>
             </div>
           </div>
-          <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ 
-              background: 'white', padding: '16px', borderRadius: '32px', display: 'inline-block',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '6px solid rgba(255,255,255,0.05)'
-            }}>
-              {/* Tab-like toggle for QR or just show one/both. Let's show both images but smaller or one at a time.
-                  Actually, showing the MB Bank one by default and mentioning BIDV is also okay, 
-                  but for a good UI, let's use a small toggle. */}
-              <img 
-                src="https://img.vietqr.io/image/MB-0013519933-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" 
-                alt="Donate QR MB" 
-                style={{ width: '100%', maxWidth: '240px', borderRadius: '16px', display: 'block' }}
-              />
-            </div>
+          <div style={{ textAlign: 'center' }}>
             <div style={{ 
               background: 'white', padding: '16px', borderRadius: '32px', display: 'inline-block',
               boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '6px solid rgba(255,255,255,0.05)'
@@ -243,10 +226,10 @@ const Home: React.FC = () => {
               <img 
                 src="https://img.vietqr.io/image/BIDV-8835052912-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" 
                 alt="Donate QR BIDV" 
-                style={{ width: '100%', maxWidth: '240px', borderRadius: '16px', display: 'block' }}
+                style={{ width: '100%', maxWidth: '280px', borderRadius: '16px', display: 'block' }}
               />
             </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Quét mã QR để ủng hộ Lumie Store</p>
+            <p style={{ marginTop: '16px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Quét mã QR để ủng hộ Lumie Store</p>
           </div>
         </div>
       </section>
