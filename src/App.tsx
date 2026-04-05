@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import api from './api/axios';
-import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, ChevronDown, Sparkles, CircleDollarSign, Play, Music, Film, ChevronRight, Menu, X, Headset } from 'lucide-react';
+import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset } from 'lucide-react';
 import Home from './pages/Home';
 import TopUp from './pages/TopUp';
 import Login from './pages/Login';
@@ -23,7 +23,6 @@ function AppContent() {
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showProductsMenu, setShowProductsMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -59,7 +58,6 @@ function AppContent() {
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
     setShowUserMenu(false);
-    setShowProductsMenu(false);
     if (!showNotifications && unreadCount > 0) {
       handleMarkRead();
     }
@@ -68,13 +66,6 @@ function AppContent() {
   const toggleUserMenu = () => {
     setShowUserMenu(!showUserMenu);
     setShowNotifications(false);
-    setShowProductsMenu(false);
-  };
-
-  const toggleProductsMenu = () => {
-    setShowProductsMenu(!showProductsMenu);
-    setShowNotifications(false);
-    setShowUserMenu(false);
   };
 
   const handleLogout = () => {
@@ -86,7 +77,6 @@ function AppContent() {
   useEffect(() => {
     setShowNotifications(false);
     setShowUserMenu(false);
-    setShowProductsMenu(false);
     setShowMobileMenu(false);
   }, [location.pathname]);
 
@@ -110,33 +100,10 @@ function AppContent() {
                 Trang Chủ
               </Link>
             </li>
-            <li style={{ position: 'relative' }}>
-              <button 
-                onClick={toggleProductsMenu} 
-                className={`nav-link ${location.pathname.startsWith('/products') ? 'active' : ''}`}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', width: '100%', justifyContent: 'space-between' }}
-              >
-                Sản Phẩm <ChevronDown size={14} style={{ transform: showProductsMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
-              </button>
-
-              {showProductsMenu && (
-                <div className="glass-card user-dropdown product-dropdown-mobile" style={{ 
-                  position: 'absolute', top: '120%', left: '0', width: '220px', zIndex: 1000, padding: '8px 0', 
-                  animation: 'slideInTop 0.3s', background: 'rgba(13, 17, 23, 0.98)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
-                }}>
-                  {[
-                    { name: 'Discord Nitro', path: '/products/discord', icon: <Sparkles size={16} /> },
-                    { name: 'Robux (Gamepass)', path: '/products/robux', icon: <CircleDollarSign size={16} /> },
-                    { name: 'YouTube Premium', path: '/products/youtube', icon: <Play size={16} /> },
-                    { name: 'Spotify Music', path: '/products/spotify', icon: <Music size={16} /> },
-                    { name: 'Netflix 4K', path: '/products/netflix', icon: <Film size={16} /> }
-                  ].map((item, idx) => (
-                    <Link key={idx} to={item.path} className="dropdown-item" onClick={() => { setShowProductsMenu(false); setShowMobileMenu(false); }}>
-                      {item.icon} <span>{item.name}</span> <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.3 }} />
-                    </Link>
-                  ))}
-                </div>
-              )}
+            <li>
+              <Link to="/products" className={`nav-link ${location.pathname.startsWith('/products') ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
+                Sản Phẩm
+              </Link>
             </li>
             <li>
               <Link to="/nap-tien" className={`nav-link ${location.pathname === '/nap-tien' ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
