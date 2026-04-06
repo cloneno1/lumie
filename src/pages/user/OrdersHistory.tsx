@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Package, Star, X, Check } from 'lucide-react';
+import { Package, Star, X, Check, AlertTriangle } from 'lucide-react';
 
 const OrdersHistory: React.FC = () => {
   const { user } = useAuth();
@@ -74,6 +74,25 @@ const OrdersHistory: React.FC = () => {
           <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Lịch sử đơn hàng</h1>
         </div>
 
+        {/* Warning Banner for Review Policy */}
+        <div style={{ 
+          background: 'rgba(239, 68, 68, 0.05)', 
+          border: '1px solid rgba(239, 68, 68, 0.1)', 
+          padding: '16px', 
+          borderRadius: '12px', 
+          marginBottom: '24px',
+          display: 'flex',
+          gap: '12px',
+          color: '#fca5a5',
+          fontSize: '14px'
+        }}>
+          <AlertTriangle size={20} style={{ flexShrink: 0, color: 'var(--accent-red)' }} />
+          <span>
+            <strong>Chính sách hậu mãi:</strong> Quý khách có <strong>3 ngày</strong> để thực hiện đánh giá đơn hàng sau khi hoàn tất. 
+            Sau 3 ngày, mục đánh giá sẽ tự động đóng lại và shop sẽ <strong>không hỗ trợ hoàn tiền</strong> trong trường hợp đơn hàng có khiếu nại.
+          </span>
+        </div>
+
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải...</div>
         ) : orders.length === 0 ? (
@@ -86,33 +105,52 @@ const OrdersHistory: React.FC = () => {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
                   <th style={{ textAlign: 'left', padding: '16px' }}>Sản phẩm</th>
-                  <th style={{ textAlign: 'left', padding: '16px' }}>Số lượng</th>
+                  <th style={{ textAlign: 'left', padding: '16px' }}>Ngày mua</th>
                   <th style={{ textAlign: 'left', padding: '16px' }}>Tổng tiền</th>
                   <th style={{ textAlign: 'left', padding: '16px' }}>Trạng thái</th>
                   <th style={{ textAlign: 'left', padding: '16px' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px', fontWeight: 600 }}>{order.productName}</td>
-                    <td style={{ padding: '16px' }}>{order.amount}</td>
-                    <td style={{ padding: '16px', color: 'var(--accent-primary)', fontWeight: 700 }}>{order.total.toLocaleString()}đ</td>
-                    <td style={{ padding: '16px' }}>{getStatusBadge(order.status)}</td>
-                    <td style={{ padding: '16px' }}>
-                      {order.status === 'completed' && (
-                        <button 
-                          onClick={() => handleOpenFeedback(order)}
-                          className="btn glass-panel" 
-                          style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                        >
-                          <Star size={14} fill={order.feedback_id ? "currentColor" : "none"} /> 
-                          {order.feedback_id ? 'Đã đánh giá' : 'Đánh giá ngay'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {orders.map((order) => {
+                  const orderDate = new Date(order.created_at);
+                  const isExpired = Date.now() - orderDate.getTime() > 3 * 24 * 60 * 60 * 1000;
+                  
+                  return (
+                    <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: '16px', fontWeight: 600 }}>{order.productName}</td>
+                      <td style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {orderDate.toLocaleDateString('vi-VN')}
+                      </td>
+                      <td style={{ padding: '16px', color: 'var(--accent-primary)', fontWeight: 700 }}>{order.total.toLocaleString()}đ</td>
+                      <td style={{ padding: '16px' }}>{getStatusBadge(order.status)}</td>
+                      <td style={{ padding: '16px' }}>
+                        {order.status === 'completed' && (
+                          <button 
+                            onClick={() => !order.feedback_id && !isExpired && handleOpenFeedback(order)}
+                            className={`btn ${order.feedback_id || isExpired ? 'disabled-btn' : 'glass-panel'}`}
+                            style={{ 
+                              padding: '6px 12px', 
+                              fontSize: '11px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '6px',
+                              opacity: (order.feedback_id || isExpired) ? 0.5 : 1,
+                              cursor: (order.feedback_id || isExpired) ? 'not-allowed' : 'pointer',
+                              background: isExpired && !order.feedback_id ? 'rgba(239, 68, 68, 0.05)' : undefined,
+                              border: isExpired && !order.feedback_id ? '1px solid rgba(239, 68, 68, 0.1)' : undefined,
+                              color: isExpired && !order.feedback_id ? '#f87171' : undefined
+                            }}
+                            disabled={!!order.feedback_id || isExpired}
+                          >
+                            <Star size={14} fill={order.feedback_id ? "currentColor" : "none"} /> 
+                            {order.feedback_id ? 'Đã đánh giá' : isExpired ? 'Đã quá hạn' : 'Đánh giá ngay'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

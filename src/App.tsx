@@ -313,7 +313,7 @@ function AppContent() {
                       
                       {/* Support Item */}
                       <a href="https://discord.gg/lumie" target="_blank" rel="noreferrer" className="dropdown-item" onClick={() => setShowUserMenu(false)}>
-                        <Headset size={18} /> <span>Hỗ trợ (Discord)</span>
+                        <Headset size={18} /> <span>Hỗ trợ khách hàng</span>
                       </a>
 
                       {(user.role === 'admin' || user.role === 'staff') && (

@@ -1,38 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity } from 'lucide-react';
+import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
 const Home: React.FC = () => {
   const { user } = useAuth();
-  const [feedbackCount, setFeedbackCount] = React.useState('5,000+');
-  const [topRechargers, setTopRechargers] = React.useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = React.useState<any[]>([]);
-  const [loadingStats, setLoadingStats] = React.useState(true);
+  const [feedbackCount, setFeedbackCount] = useState('5,000+');
+  const [topRechargers, setTopRechargers] = useState<any[]>([]);
+  const [leaderboardType, setLeaderboardType] = useState<'monthly' | 'total'>('monthly');
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
 
-  React.useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [statsRes, topRes, activityRes] = await Promise.all([
-          api.get('/stats'),
-          api.get('/stats/top-rechargers'),
-          api.get('/stats/recent-activity')
-        ]);
-        
-        if (statsRes.data.totalFeedbacks) {
-          setFeedbackCount(statsRes.data.totalFeedbacks.toLocaleString() + '+');
-        }
-        setTopRechargers(topRes.data);
-        setRecentActivity(activityRes.data);
-      } catch (err) {
-        console.error('Lỗi tải thống kê:', err);
-      } finally {
-        setLoadingStats(false);
+  const fetchStats = async () => {
+    try {
+      setLoadingStats(true);
+      const [statsRes, rankRes, activityRes] = await Promise.all([
+        api.get('/stats'),
+        api.get('/stats/vip-rankings'),
+        api.get('/stats/recent-activity')
+      ]);
+      
+      if (statsRes.data.totalFeedbacks) {
+        setFeedbackCount(statsRes.data.totalFeedbacks.toLocaleString() + '+');
       }
-    };
+      
+      // Select rankings based on type
+      const rankings = rankRes.data[leaderboardType] || [];
+      setTopRechargers(rankings);
+      setRecentActivity(activityRes.data);
+    } catch (err) {
+      console.error('Lỗi tải thống kê:', err);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
     fetchStats();
-  }, []);
+  }, [leaderboardType]);
 
   return (
     <div className="home-page">
@@ -77,13 +83,31 @@ const Home: React.FC = () => {
       <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '100px' }}>
         {/* Top Rechargers Leaderboard */}
         <div className="glass-panel" style={{ padding: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <div style={{ background: '#f59e0b20', padding: '10px', borderRadius: '12px' }}>
-              <Trophy size={24} color="#f59e0b" />
-            </div>
-            <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: '#f59e0b20', padding: '10px', borderRadius: '12px' }}>
+                <Trophy size={24} color="#f59e0b" />
+              </div>
               <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Đua TOP Nạp Thẻ</h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Vinh danh các đại gia trong tháng</p>
+            </div>
+            
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <button 
+                onClick={() => setLeaderboardType('monthly')}
+                style={{ 
+                  padding: '4px 12px', fontSize: '12px', borderRadius: '6px', border: 'none',
+                  background: leaderboardType === 'monthly' ? 'var(--accent-primary)' : 'transparent',
+                  color: leaderboardType === 'monthly' ? '#000' : '#fff', cursor: 'pointer'
+                }}
+              >Tháng này</button>
+              <button 
+                onClick={() => setLeaderboardType('total')}
+                style={{ 
+                  padding: '4px 12px', fontSize: '12px', borderRadius: '6px', border: 'none',
+                  background: leaderboardType === 'total' ? 'var(--accent-primary)' : 'transparent',
+                  color: leaderboardType === 'total' ? '#000' : '#fff', cursor: 'pointer'
+                }}
+              >Tổng nạp</button>
             </div>
           </div>
 
@@ -91,42 +115,51 @@ const Home: React.FC = () => {
             {loadingStats ? (
               [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '60px', borderRadius: '12px' }}></div>)
             ) : topRechargers.length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>Chưa có dữ liệu tháng này</p>
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>Chưa có dữ liệu</p>
             ) : (
-              topRechargers.slice(0, 5).map((u, idx) => (
-                <div key={u.id} style={{ 
-                  display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', 
+              topRechargers.map((u, idx) => (
+                <div key={idx} style={{ 
+                  display: 'flex', alignItems: 'center', gap: '16px', padding: '12px 16px', 
                   background: idx === 0 ? 'rgba(245, 158, 11, 0.05)' : 'rgba(255,255,255,0.02)', 
                   borderRadius: '16px', border: idx === 0 ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid rgba(255,255,255,0.05)'
                 }}>
                   <div style={{ 
-                    width: '32px', height: '32px', borderRadius: '8px', 
+                    width: '28px', height: '28px', borderRadius: '6px', 
                     background: idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px'
                   }}>
                     {idx + 1}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700 }}>{u.username}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--accent-primary)' }}>{u.total.toLocaleString()}đ</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {u.username}
+                      {u.amount >= 2500000 && <Crown size={14} color="#f59e0b" />}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--accent-primary)' }}>{u.amount.toLocaleString()}đ</div>
                   </div>
-                  {idx === 0 && <Sparkles size={20} color="#f59e0b" />}
+                  {idx === 0 && <Sparkles size={18} color="#f59e0b" />}
                 </div>
               ))
             )}
+            
+            <div style={{ 
+              marginTop: '12px', padding: '12px', borderRadius: '12px', 
+              background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)',
+              fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center'
+            }}>
+              Mốc nạp <strong>2.5m</strong> & <strong>3.5m</strong>: Nhận quà Spotify Premium! 
+              <Link to="/nap-tien" style={{ marginLeft: '6px', color: '#60a5fa', fontWeight: 600 }}>Chi tiết</Link>
+            </div>
           </div>
         </div>
 
-        {/* Recent Activity (Orders & Reviews) */}
+        {/* Recent Activity */}
         <div className="glass-panel" style={{ padding: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '12px' }}>
               <Activity size={24} color="var(--accent-primary)" />
             </div>
-            <div>
-              <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Hoạt động mới nhất</h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Giao dịch và đánh giá thời gian thực</p>
-            </div>
+            <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Hoạt động mới nhất</h2>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -153,7 +186,7 @@ const Home: React.FC = () => {
                       </div>
                     )}
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {new Date(act.created_at).toLocaleTimeString('vi-VN')} - {new Date(act.created_at).toLocaleDateString('vi-VN')}
+                      {new Date(act.created_at).toLocaleTimeString('vi-VN')}
                     </div>
                   </div>
                 </div>
@@ -164,7 +197,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Features Section */}
-      <section style={{ background: 'rgba(255,255,255,0.02)', padding: '100px 0', marginBottom: '80px', borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)' }}>
+      <section style={{ background: 'rgba(255,255,255,0.01)', padding: '80px 0', marginBottom: '80px', borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <h2 style={{ fontSize: '2.5rem', marginBottom: '16px' }}>Tại sao chọn Lumie Store?</h2>
@@ -173,86 +206,61 @@ const Home: React.FC = () => {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
             {[
-              { icon: <Zap size={24} color="#10b981" />, title: 'Giao Hàng Tự Động', desc: 'Hệ thống xử lý đơn hàng hoàn toàn tự động, nhận hàng chỉ sau vài giây thanh toán thành công.', color: 'rgba(16, 185, 129, 0.1)' },
-              { icon: <ShieldCheck size={24} color="#3b82f6" />, title: 'Bảo Mật & Uy Tín', desc: 'Mọi thông tin giao dịch đều được mã hóa và bảo mật. Cam kết hoàn tiền nếu sản phẩm gặp lỗi.', color: 'rgba(59, 130, 246, 0.1)' },
-              { icon: <Sparkles size={24} color="#f59e0b" />, title: 'Hỗ Trợ 24/7', desc: 'Đội ngũ hỗ trợ nhiệt tình, giải đáp mọi thắc mắc và vấn đề của khách hàng nhanh chóng nhất.', color: 'rgba(245, 158, 11, 0.1)' }
-            ].map((feature, idx) => (
+              { icon: <Zap size={24} color="#10b981" />, title: 'Giao Hàng Tự Động', desc: 'Hệ thống xử lý đơn hàng hoàn toàn tự động, nhận hàng chỉ sau vài giây thanh toán.', color: 'rgba(16, 185, 129, 0.1)' },
+              { icon: <ShieldCheck size={24} color="#3b82f6" />, title: 'Bảo Mật & Uy Tín', desc: 'Mọi thông tin giao dịch đều được mã hóa. Cam kết hoàn tiền nếu sản phẩm gặp lỗi.', color: 'rgba(59, 130, 246, 0.1)' },
+              { icon: <Sparkles size={24} color="#f59e0b" />, title: 'Hỗ Trợ 24/7', desc: 'Đội ngũ hỗ trợ nhiệt tình, giải đáp mọi thắc mắc của khách hàng nhanh chóng nhất.', color: 'rgba(245, 158, 11, 0.1)' }
+            ].map((f, idx) => (
               <div key={idx} className="glass-card" style={{ padding: '32px' }}>
-                <div style={{ background: feature.color, width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
-                  {feature.icon}
-                </div>
-                <h3 style={{ marginBottom: '12px', fontSize: '1.3rem' }}>{feature.title}</h3>
-                <p style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>{feature.desc}</p>
+                <div style={{ background: f.color, width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>{f.icon}</div>
+                <h3 style={{ marginBottom: '12px', fontSize: '1.2rem' }}>{f.title}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6 }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Donate & QR Section */}
+      {/* Donate Section */}
       <section className="container" style={{ marginBottom: '100px' }}>
-        <div className="glass-panel donate-grid" style={{ 
-          display: 'grid', gridTemplateColumns: '1fr 350px', gap: '40px', padding: '60px', borderRadius: '40px',
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
-          alignItems: 'center'
-        }}>
+        <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px', padding: '60px', borderRadius: '40px', background: 'rgba(59,130,246,0.03)', alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '12px' }}>
-                <Heart size={28} color="#ef4444" fill="#ef4444" />
-              </div>
+              <Heart size={32} color="#ef4444" fill="#ef4444" />
               <h2 style={{ fontSize: '2rem', margin: 0 }}>Ủng hộ Lumie Store</h2>
             </div>
-            <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '32px' }}>
-              Nếu bạn yêu thích dịch vụ của chúng tôi, hãy ủng hộ web để có thêm động lực và phát triển. 
-              Mọi sự đóng góp của bạn đều giúp chúng tôi duy trì hệ thống và cải thiện trải nghiệm người dùng.
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '32px' }}>
+              Nếu bạn yêu thích dịch vụ, hãy ủng hộ web để có thêm động lực phát triển. 
+              Mọi sự đóng góp đều giúp chúng tôi duy trì hệ thống và nâng cấp hạ tầng.
             </p>
-            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '200px' }}>
-                <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: '4px', color: '#3b82f6' }}>BIDV (Ngân hàng Đầu tư & Phát triển)</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '1.1rem', letterSpacing: '1px' }}>8835052912</div>
-              </div>
-              <div style={{ flex: '1 1 100%' }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>Chủ Tài Khoản</div>
-                <div style={{ color: 'var(--text-muted)' }}>PHAM VINH PHU</div>
-              </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#3b82f6' }}>BIDV (Ngân hàng Đầu tư & Phát triển)</div>
+              <div style={{ color: 'var(--accent-primary)', fontSize: '1.5rem', fontWeight: 800, margin: '8px 0' }}>8835052912</div>
+              <div style={{ color: 'var(--text-muted)', fontWeight: 600 }}>PHAM VINH PHU</div>
             </div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              background: 'white', padding: '16px', borderRadius: '32px', display: 'inline-block',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.4)', border: '6px solid rgba(255,255,255,0.05)'
-            }}>
-              <img 
-                src="https://img.vietqr.io/image/BIDV-8835052912-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" 
-                alt="Donate QR BIDV" 
-                style={{ width: '100%', maxWidth: '280px', borderRadius: '16px', display: 'block' }}
-              />
+            <div style={{ background: 'white', padding: '16px', borderRadius: '24px', display: 'inline-block' }}>
+              <img src="https://img.vietqr.io/image/BIDV-8835052912-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" alt="QR" style={{ width: '220px' }} />
             </div>
-            <p style={{ marginTop: '16px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Quét mã QR để ủng hộ Lumie Store</p>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="container" style={{ paddingBottom: '100px' }}>
-        <div className="glass-card" style={{ 
-          padding: '80px 40px', 
-          textAlign: 'center', 
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
-          borderRadius: '40px',
-          border: '1px solid rgba(255,255,255,0.1)'
-        }}>
-          <h2 style={{ fontSize: '3rem', marginBottom: '24px', fontWeight: 800 }}>Sẵn sàng trải nghiệm?</h2>
-          <p style={{ maxWidth: '700px', margin: '0 auto 40px', color: 'var(--text-muted)', fontSize: '1.25rem', lineHeight: 1.6 }}>
-            Tham gia vào cộng đồng hàng ngàn khách hàng đã và đang tin dùng dịch vụ của chúng tôi mỗi ngày. 
-            Nhận ưu đãi đặc biệt cho lượt mua hàng đầu tiên của bạn!
+        <div className="glass-card" style={{ padding: '80px 40px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))', borderRadius: '40px' }}>
+          <h2 style={{ fontSize: '2.5rem', marginBottom: '20px' }}>Sẵn sàng trải nghiệm?</h2>
+          <p style={{ maxWidth: '600px', margin: '0 auto 40px', color: 'var(--text-muted)', fontSize: '1.1rem' }}>
+            Tham gia vào cộng đồng khách hàng tin dùng dịch vụ của chúng tôi mỗi ngày. 
+            Nhận ưu đãi ưu đãi ngay hôm nay!
           </p>
-          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-            <Link to={user ? "/products" : "/register"} className="btn btn-primary" style={{ padding: '18px 50px', fontSize: '1.1rem' }}>
-              {user ? "Mua Sắm Ngay" : "Bắt Đầu Ngay"}
-            </Link>
-            <Link to="/products" className="btn glass-panel" style={{ padding: '18px 50px', fontSize: '1.1rem' }}>Xem Sản Phẩm</Link>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+            {!user ? (
+              <Link to="/register" className="btn btn-primary" style={{ padding: '14px 40px' }}>Bắt Đầu Ngay</Link>
+            ) : (
+              <Link to="/profile/orders" className="btn btn-primary" style={{ padding: '14px 40px' }}>Lịch sử đơn hàng</Link>
+            )}
+            <Link to="/products" className="btn glass-panel" style={{ padding: '14px 40px' }}>Xem Sản Phẩm</Link>
           </div>
         </div>
       </section>

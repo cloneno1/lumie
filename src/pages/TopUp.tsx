@@ -266,7 +266,8 @@ function TopUp() {
             <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--accent-red)' }} />
             <span style={{ lineHeight: 1.5 }}>
               <strong style={{ color: 'white', display: 'block', marginBottom: '2px' }}>Lưu ý đặc biệt:</strong> 
-              Quý khách vui lòng chọn <strong>đúng mệnh giá</strong>. Nếu chọn sai hệ thống sẽ không hỗ trợ hoàn tiền hoặc cộng tiền.
+              Quý khách vui lòng chọn <strong>đúng mệnh giá</strong>. Nếu chọn sai hệ thống sẽ không hỗ trợ hoàn tiền. 
+              Mọi đơn hàng cần <strong>đánh giá trong vòng 3 ngày</strong>, quá hạn mục đánh giá sẽ tự động đóng và không hỗ trợ hoàn tiền nếu có khiếu nại.
             </span>
           </div>
 

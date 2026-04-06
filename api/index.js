@@ -827,6 +827,34 @@ router.post(`${ADMIN_BASE}/u-role-s`, authenticateAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
+router.get(`${ADMIN_BASE}/pending-feedback-report`, authenticateAdmin, async (req, res) => {
+  try {
+    const orders = await db.orders.getAll();
+    const now = Date.now();
+    const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+    
+    // Filter finished orders without feedback that are older than 3 days
+    const expiredOrders = orders.filter(o => 
+      o.status === 'completed' && 
+      !o.feedback_id && 
+      (now - new Date(o.created_at).getTime()) > THREE_DAYS
+    );
+
+    const report = await Promise.all(expiredOrders.map(async o => {
+      const u = await db.users.getById(o.user_id || o.userId);
+      return {
+        orderId: o.id,
+        username: u?.username,
+        discordId: u?.discord_id || u?.discordId || 'Chưa liên kết',
+        productName: u?.product_name || o.productName || o.product_name,
+        purchaseDate: o.created_at
+      };
+    }));
+
+    res.json(report);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // Middleware: Authenticate Staff/Admin
 const authenticateStaff = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
