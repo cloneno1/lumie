@@ -413,7 +413,7 @@ function TopUp() {
                 marginBottom: '16px'
               }}>
                 <img 
-                  src={`https://img.vietqr.io/image/BIDV-${BANKS.BIDV.number}-compact2.png?amount=${amount}&addInfo=LUMIE ${user?.username || 'USERNAME'}&accountName=${BANKS.BIDV.accountName}`}
+                  src={`https://img.vietqr.io/image/BIDV-${BANKS.BIDV.number}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`LUMIE ${user?.username || 'USERNAME'}`)}&accountName=${encodeURIComponent(BANKS.BIDV.accountName)}`}
                   alt="VietQR Payment BIDV"
                   style={{ width: '100%', maxWidth: '240px', borderRadius: '12px', display: 'block' }}
                 />
