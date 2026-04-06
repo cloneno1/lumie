@@ -10,6 +10,7 @@ import hpp from 'hpp';
 import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import { db } from '../db.js';
+import { calculateVipLevel, VIP_LEVELS } from './vip-utils.js';
 
 // Multer config for avatar uploads (memory storage)
 const upload = multer({ 
@@ -518,11 +519,35 @@ router.post('/callback/gachthe1s', async (req, res) => {
       if (tx) {
         const user = await db.users.getById(tx.user_id);
         if (user) {
-          await db.users.update(user.id, { balance: user.balance + parseInt(amount) });
+          const rechargeAmt = parseInt(amount);
+          const newBalance = (user.balance || 0) + rechargeAmt;
+          const newVipPoints = (user.vip_points || 0) + rechargeAmt;
+          const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
+          const newVipLevel = calculateVipLevel(newVipPoints);
+          
+          await db.users.update(user.id, { 
+            balance: newBalance,
+            vip_points: newVipPoints,
+            vip_level: newVipLevel,
+            total_topup: newTotalTopup,
+            last_topup_at: new Date().toISOString()
+          });
+
           await db.notifications.create({
             userId: user.id, title: 'Nạp thẻ thành công',
-            content: `Thẻ ${tx.telco} ${parseInt(amount).toLocaleString()}đ thành công!`, type: 'topup'
+            content: `Thẻ ${tx.telco} ${rechargeAmt.toLocaleString()}đ thành công! + ${rechargeAmt.toLocaleString()} điểm VIP.`, type: 'topup'
           });
+
+          // Check for 2.5M Perk (bonus product)
+          if (newTotalTopup >= 2500000 && (user.total_topup || 0) < 2500000) {
+             // Notify user of perk 
+             await db.notifications.create({
+               userId: user.id, 
+               title: 'Ưu đãi VIP 2.5 Triệu!',
+               content: 'Chúc mừng bạn đã đạt mốc 2.500.000đ! Vui lòng liên hệ Admin để nhận 1 tháng sản phẩm hay mua nhất.',
+               type: 'vip_perk'
+             });
+          }
         }
       }
     }
@@ -577,13 +602,24 @@ router.post(`${ADMIN_BASE}/b-up-s`, authenticateAdmin, async (req, res) => {
     const user = await db.users.getById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const newBalance = action === 'add' ? user.balance + amount : amount;
-    await db.users.update(userId, { balance: newBalance });
+    const updates = {};
+    if (action === 'add') {
+      updates.balance = (user.balance || 0) + amount;
+      updates.vip_points = (user.vip_points || 0) + amount;
+      updates.total_topup = (user.total_topup || 0) + amount;
+      updates.vip_level = calculateVipLevel(updates.vip_points);
+      updates.last_topup_at = new Date().toISOString();
+    } else {
+      updates.balance = amount;
+    }
+
+    await db.users.update(userId, updates);
     await db.notifications.create({
       userId: user.id, title: 'Số dư biến động',
-      content: `Admin đã ${action === 'add' ? 'cộng thêm' : 'đặt lại'} ${amount.toLocaleString()}đ.`, type: 'admin'
+      content: `Admin đã ${action === 'add' ? 'cộng thêm' : 'đặt lại'} ${amount.toLocaleString()}đ. ${action === 'add' ? `+${amount.toLocaleString()} điểm VIP.` : ''}`, 
+      type: 'admin'
     });
-    res.json({ message: 'Thành công!', newBalance });
+    res.json({ message: 'Thành công!', newBalance: updates.balance });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -690,6 +726,92 @@ router.get('/stats/top-rechargers', async (req, res) => {
     );
 
     res.json(sortedUsers);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/user/vip-status', authenticateToken, async (req, res) => {
+  try {
+    const user = await db.users.getById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Simulate Decaying Point Logic: If not topup for > 15 days, lose 5% points 
+    // This is a simplified approach, in a real app use a CRON job.
+    let currentPoints = user.vip_points || 0;
+    const lastTopup = user.last_topup_at ? new Date(user.last_topup_at) : new Date(0);
+    const dayDiff = Math.floor((new Date() - lastTopup) / (1000 * 60 * 60 * 24));
+    
+    if (dayDiff > 14 && currentPoints > 0) {
+       // Just update or warn. Let's update and notify.
+       const pointsToLose = Math.floor(currentPoints * 0.01 * (dayDiff - 13)); // 1% per day after 14 days
+       const finalPoints = Math.max(0, currentPoints - pointsToLose);
+       const finalVipLevel = calculateVipLevel(finalPoints);
+       
+       if (finalPoints !== currentPoints) {
+         await db.users.update(user.id, { 
+           vip_points: finalPoints,
+           vip_level: finalVipLevel
+         });
+         currentPoints = finalPoints;
+       }
+    }
+
+    const nextLevel = VIP_LEVELS.find(v => v.level === (user.vip_level || 0) + 1) || null;
+    const currentLevelData = VIP_LEVELS.find(v => v.level === (user.vip_level || 0));
+
+    res.json({
+      vipLevel: user.vip_level || 0,
+      vipPoints: currentPoints,
+      totalTopup: user.total_topup || 0,
+      lastTopupAt: user.last_topup_at,
+      nextLevel: nextLevel,
+      currentLevelData: currentLevelData,
+      allLevels: VIP_LEVELS
+    });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/stats/vip-rankings', async (req, res) => {
+  try {
+    const allUsers = await db.users.getAll();
+    
+    // Total Topup rankings
+    const topTotal = [...allUsers]
+      .filter(u => u.total_topup > 0)
+      .sort((a, b) => (b.total_topup || 0) - (a.total_topup || 0))
+      .slice(0, 10)
+      .map(u => ({ id: u.id, username: u.username, amount: u.total_topup, avatar: u.avatar }));
+
+    // For Week/Month, we'd need a transactions table with timestamps and successful status
+    // Let's filter from db.transactions (inefficient but works for small/mid scales without heavy DB query)
+    const transactions = await db.transactions.getAll();
+    const successfulTx = transactions.filter(tx => tx.status === '1' || tx.status === 1);
+    
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
+    const getRankingsForPeriod = (periodDate) => {
+      const periodMap = {};
+      successfulTx.forEach(tx => {
+        const txDate = new Date(tx.created_at);
+        if (txDate >= periodDate) {
+           periodMap[tx.user_id] = (periodMap[tx.user_id] || 0) + tx.amount;
+        }
+      });
+      return Object.entries(periodMap)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([uid, amt]) => {
+          const u = allUsers.find(user => user.id === uid);
+          return { id: uid, username: u?.username || 'Ẩn danh', amount: amt, avatar: u?.avatar };
+        });
+    };
+
+    res.json({
+      total: topTotal,
+      weekly: getRankingsForPeriod(oneWeekAgo),
+      monthly: getRankingsForPeriod(oneMonthAgo)
+    });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

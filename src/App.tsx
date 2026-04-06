@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import api from './api/axios';
-import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset, ShoppingCart } from 'lucide-react';
+import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset, ShoppingCart, Crown } from 'lucide-react';
 import Home from './pages/Home';
 import TopUp from './pages/TopUp';
 import Login from './pages/Login';
@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import Products from './pages/Products';
 import AuthCallback from './pages/AuthCallback';
 import Cart from './pages/Cart';
+import VIP from './pages/VIP';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
 import './index.css';
@@ -125,6 +126,11 @@ function AppContent() {
             <li>
               <Link to="/nap-tien" className={`nav-link ${location.pathname === '/nap-tien' ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
                 Nạp Tiền
+              </Link>
+            </li>
+            <li>
+              <Link to="/vip" className={`nav-link ${location.pathname === '/vip' ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
+                VIP
               </Link>
             </li>
           </ul>
@@ -244,7 +250,22 @@ function AppContent() {
                     
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }} className="hide-mobile">
-                        <span style={{ fontSize: '14px', fontWeight: '700', letterSpacing: '-0.2px' }}>{user.username}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '700', letterSpacing: '-0.2px' }}>{user.username}</span>
+                          {user.vip_level && user.vip_level > 0 && (
+                            <span style={{ 
+                              fontSize: '10px', 
+                              background: 'var(--gradient-primary)', 
+                              color: 'white', 
+                              padding: '1px 6px', 
+                              borderRadius: '4px', 
+                              fontWeight: 800,
+                              textTransform: 'uppercase'
+                            }}>
+                              V{user.vip_level}
+                            </span>
+                          )}
+                        </div>
                         <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: '600' }}>{user.balance.toLocaleString()}đ</span>
                       </div>
                       <svg 
@@ -271,6 +292,9 @@ function AppContent() {
                     }}>
                       <Link to="/profile" className="dropdown-item" onClick={() => setShowUserMenu(false)}>
                         <User size={18} /> <span>Trang cá nhân</span>
+                      </Link>
+                      <Link to="/vip" className="dropdown-item" style={{ color: '#eab308' }} onClick={() => setShowUserMenu(false)}>
+                        <Crown size={18} /> <span>Đặc quyền VIP</span>
                       </Link>
                       <Link to="/profile/orders" className="dropdown-item" onClick={() => setShowUserMenu(false)}>
                         <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path></svg>
@@ -325,6 +349,7 @@ function AppContent() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/discord" element={<Discord />} />
           <Route path="/nap-tien" element={<TopUp />} />
+          <Route path="/vip" element={<VIP />} />
           
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
