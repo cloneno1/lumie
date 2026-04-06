@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 
 const Register: React.FC = () => {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const handleSocialLogin = async (provider: 'discord' | 'google') => {
     setLoadingProvider(provider);
