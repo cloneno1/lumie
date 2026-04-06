@@ -130,11 +130,18 @@ router.post('/auth/register', async (req, res) => {
     const { username, password, email } = req.body;
     if (!username || !password) return res.status(400).json({ message: 'Vui lòng cung cấp username và password.' });
 
-    const existingUser = await db.users.getByUsername(username);
-    if (existingUser) return res.status(400).json({ message: 'Tên người dùng đã tồn tại.' });
+    // 2. Tự sinh ID 9 chữ số ngẫu nhiên duy nhất
+    let id;
+    let isUsed = true;
+    while (isUsed) {
+      id = Math.floor(100000000 + Math.random() * 900000000);
+      const checkId = await db.users.getById(id);
+      if (!checkId) isUsed = false;
+    }
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = await db.users.create({
+      id, // Gán ID ngẫu nhiên vừa tạo
       username,
       password: hashedPassword,
       email: email || '',
@@ -243,19 +250,28 @@ router.post('/auth/discord/callback', async (req, res) => {
 
       if (!user) {
         // Create new user if no account found by discordId or email
-        // Check if username taken, if so append random digits
         let finalUsername = username;
         const existing = await db.users.getByUsername(finalUsername);
         if (existing) {
           finalUsername = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
         }
 
+        // 2. Tự sinh ID 9 chữ số ngẫu nhiên duy nhất
+        let id;
+        let isUsed = true;
+        while (isUsed) {
+          id = Math.floor(100000000 + Math.random() * 900000000);
+          const checkId = await db.users.getById(id);
+          if (!checkId) isUsed = false;
+        }
+
         user = await db.users.create({
+          id,
           username: finalUsername,
           email: email || '',
           discord_id: discordId,
           avatar: avatarUrl,
-          password: await bcrypt.hash(uuidv4(), 12), // Random password
+          password: await bcrypt.hash(uuidv4(), 12),
           has_password: false,
           balance: 0,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
@@ -333,7 +349,17 @@ router.post('/auth/google/callback', async (req, res) => {
           finalUsername = `${finalUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
         }
 
+        // 2. Tự sinh ID 9 chữ số ngẫu nhiên duy nhất
+        let id;
+        let isUsed = true;
+        while (isUsed) {
+          id = Math.floor(100000000 + Math.random() * 900000000);
+          const checkId = await db.users.getById(id);
+          if (!checkId) isUsed = false;
+        }
+
         user = await db.users.create({
+          id, // Gán ID ngẫu nhiên vừa tạo
           username: finalUsername,
           email: email,
           google_id: googleId,
