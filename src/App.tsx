@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import api from './api/axios';
 import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset, ShoppingCart } from 'lucide-react';
