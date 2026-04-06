@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Krona+One&family=Lexend:wght@300;400;700&display=swap');
 
 :root {
   --bg-dark: #0a0a0f;
@@ -30,7 +30,7 @@
 }
 
 body {
-  font-family: 'Cavolini', 'Kalam', cursive;
+  font-family: 'Kermit Expanded', 'Krona One', 'Lexend', sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-main);
   background-image: 
