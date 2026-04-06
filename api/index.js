@@ -142,6 +142,7 @@ router.post('/auth/register', async (req, res) => {
     });
 
     const { password: _, ...userWithoutPassword } = newUser;
+    userWithoutPassword.has_password = true; // Manual registration always has password
     res.json({ message: 'Đăng ký thành công!', user: userWithoutPassword });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -170,6 +171,7 @@ router.post('/auth/login', async (req, res) => {
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
     const { password: _, ...userWithoutPassword } = user;
+    userWithoutPassword.has_password = !!user.has_password;
     res.json({ token, user: userWithoutPassword });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -181,6 +183,7 @@ router.get('/auth/me', authenticateToken, async (req, res) => {
     const user = await db.users.getById(req.user.id);
     if (!user) return res.status(404).json({ message: 'Không tìm thấy user.' });
     const { password: _, ...userWithoutPassword } = user;
+    userWithoutPassword.has_password = !!user.has_password;
     res.json(userWithoutPassword);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -251,6 +254,7 @@ router.post('/auth/discord/callback', async (req, res) => {
           discord_id: discordId,
           avatar: avatarUrl,
           password: await bcrypt.hash(uuidv4(), 12), // Random password
+          has_password: false,
           balance: 0,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
@@ -268,6 +272,7 @@ router.post('/auth/discord/callback', async (req, res) => {
     // Issue JWT
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
     const { password: _, ...userWithoutPassword } = user;
+    userWithoutPassword.has_password = !!user.has_password;
     
     res.json({ token, user: userWithoutPassword });
   } catch (err) {
@@ -332,6 +337,7 @@ router.post('/auth/google/callback', async (req, res) => {
           google_id: googleId,
           avatar: picture,
           password: await bcrypt.hash(uuidv4(), 12),
+          has_password: false,
           balance: 0,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
@@ -348,6 +354,7 @@ router.post('/auth/google/callback', async (req, res) => {
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
     const { password: _, ...userWithoutPassword } = user;
+    userWithoutPassword.has_password = !!user.has_password;
     res.json({ token, user: userWithoutPassword });
   } catch (err) {
     console.error('Google Auth Error:', err.response?.data || err.message);
@@ -393,10 +400,13 @@ router.post('/user/update-profile', authenticateToken, async (req, res) => {
     const user = await db.users.getById(userId);
 
     if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
-    if (!currentPassword) return res.status(400).json({ message: 'Vui lòng nhập mật khẩu hiện tại để xác minh.' });
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác.' });
+    // Check password if it exists
+    if (user.has_password) {
+      if (!currentPassword) return res.status(400).json({ message: 'Vui lòng nhập mật khẩu hiện tại để xác minh.' });
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác.' });
+    }
 
     const updates = {};
     if (username) {
@@ -412,6 +422,7 @@ router.post('/user/update-profile', authenticateToken, async (req, res) => {
     if (avatar !== undefined) updates.avatar = avatar;
     if (newPassword) {
       updates.password = await bcrypt.hash(newPassword, 12);
+      updates.has_password = true;
     }
 
     const updatedUser = await db.users.update(userId, updates);
