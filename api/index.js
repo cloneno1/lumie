@@ -222,32 +222,40 @@ router.post('/auth/discord/callback', async (req, res) => {
     let user = await db.users.getByDiscordId(discordId);
 
     if (!user) {
-      // If user doesn't exist by Discord ID, check by email if available
-      if (email) {
-        // Note: For simplicity, we just create a new user if discordId doesn't match.
-        // You could also try matching by email here if you want to link accounts.
-      }
-
-      // Create new user
+      // If user doesn't exist by Discord ID, check by email if available to link accounts
       const avatarUrl = avatar ? `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${parseInt(discordId) % 5}.png`;
       
-      // Check if username taken, if so append random digits
-      let finalUsername = username;
-      const existing = await db.users.getByUsername(finalUsername);
-      if (existing) {
-        finalUsername = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
+      if (email) {
+        const existingUserByEmail = await db.users.getByEmail(email);
+        if (existingUserByEmail) {
+          // Link discord_id to existing account with this email
+          user = await db.users.update(existingUserByEmail.id, { 
+            discord_id: discordId,
+            avatar: existingUserByEmail.avatar || avatarUrl // Update avatar if not set
+          });
+        }
       }
 
-      user = await db.users.create({
-        username: finalUsername,
-        email: email || '',
-        discord_id: discordId,
-        avatar: avatarUrl,
-        password: await bcrypt.hash(uuidv4(), 12), // Random password
-        balance: 0,
-        role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
-        banned: false
-      });
+      if (!user) {
+        // Create new user if no account found by discordId or email
+        // Check if username taken, if so append random digits
+        let finalUsername = username;
+        const existing = await db.users.getByUsername(finalUsername);
+        if (existing) {
+          finalUsername = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+
+        user = await db.users.create({
+          username: finalUsername,
+          email: email || '',
+          discord_id: discordId,
+          avatar: avatarUrl,
+          password: await bcrypt.hash(uuidv4(), 12), // Random password
+          balance: 0,
+          role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
+          banned: false
+        });
+      }
     }
 
     // Elevation check for existing users logging in
@@ -298,23 +306,37 @@ router.post('/auth/google/callback', async (req, res) => {
     let user = await db.users.getByGoogleId(googleId);
 
     if (!user) {
-      // Create new user if not exists
-      let finalUsername = name.replace(/\s+/g, '_').toLowerCase();
-      const existing = await db.users.getByUsername(finalUsername);
-      if (existing) {
-        finalUsername = `${finalUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+      // Check if user exists with this email to link accounts
+      if (email) {
+        const existingUserByEmail = await db.users.getByEmail(email);
+        if (existingUserByEmail) {
+          // Link google_id to existing account
+          user = await db.users.update(existingUserByEmail.id, {
+            google_id: googleId,
+            avatar: existingUserByEmail.avatar || picture
+          });
+        }
       }
 
-      user = await db.users.create({
-        username: finalUsername,
-        email: email,
-        google_id: googleId,
-        avatar: picture,
-        password: await bcrypt.hash(uuidv4(), 12),
-        balance: 0,
-        role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
-        banned: false
-      });
+      if (!user) {
+        // Create new user if not exists
+        let finalUsername = name.replace(/\s+/g, '_').toLowerCase();
+        const existing = await db.users.getByUsername(finalUsername);
+        if (existing) {
+          finalUsername = `${finalUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+
+        user = await db.users.create({
+          username: finalUsername,
+          email: email,
+          google_id: googleId,
+          avatar: picture,
+          password: await bcrypt.hash(uuidv4(), 12),
+          balance: 0,
+          role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
+          banned: false
+        });
+      }
     }
 
     // Elevation check for existing users logging in
