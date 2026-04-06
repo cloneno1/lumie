@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown } from 'lucide-react';
+import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
@@ -254,13 +254,16 @@ const Home: React.FC = () => {
             Tham gia vào cộng đồng khách hàng tin dùng dịch vụ của chúng tôi mỗi ngày. 
             Nhận ưu đãi ưu đãi ngay hôm nay!
           </p>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {!user ? (
               <Link to="/register" className="btn btn-primary" style={{ padding: '14px 40px' }}>Bắt Đầu Ngay</Link>
             ) : (
-              <Link to="/profile/orders" className="btn btn-primary" style={{ padding: '14px 40px' }}>Lịch sử đơn hàng</Link>
+              <Link to="/nap-tien" className="btn btn-primary" style={{ padding: '14px 40px' }}>Nạp Tiền Ngay</Link>
             )}
             <Link to="/products" className="btn glass-panel" style={{ padding: '14px 40px' }}>Xem Sản Phẩm</Link>
+            <a href="https://discord.gg/lumie" target="_blank" rel="noreferrer" className="btn glass-panel" style={{ padding: '14px 40px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Headset size={18} /> Hỗ Trợ 24/7
+            </a>
           </div>
         </div>
       </section>

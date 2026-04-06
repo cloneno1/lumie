@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import { db } from '../db.js';
 import { calculateVipLevel, VIP_LEVELS } from './vip-utils.js';
+import { GACHA_REWARDS, rollGacha } from './gacha-utils.js';
 
 // Multer config for avatar uploads (memory storage)
 const upload = multer({ 
@@ -463,7 +464,15 @@ router.post('/auth/google/callback', async (req, res) => {
 router.get('/user/orders', authenticateToken, async (req, res) => {
   try {
     const orders = await db.orders.getByUserId(req.user.id);
-    res.json(orders);
+    const ordersWithFeedback = await Promise.all(orders.map(async (order) => {
+      const feedback = await db.feedbacks.getByOrderId(order.id);
+      return {
+        ...order,
+        feedback_id: feedback ? feedback.id : null,
+        productName: order.product_name || order.productName // Compatibility
+      };
+    }));
+    res.json(ordersWithFeedback);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -620,13 +629,25 @@ router.post('/callback/gachthe1s', async (req, res) => {
           const newVipLevel = calculateVipLevel(newVipPoints);
           
           await db.users.update(user.id, { 
-            balance: newBalance
+            balance: newBalance,
+            vip_points: newVipPoints,
+            vip_level: newVipLevel,
+            total_topup: newTotalTopup
           });
 
           await db.notifications.create({
             userId: user.id, title: 'Nạp thẻ thành công',
             content: `Thẻ ${tx.telco} ${rechargeAmt.toLocaleString()}đ thành công! + ${rechargeAmt.toLocaleString()} điểm VIP.`, type: 'topup'
           });
+
+          if (newVipLevel > (user.vip_level || 0)) {
+            await db.notifications.create({
+              userId: user.id,
+              title: `Chúc mừng! Bạn đã đạt VIP ${newVipLevel}`,
+              content: `Bạn đã được thăng cấp lên VIP ${newVipLevel}. Kiểm tra ưu đãi mới ngay!`,
+              type: 'vip_up'
+            });
+          }
 
           // Check for 2.5M Perk (bonus product)
           if (newTotalTopup >= 2500000 && (user.total_topup || 0) < 2500000) {
@@ -702,8 +723,18 @@ router.post('/internal/bank-sync', async (req, res) => {
     }
 
     // 5. Cộng tiền & Lưu lịch sử
-    const newBalance = (user.balance || 0) + finalAmount;
-    await db.users.update(user.id, { balance: newBalance });
+    const rechargeAmt = finalAmount;
+    const newBalance = (user.balance || 0) + rechargeAmt;
+    const newVipPoints = (user.vip_points || 0) + rechargeAmt;
+    const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
+    const newVipLevel = calculateVipLevel(newVipPoints);
+    
+    await db.users.update(user.id, { 
+      balance: newBalance,
+      vip_points: newVipPoints,
+      vip_level: newVipLevel,
+      total_topup: newTotalTopup
+    });
 
     const rechargeId = transactionId !== '{not_id}' ? transactionId : `vcb_${Date.now()}`;
     await db.transactions.create({
@@ -721,9 +752,19 @@ router.post('/internal/bank-sync', async (req, res) => {
     await db.notifications.create({
       userId: user.id,
       title: 'Nạp tiền thành công',
-      content: `Số tiền ${finalAmount.toLocaleString()}đ đã được cộng tự động vào tài khoản từ giao dịch VCB.`,
+      content: `Số tiền ${finalAmount.toLocaleString()}đ đã được cộng tự động vào tài khoản từ giao dịch VCB. + ${finalAmount.toLocaleString()} điểm VIP.`,
       type: 'topup'
     });
+
+    // Notify about VIP level up
+    if (newVipLevel > (user.vip_level || 0)) {
+       await db.notifications.create({
+         userId: user.id,
+         title: `Chúc mừng! Bạn đã đạt VIP ${newVipLevel}`,
+         content: `Bạn đã được thăng cấp lên VIP ${newVipLevel}. Kiểm tra ưu đãi mới ngay!`,
+         type: 'vip_up'
+       });
+    }
 
     console.log(`[BANK_SYNC_SUCCESS] +${finalAmount} VND cho ${user.username} (ID: ${identifier})`);
     res.json({ success: true, user: user.username, balance: newBalance });
@@ -937,25 +978,117 @@ router.get('/user/vip-status', authenticateToken, async (req, res) => {
     const user = await db.users.getById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     
-    // Simulate Decaying Point Logic: If not topup for > 15 days, lose 5% points 
-    // This is a simplified approach, in a real app use a CRON job.
-    let currentPoints = user.vip_points || 0;
-    /* Decaying logic disabled due to missing column
-    const lastTopup = ...
-    ...
-    */
+    // Monthly Gacha Tickets Logic: "Số vip = số vé hàng tháng"
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
+    let updates = {};
+    let gachaTickets = user.gacha_tickets || 0;
+
+    if (user.last_ticket_month !== currentMonth && (user.vip_level || 0) > 0) {
+      gachaTickets = user.vip_level || 0; // Number of tickets = VIP level
+      updates.gacha_tickets = gachaTickets;
+      updates.last_ticket_month = currentMonth;
+      
+      await db.notifications.create({
+        userId: user.id,
+        title: 'Nhận vé Gacha tháng mới',
+        content: `Chào tháng mới! Bạn đã nhận được ${gachaTickets} vé Gacha dựa trên cấp độ VIP ${user.vip_level}.`,
+        type: 'gacha_ticket'
+      });
+      
+      await db.users.update(user.id, updates);
+    }
 
     const nextLevel = VIP_LEVELS.find(v => v.level === (user.vip_level || 0) + 1) || null;
     const currentLevelData = VIP_LEVELS.find(v => v.level === (user.vip_level || 0));
 
     res.json({
       vipLevel: user.vip_level || 0,
-      vipPoints: currentPoints,
+      vipPoints: user.vip_points || 0,
       totalTopup: user.total_topup || 0,
+      gachaTickets: gachaTickets,
       nextLevel: nextLevel,
       currentLevelData: currentLevelData,
-      allLevels: VIP_LEVELS
+      allLevels: VIP_LEVELS,
+      claimedMilestones: user.claimed_milestones || []
     });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.post('/gacha/roll', authenticateToken, async (req, res) => {
+  try {
+    const user = await db.users.getById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    if ((user.gacha_tickets || 0) <= 0) {
+      return res.status(400).json({ message: 'Bạn không có đủ vé Gacha.' });
+    }
+
+    const reward = rollGacha(user.vip_level || 0);
+    const newTickets = user.gacha_tickets - 1;
+    
+    let updates = { gacha_tickets: newTickets };
+    let finalMessage = `Chúc mừng! Bạn đã trúng ${reward.name}.`;
+
+    if (reward.type === 'cash') {
+      updates.balance = (user.balance || 0) + reward.value;
+      finalMessage += ` Số dư đã được cộng thêm ${reward.value.toLocaleString()}đ.`;
+    }
+
+    await db.users.update(user.id, updates);
+    
+    // Log for admin if it's a physical/product reward
+    if (reward.type === 'product' || reward.type === 'deco') {
+      await db.notifications.create({
+        userId: user.id,
+        title: 'Trúng thưởng Gacha!',
+        content: `Bạn vừa quay được ${reward.name}. Vui lòng liên hệ Admin qua Ticket Discord để nhận quà.`,
+        type: 'gacha_win'
+      });
+    }
+
+    res.json({ reward, ticketsLeft: newTickets, message: finalMessage });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.post('/user/claim-vip-milestone', authenticateToken, async (req, res) => {
+  try {
+    const { milestone } = req.body; // e.g., 5, 6, 7, 8, 9, 10
+    const user = await db.users.getById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if ((user.vip_level || 0) < milestone) {
+      return res.status(400).json({ message: `Bạn cần đạt VIP ${milestone} để nhận quà này.` });
+    }
+
+    const claimed = user.claimed_milestones || [];
+    if (claimed.includes(milestone)) {
+      return res.status(400).json({ message: 'Bạn đã nhận phần quà này rồi.' });
+    }
+
+    // Add to claimed
+    claimed.push(milestone);
+    await db.users.update(user.id, { claimed_milestones: claimed });
+
+    const milestoneRewards = {
+      5: 'Gói YouTube 3 tháng',
+      6: '3 Deco 66 cá',
+      7: '1 Deco 79 + 1 Deco 131',
+      8: '4 Tháng Spotify Premium',
+      9: '4 Tháng Netflix Premium',
+      10: '6 Tháng Gói bất kỳ (Shop)'
+    };
+
+    const rewardName = milestoneRewards[milestone] || 'Phần quà VIP';
+
+    await db.notifications.create({
+      userId: user.id,
+      title: `Nhận thành công quà VIP ${milestone}`,
+      content: `Bạn vừa đăng ký nhận ${rewardName}. Shop sẽ kiểm tra và gửi quà cho bạn trong vòng 24h. Liên hệ Ticket Discord nếu cần hỗ trợ gấp.`,
+      type: 'milestone_claim'
+    });
+
+    res.json({ message: `Đã gửi yêu cầu nhận quà VIP ${milestone}!`, claimedMilestones: claimed });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
