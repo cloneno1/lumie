@@ -310,7 +310,7 @@ function TopUp() {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản BIDV</h2>
+                <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản Vietcombank</h2>
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
