@@ -16,16 +16,16 @@ import { simpleParser } from 'mailparser';
 const CONFIG = {
   // Thông tin Email nhận thông báo BIDV
   email: {
-    user: 'your-email@gmail.com',
-    pass: 'your-16-char-app-password', // Mật khẩu ứng dụng Google
+    user: 'lumie.stzre@gmail.com',
+    pass: 'troq gdtb qzpv xuqb', // Mật khẩu ứng dụng Google
     host: 'imap.gmail.com',
     port: 993,
     secure: true
   },
-  
+
   // Thông tin kết nối tới Store của bạn
   api: {
-    url: 'https://your-store-api.vercel.app/api/internal/bank-sync', // URL API của bạn
+    url: 'https://lumiestore.uk/api/internal/bank-sync', // URL API của bạn
     secret: 'lumie_auto_bank_secure_2024' // Phải khớp với INTERNAL_SYNC_SECRET trong api/index.js
   },
 
@@ -60,7 +60,7 @@ const parseBIDVEmail = (text) => {
     // 2. Phân tích nội dung (ND: ...)
     // BIDV thường dùng ND: hoặc No i dung:
     const memoMatch = text.match(/(?:ND|Noi dung|ND:)\s*(.*?)(?=\s*\||$)/i);
-    
+
     // 3. Phân tích số tài khoản (TK: ...)
     const accountMatch = text.match(/TK:\s*(\d+)/i);
 
@@ -83,24 +83,24 @@ const parseBIDVEmail = (text) => {
 
 const main = async () => {
   console.log('🚀 Đang khởi động hệ thống theo dõi BIDV...');
-  
+
   try {
     await client.connect();
     console.log('✅ Đã kết nối tới Gmail thành công.');
 
     // Chọn hòm thư INBOX
     let lock = await client.getMailboxLock('INBOX');
-    
+
     try {
       // Mỗi khi có email mới (Event 'exists' hoặc 'idle' tùy bản cập nhật)
       client.on('exists', async (data) => {
         const count = data.count;
         console.log(`📩 Có ${count} email mới trong hòm thư.`);
-        
+
         // Lấy email mới nhất
         const message = await client.fetchOne(count.toString(), { source: true });
         const parsed = await simpleParser(message.source);
-        
+
         const from = parsed.from.value[0].address;
         const subject = parsed.subject.toLowerCase();
         const body = parsed.text || parsed.html;
@@ -111,12 +111,12 @@ const main = async () => {
 
         if (isFromBank && hasKeywords) {
           console.log('🔍 Phát hiện email thông báo biến động số dư BIDV.');
-          
+
           const data = parseBIDVEmail(body);
-          
+
           if (data && parseInt(data.amount) > 0) {
             console.log(`💰 Giao dịch: +${parseInt(data.amount).toLocaleString()}đ | ND: ${data.memo}`);
-            
+
             // Gửi sang API Store
             try {
               const response = await axios.post(CONFIG.api.url, {
@@ -127,7 +127,7 @@ const main = async () => {
                 bankName: 'BIDV',
                 bankAccount: data.bankAccount
               });
-              
+
               if (response.data.status === 'processed') {
                 console.log(`✅ Thành công: Đã cộng tiền cho ${response.data.username}`);
               } else if (response.data.status === 'duplicate') {
@@ -144,8 +144,8 @@ const main = async () => {
 
       // Giữ kết nối Idle để nhận mail real-time
       console.log('📡 Đang lắng nghe email mới (Real-time mode)...');
-      while(true) {
-         await new Promise(resolve => setTimeout(resolve, 60000)); // Keep alive loop
+      while (true) {
+        await new Promise(resolve => setTimeout(resolve, 60000)); // Keep alive loop
       }
 
     } finally {

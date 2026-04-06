@@ -584,8 +584,8 @@ router.post('/internal/bank-sync', async (req, res) => {
     }
 
     // 3. Phân tích nội dung chuyển khoản (Memo)
-    // Quy chuẩn: LUMIE 123 (123 là ID User) hoặc LUMIE username
-    const match = memo.match(/LUMIE\s+(\w+)/i);
+    // Quy chuẩn: LUMIE 123 (123 là ID User) hoặc LUMIE username (hỗ trợ dấu chấm .)
+    const match = memo.match(/LUMIE\s+([\w.]+)/i);
     const identifier = match ? match[1] : null;
 
     if (!identifier) {
