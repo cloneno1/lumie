@@ -645,8 +645,9 @@ router.post('/internal/bank-sync', async (req, res) => {
   } catch (err) {
     console.error('[BANK ERROR]', err);
     res.status(500).json({ 
-      message: 'Internal Server Error',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+      message: 'Lỗi hệ thống (Sync)',
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 });
