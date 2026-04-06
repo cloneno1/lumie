@@ -580,9 +580,16 @@ router.post('/internal/bank-sync', async (req, res) => {
     }
 
     // 3. Phân tích nội dung chuyển khoản (Memo)
-    // Quy chuẩn: LUMIE 123 (123 là ID User) hoặc LUMIE username (hỗ trợ dấu chấm .)
+    // Hỗ trợ cả ND: LUMIE 4 hoặc đơn giản là LUMIE 4 (thường thấy trên push notification)
+    let identifier = null;
     const match = memo.match(/LUMIE\s+([\w.]+)/i);
-    const identifier = match ? match[1] : null;
+    identifier = match ? match[1] : null;
+
+    if (!identifier) {
+      // Thử tìm trong toàn bộ text nếu memo không có tiền tố ND:
+      const rawMatch = memo.match(/LUMIE\s+([\w.]+)/i);
+      identifier = rawMatch ? rawMatch[1] : null;
+    }
 
     if (!identifier) {
       console.log(`[BANK] No identifier found in memo: ${memo}`);
