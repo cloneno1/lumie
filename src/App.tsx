@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, ReactNode } from 'react';
+import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import api from './api/axios';
 import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset, ShoppingCart } from 'lucide-react';
 import Home from './pages/Home';
@@ -23,7 +23,7 @@ import Discord from './pages/products/Discord';
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const { totalItems } = useCart();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -83,6 +83,19 @@ function AppContent() {
     setShowUserMenu(false);
     setShowMobileMenu(false);
   }, [location.pathname]);
+
+  // Auth Protection Wrappers
+  const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>Đang tải...</div>;
+    if (!user) return <Navigate to="/login" replace />;
+    return <>{children}</>;
+  };
+
+  const PublicRoute = ({ children }: { children: ReactNode }) => {
+    if (loading) return null;
+    if (user) return <Navigate to="/" replace />;
+    return <>{children}</>;
+  };
 
   return (
     <>
@@ -312,17 +325,21 @@ function AppContent() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/discord" element={<Discord />} />
           <Route path="/nap-tien" element={<TopUp />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          
           <Route path="/auth/callback/discord" element={<AuthCallback provider="discord" />} />
           <Route path="/auth/callback/google" element={<AuthCallback provider="google" />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile/orders" element={<OrdersHistory />} />
-          <Route path="/profile/topups" element={<TopUpHistory />} />
-          <Route path="/profile/settings" element={<AccountSettings />} />
+          
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/profile/orders" element={<ProtectedRoute><OrdersHistory /></ProtectedRoute>} />
+          <Route path="/profile/topups" element={<ProtectedRoute><TopUpHistory /></ProtectedRoute>} />
+          <Route path="/profile/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+          
           <Route path="/cart" element={<Cart />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/staff" element={<AdminDashboard />} /> {/* Use same for now or separate later */}
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/staff" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         </Routes>
       </main>
 
