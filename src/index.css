@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap');
+
 :root {
   --bg-dark: #0a0a0f;
   --bg-card: rgba(20, 20, 30, 0.6);
@@ -28,7 +30,7 @@
 }
 
 body {
-  font-family: 'Times New Roman', 'Times', serif;
+  font-family: 'Cavolini', 'Kalam', cursive;
   background-color: var(--bg-dark);
   color: var(--text-main);
   background-image: 
