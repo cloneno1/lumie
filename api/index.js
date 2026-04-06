@@ -629,18 +629,24 @@ router.post('/internal/bank-sync', async (req, res) => {
       });
     }
 
-    // 4. Tìm người dùng
+    // 4. Tìm người dùng (Cực kỳ chính xác với Mã số nạp 9 chữ số)
     let user = null;
-    // Thử tìm theo ID trước (vì mã nạp hiện tại gắn với ID)
-    user = await db.users.getById(identifier);
     
-    // Nếu không tìm thấy theo ID, tìm theo username (làm phương án dự phòng)
+    // Luôn ưu tiên tìm ID trước (Chấp nhận cả con số 9 chữ số chuẩn hoặc UUID cũ)
+    try {
+      user = await db.users.getById(identifier);
+    } catch (err) {
+      console.log(`[BANK_SYNC] ID format skip, falling back to username...`);
+    }
+
+    // Nếu không tìm thấy theo ID, tìm theo username (Phòng trường hợp khách gõ tên)
     if (!user) {
       user = await db.users.getByUsername(identifier);
     }
+
     if (!user) {
       console.log(`[BANK] User ${identifier} not found`);
-      return res.status(404).json({ message: 'User (Mã nạp) không tồn tại' });
+      return res.status(404).json({ message: 'Không tìm thấy người dùng với mã nạp này' });
     }
 
     // 5. Cập nhật số dư (Chỉ dùng cột balance để đảm bảo hoạt động)
