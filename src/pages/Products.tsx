@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Gamepad2, Play, Music, Film, CircleDollarSign } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import { Sparkles, Gamepad2, Play, Music, Film, CircleDollarSign, ShoppingCart } from 'lucide-react';
 
 const Products: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const { addToCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -170,7 +172,18 @@ const Products: React.FC = () => {
                   {product.displayPrice}
                   <span>{product.duration}</span>
                 </div>
-                <button className="btn-buy" onClick={() => handleBuy(product)}>Mua Ngay</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="btn-buy" 
+                    style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 12px' }}
+                    onClick={() => {
+                      addToCart(product);
+                    }}
+                  >
+                    <ShoppingCart size={18} />
+                  </button>
+                  <button className="btn-buy" onClick={() => handleBuy(product)}>Mua Ngay</button>
+                </div>
               </div>
             </div>
           ))}

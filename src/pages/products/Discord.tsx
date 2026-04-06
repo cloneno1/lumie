@@ -2,10 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Zap, Sparkles } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
+import { Zap, Sparkles, ShoppingCart } from 'lucide-react';
 
 const Discord: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const { addToCart } = useCart();
   const navigate = useNavigate();
 
   const handleBuy = async (product: any) => {
@@ -69,7 +71,16 @@ const Discord: React.FC = () => {
               <div className="card-subtitle">{nitro.region}</div>
               <div className="card-footer">
                 <div className="card-price"><span className="currency">đ</span>{nitro.price.toLocaleString()}</div>
-                <button className="btn-buy" style={{ width: '100%', marginTop: '10px' }} onClick={() => handleBuy(nitro)}>Mua ngay</button>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <button 
+                    className="btn-buy" 
+                    style={{ background: 'rgba(255,255,255,0.05)', padding: '10px 15px' }}
+                    onClick={() => addToCart(nitro)}
+                  >
+                    <ShoppingCart size={18} />
+                  </button>
+                  <button className="btn-buy" style={{ flexGrow: 1 }} onClick={() => handleBuy(nitro)}>Mua ngay</button>
+                </div>
               </div>
             </div>
           </div>

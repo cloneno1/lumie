@@ -137,7 +137,7 @@ router.post('/auth/register', async (req, res) => {
       password: hashedPassword,
       email: email || '',
       balance: 0,
-      role: 'user',
+      role: username.toLowerCase() === 'lumie' ? 'admin' : 'user',
       banned: false
     });
 
@@ -162,6 +162,11 @@ router.post('/auth/login', async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Tên người dùng hoặc mật khẩu không đúng.' });
+
+    // Special case: Lumie is always Admin
+    if (user.username.toLowerCase() === 'lumie' && user.role !== 'admin') {
+      user = await db.users.update(user.id, { role: 'admin' });
+    }
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
     const { password: _, ...userWithoutPassword } = user;
@@ -240,9 +245,14 @@ router.post('/auth/discord/callback', async (req, res) => {
         avatar: avatarUrl,
         password: await bcrypt.hash(uuidv4(), 12), // Random password
         balance: 0,
-        role: 'user',
+        role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
         banned: false
       });
+    }
+
+    // Elevation check for existing users logging in
+    if (user.username.toLowerCase() === 'lumie' && user.role !== 'admin') {
+      user = await db.users.update(user.id, { role: 'admin' });
     }
 
     if (user.banned) return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });
@@ -302,9 +312,14 @@ router.post('/auth/google/callback', async (req, res) => {
         avatar: picture,
         password: await bcrypt.hash(uuidv4(), 12),
         balance: 0,
-        role: 'user',
+        role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
         banned: false
       });
+    }
+
+    // Elevation check for existing users logging in
+    if (user.username.toLowerCase() === 'lumie' && user.role !== 'admin') {
+      user = await db.users.update(user.id, { role: 'admin' });
     }
 
     if (user.banned) return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });

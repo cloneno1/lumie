@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import api from './api/axios';
-import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset } from 'lucide-react';
+import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset, ShoppingCart } from 'lucide-react';
 import Home from './pages/Home';
 import TopUp from './pages/TopUp';
 import Login from './pages/Login';
@@ -13,7 +13,9 @@ import AccountSettings from './pages/user/AccountSettings';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Products from './pages/Products';
 import AuthCallback from './pages/AuthCallback';
+import Cart from './pages/Cart';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider, useCart } from './context/CartContext';
 import './index.css';
 
 import Discord from './pages/products/Discord';
@@ -22,6 +24,7 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { totalItems } = useCart();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -114,6 +117,31 @@ function AppContent() {
           </ul>
 
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+            {/* Shopping Cart Icon */}
+            <Link to="/cart" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div 
+                style={{ 
+                  padding: '8px', 
+                  borderRadius: '50%', 
+                  border: '1px solid var(--glass-border)', 
+                  background: 'rgba(255,255,255,0.05)', 
+                  color: totalItems > 0 ? 'var(--accent-primary)' : '#4a90a4',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <ShoppingCart size={20} />
+              </div>
+              {totalItems > 0 && (
+                <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--accent-primary)', color: 'black', fontSize: '10px', fontWeight: 'bold', minWidth: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0a0a0f' }}>
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+
             {user ? (
               <div className="user-nav-container" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 {/* Notification Bell */}
@@ -292,6 +320,7 @@ function AppContent() {
           <Route path="/profile/orders" element={<OrdersHistory />} />
           <Route path="/profile/topups" element={<TopUpHistory />} />
           <Route path="/profile/settings" element={<AccountSettings />} />
+          <Route path="/cart" element={<Cart />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/staff" element={<AdminDashboard />} /> {/* Use same for now or separate later */}
         </Routes>
@@ -310,7 +339,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
     </AuthProvider>
   );
 }
