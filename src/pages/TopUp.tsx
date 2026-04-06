@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { CreditCard, Landmark, Copy, CheckCircle2, Ticket, Loader2, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, Landmark, Copy, CheckCircle2, Ticket, Loader2, AlertTriangle, History, RefreshCcw } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -31,6 +31,30 @@ function TopUp() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{type: 'success' | 'error' | 'pending', text: string, requestId?: string} | null>(null);
+  const [txHistory, setTxHistory] = useState<any[]>([]);
+  const [fetchingHistory, setFetchingHistory] = useState(false);
+
+  // Fetch History
+  const fetchTxHistory = async () => {
+    try {
+      setFetchingHistory(true);
+      const res = await api.get('/user/transactions');
+      setTxHistory(res.data.slice(0, 5)); // Only show top 5
+    } catch {
+      // Fail silently
+    } finally {
+      setFetchingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchTxHistory();
+      // Auto refresh every 15s to check for bank sync
+      const interval = setInterval(fetchTxHistory, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -382,6 +406,75 @@ function TopUp() {
           </div>
         </div>
       )}
+
+      {/* Transaction History Section */}
+      <div className="glass-panel animate-fade-in delay-3" style={{ padding: '32px', marginTop: '32px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <History size={24} style={{ color: 'var(--accent-primary)' }} />
+            <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Giao dịch gần đây</h2>
+          </div>
+          <button 
+            onClick={fetchTxHistory} 
+            className="btn-icon" 
+            style={{ padding: '8px' }}
+            title="Làm mới lịch sử"
+          >
+            <RefreshCcw size={18} className={fetchingHistory ? 'animate-spin' : ''} />
+          </button>
+        </div>
+
+        {txHistory.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+            Bạn chưa có giao dịch nào gần đây.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {txHistory.map((tx) => (
+              <div 
+                key={tx.id || tx.request_id}
+                style={{ 
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  padding: '16px 20px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  border: '1px solid rgba(255,255,255,0.03)'
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
+                    {tx.telco?.startsWith('BANK') ? 'Nạp tiền BIDV' : `Nạp thẻ ${tx.telco}`}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {new Date(tx.created_at).toLocaleString('vi-VN')}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'white', marginBottom: '4px' }}>
+                    +{parseInt(tx.amount).toLocaleString()}đ
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.75rem', 
+                    padding: '4px 10px', 
+                    borderRadius: '20px',
+                    display: 'inline-block',
+                    background: tx.status === 1 || tx.status === '1' ? 'rgba(16, 185, 129, 0.15)' : tx.status === 99 || tx.status === '99' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    color: tx.status === 1 || tx.status === '1' ? '#10b981' : tx.status === 99 || tx.status === '99' ? '#3b82f6' : '#ef4444',
+                    fontWeight: 600
+                  }}>
+                    {tx.status === 1 || tx.status === '1' ? 'Thành công' : tx.status === 99 || tx.status === '99' ? 'Đang xử lý' : 'Thất bại'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p style={{ marginTop: '20px', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+          * Lịch sử cập nhật tự động mỗi 15 giây.
+        </p>
+      </div>
     </div>
   );
 }
