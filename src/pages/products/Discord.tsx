@@ -39,10 +39,10 @@ const Discord: React.FC = () => {
   };
 
   const nitroItems = [
-    { id: 'nitro-b-1m', title: 'Discord Nitro Boost - 1 Month', price: 99000, img: 'https://images2.alphacoders.com/114/1148675.png', badge: '6% Cashback', region: 'GLOBAL' },
-    { id: 'nitro-b-1y', title: 'Discord Nitro Boost - 1 Year', price: 950000, img: 'https://wallpaperaccess.com/full/5736411.png', badge: '10% Cashback', region: 'GLOBAL' },
-    { id: 'nitro-c-1m', title: 'Discord Nitro Classic - 1 Month', price: 55000, img: 'https://images.wallpapersden.com/image/download/discord-logo-dark_bGhmZ2aUmZqaraWkpJRmbmdlrWZlbWU.jpg', badge: '5% Cashback', region: 'GLOBAL' },
-    { id: 'nitro-c-1y', title: 'Discord Nitro Classic - 1 Year', price: 530000, img: 'https://wallpapercave.com/wp/wp8524458.png', badge: '8% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-b-1m', title: 'Discord Nitro Boost - 1 Month', price: 199000, img: 'https://images2.alphacoders.com/114/1148675.png', badge: '6% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-b-1y', title: 'Discord Nitro Boost - 1 Year', price: 1890000, img: 'https://wallpaperaccess.com/full/5736411.png', badge: '10% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-c-1m', title: 'Discord Nitro Basic - 1 Month', price: 89000, img: 'https://images.wallpapersden.com/image/download/discord-logo-dark_bGhmZ2aUmZqaraWkpJRmbmdlrWZlbWU.jpg', badge: '5% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-c-1y', title: 'Discord Nitro Basic - 1 Year', price: 850000, img: 'https://wallpapercave.com/wp/wp8524458.png', badge: '8% Cashback', region: 'GLOBAL' },
   ];
 
   return (

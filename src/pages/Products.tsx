@@ -23,9 +23,10 @@ const Products: React.FC = () => {
   const categories = ['All', 'Discord', 'Robux', 'YouTube', 'Spotify', 'Netflix'];
 
   const products = [
+    // --- DISCORD ---
     {
       id: 1,
-      title: 'Discord Nitro Premium',
+      title: 'Discord Nitro Premium (Boost) - 1 Tháng',
       category: 'Discord',
       desc: '1 Tháng Full Nitro. Nâng cấp server nhanh chóng.',
       price: 199000,
@@ -36,8 +37,20 @@ const Products: React.FC = () => {
       highlight: true
     },
     {
+      id: 11,
+      title: 'Discord Nitro Premium (Boost) - 1 Năm',
+      category: 'Discord',
+      desc: '1 Năm Full Nitro + Server Boosts. Tiết kiệm hơn.',
+      price: 1890000,
+      displayPrice: '1.890.000đ',
+      duration: '/năm',
+      icon: <Sparkles className="w-8 h-8" />,
+      theme: 'discord',
+      highlight: true
+    },
+    {
       id: 2,
-      title: 'Discord Basic Nitro',
+      title: 'Discord Basic Nitro - 1 Tháng',
       category: 'Discord',
       desc: '1 Tháng Basic Nitro. Avatar động và tải lên file lớn.',
       price: 89000,
@@ -47,6 +60,20 @@ const Products: React.FC = () => {
       theme: 'discord',
       highlight: false
     },
+    {
+      id: 21,
+      title: 'Discord Basic Nitro - 1 Năm',
+      category: 'Discord',
+      desc: '1 Năm Basic Nitro. Tiết kiệm đáng kể.',
+      price: 850000,
+      displayPrice: '850.000đ',
+      duration: '/năm',
+      icon: <Sparkles className="w-8 h-8" />,
+      theme: 'discord',
+      highlight: false
+    },
+
+    // --- ROBUX ---
     {
       id: 3,
       title: 'Robux 120H Pending',
@@ -59,11 +86,13 @@ const Products: React.FC = () => {
       theme: 'robux',
       highlight: true
     },
+
+    // --- YOUTUBE ---
     {
       id: 4,
-      title: 'YouTube Premium',
+      title: 'YouTube Premium - 1 Tháng',
       category: 'YouTube',
-      desc: 'Xem YouTube không quảng cáo, YouTube Music bản quyền 1 tháng.',
+      desc: 'Xem YouTube không quảng cáo, YouTube Music 1 tháng.',
       price: 55000,
       displayPrice: '55.000đ',
       duration: '/tháng',
@@ -72,10 +101,48 @@ const Products: React.FC = () => {
       highlight: false
     },
     {
+      id: 41,
+      title: 'YouTube Premium - 3 Tháng',
+      category: 'YouTube',
+      desc: 'Xem YouTube không quảng cáo, YouTube Music 3 tháng.',
+      price: 150000,
+      displayPrice: '150.000đ',
+      duration: '/3 tháng',
+      icon: <Play className="w-8 h-8" />,
+      theme: 'youtube',
+      highlight: false
+    },
+    {
+      id: 42,
+      title: 'YouTube Premium - 6 Tháng',
+      category: 'YouTube',
+      desc: 'Giải trí không giới hạn với YouTube Music 6 tháng.',
+      price: 280000,
+      displayPrice: '280.000đ',
+      duration: '/6 tháng',
+      icon: <Play className="w-8 h-8" />,
+      theme: 'youtube',
+      highlight: false
+    },
+    {
+      id: 43,
+      title: 'YouTube Premium - 1 Năm',
+      category: 'YouTube',
+      desc: 'Gói YouTube Premium 1 năm tiết kiệm nhất.',
+      price: 520000,
+      displayPrice: '520.000đ',
+      duration: '/năm',
+      icon: <Play className="w-8 h-8" />,
+      theme: 'youtube',
+      highlight: true
+    },
+
+    // --- SPOTIFY ---
+    {
       id: 5,
-      title: 'Spotify Premium Upgrade',
+      title: 'Spotify Premium - 1 Tháng',
       category: 'Spotify',
-      desc: 'Nâng cấp Premium trực tiếp trên tài khoản cá nhân của bạn.',
+      desc: 'Nâng cấp Premium trực tiếp trên tài khoản cá nhân 1 tháng.',
       price: 45000,
       displayPrice: '45.000đ',
       duration: '/tháng',
@@ -84,13 +151,87 @@ const Products: React.FC = () => {
       highlight: false
     },
     {
+      id: 51,
+      title: 'Spotify Premium - 3 Tháng',
+      category: 'Spotify',
+      desc: 'Tận hưởng âm nhạc không quảng cáo trong 3 tháng.',
+      price: 130000,
+      displayPrice: '130.000đ',
+      duration: '/3 tháng',
+      icon: <Music className="w-8 h-8" />,
+      theme: 'spotify',
+      highlight: false
+    },
+    {
+      id: 52,
+      title: 'Spotify Premium - 6 Tháng',
+      category: 'Spotify',
+      desc: 'Tài khoản Premium chính chủ cho 6 tháng trải nghiệm.',
+      price: 250000,
+      displayPrice: '250.000đ',
+      duration: '/6 tháng',
+      icon: <Music className="w-8 h-8" />,
+      theme: 'spotify',
+      highlight: false
+    },
+    {
+      id: 53,
+      title: 'Spotify Premium - 1 Năm',
+      category: 'Spotify',
+      desc: 'Gói 1 năm Premium Spotify ổn định, uy tín.',
+      price: 450000,
+      displayPrice: '450.000đ',
+      duration: '/năm',
+      icon: <Music className="w-8 h-8" />,
+      theme: 'spotify',
+      highlight: true
+    },
+
+    // --- NETFLIX ---
+    {
       id: 6,
-      title: 'Netflix Premium 4K',
+      title: 'Netflix Premium 4K - 1 Tháng',
       category: 'Netflix',
-      desc: 'Tài khoản góc share 1 profile hoặc tạo profile riêng biệt.',
+      desc: 'Tài khoản shared 1 profile hoặc tạo profile riêng biệt.',
       price: 80000,
       displayPrice: '80.000đ',
       duration: '/tháng',
+      icon: <Film className="w-8 h-8" />,
+      theme: 'netflix',
+      highlight: true
+    },
+    {
+      id: 61,
+      title: 'Netflix Premium 4K - 3 Tháng',
+      category: 'Netflix',
+      desc: 'Thoải mái xem phim 4K trong 3 tháng liên tục.',
+      price: 225000,
+      displayPrice: '225.000đ',
+      duration: '/3 tháng',
+      icon: <Film className="w-8 h-8" />,
+      theme: 'netflix',
+      highlight: false
+    },
+    {
+      id: 62,
+      title: 'Netflix Premium 4K - 6 Tháng',
+      category: 'Netflix',
+      desc: 'Xem phim không giới hạn 4K bản quyền 6 tháng.',
+      price: 430000,
+      displayPrice: '430.000đ',
+      duration: '/6 tháng',
+      icon: <Film className="w-8 h-8" />,
+      theme: 'netflix',
+      highlight: false
+    },
+    {
+      id: 63,
+      title: 'Netflix Premium 4K - 1 Năm',
+      category: 'Netflix',
+      desc: 'Gói Netflix Premium 1 năm tiện lợi, giá rẻ.',
+      price: 800000,
+      displayPrice: '800.000đ',
+      duration: '/năm',
       icon: <Film className="w-8 h-8" />,
       theme: 'netflix',
       highlight: true
