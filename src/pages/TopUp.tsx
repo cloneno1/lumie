@@ -146,7 +146,7 @@ function TopUp() {
             style={{ flex: 1, minWidth: '180px', justifyContent: 'center', display: 'flex', gap: '8px' }}
           >
             <Landmark size={20} />
-            Chuyển khoản (BIDV)
+            Chuyển khoản (VCB)
           </button>
         </div>
       </div>
