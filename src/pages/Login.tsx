@@ -49,10 +49,12 @@ const Login: React.FC = () => {
         width: '100%', 
         maxWidth: '460px', 
         padding: '50px 40px',
-        background: 'white',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
-        textAlign: 'center'
+        background: 'rgba(17, 24, 39, 0.7)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        textAlign: 'center',
+        borderRadius: '24px'
       }}>
         <h2 className="auth-header-title">Đăng nhập với</h2>
 
@@ -121,7 +123,7 @@ const Login: React.FC = () => {
           </div>
 
           <div style={{ textAlign: 'right', marginBottom: '20px' }}>
-            <Link to="#" style={{ fontSize: '14px', color: '#1f2937', fontWeight: '700', textDecoration: 'underline' }}>
+            <Link to="#" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', fontWeight: '600', textDecoration: 'none' }}>
               Quên mật khẩu?
             </Link>
           </div>
