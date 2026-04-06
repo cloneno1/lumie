@@ -353,12 +353,16 @@ function AppContent() {
   );
 }
 
+import { NotificationProvider } from './context/NotificationContext';
+
 function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <AppContent />
-      </CartProvider>
+      <NotificationProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

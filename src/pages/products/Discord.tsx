@@ -4,20 +4,22 @@ import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { Zap, Sparkles, ShoppingCart } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
 
 const Discord: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { addToCart } = useCart();
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   const handleBuy = async (product: any) => {
     if (!user) {
-      alert('Vui lòng đăng nhập để mua hàng!');
+      showNotification('Vui lòng đăng nhập để mua hàng!', 'info');
       navigate('/login');
       return;
     }
     if (user.balance < product.price) {
-      alert('Số dư không đủ. Vui lòng nạp thêm!');
+      showNotification('Số dư không đủ. Vui lòng nạp thêm!', 'error');
       navigate('/nap-tien');
       return;
     }
@@ -30,11 +32,11 @@ const Discord: React.FC = () => {
         price: product.price,
         amount: 1
       });
-      alert('Mua hàng thành công!');
+      showNotification('Mua hàng thành công!', 'success');
       refreshUser();
       navigate('/profile/orders');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi hệ thống');
+      showNotification(err.response?.data?.message || 'Lỗi hệ thống', 'error');
     }
   };
 

@@ -4,12 +4,14 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Sparkles, Gamepad2, Play, Music, Film, CircleDollarSign, ShoppingCart } from 'lucide-react';
+import { useNotification } from '../context/NotificationContext';
 
 const Products: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { addToCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+  const { showNotification } = useNotification();
   
   // Get category from URL query if exists
   const queryParams = new URLSearchParams(location.search);
@@ -240,13 +242,13 @@ const Products: React.FC = () => {
 
   const handleBuy = async (product: any) => {
     if (!user) {
-      alert('Vui lòng đăng nhập để mua hàng!');
+      showNotification('Vui lòng đăng nhập để mua hàng!', 'info');
       navigate('/login');
       return;
     }
 
     if (user.balance < product.price) {
-      alert('Số dư tài khoản không đủ. Vui lòng nạp thêm tiền!');
+      showNotification('Số dư tài khoản không đủ. Vui lòng nạp thêm tiền!', 'error');
       navigate('/nap-tien');
       return;
     }
@@ -260,11 +262,11 @@ const Products: React.FC = () => {
         price: product.price,
         amount: 1
       });
-      alert('Mua hàng thành công! Vui lòng kiểm tra lịch sử đơn hàng.');
+      showNotification('Mua hàng thành công! Vui lòng kiểm tra lịch sử đơn hàng.', 'success');
       refreshUser();
       navigate('/profile/orders');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi mua hàng.');
+      showNotification(err.response?.data?.message || 'Có lỗi xảy ra khi mua hàng.', 'error');
     }
   };
 

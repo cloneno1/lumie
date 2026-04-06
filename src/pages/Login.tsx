@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -11,6 +12,7 @@ const Login: React.FC = () => {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showNotification } = useNotification();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +40,7 @@ const Login: React.FC = () => {
       const response = await api.get(`/auth/${provider}/url`);
       window.location.href = response.data.url;
     } catch (err) {
-      alert(`Lỗi khi kết nối với ${provider}`);
+      showNotification(`Lỗi khi kết nối với ${provider}`, 'error');
       setLoadingProvider(null);
     }
   };

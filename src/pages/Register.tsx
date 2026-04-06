@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import { useNotification } from '../context/NotificationContext';
 
 const Register: React.FC = () => {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+  const { showNotification } = useNotification();
 
   const handleSocialLogin = async (provider: 'discord' | 'google') => {
     setLoadingProvider(provider);
@@ -11,7 +13,7 @@ const Register: React.FC = () => {
       const response = await api.get(`/auth/${provider}/url`);
       window.location.href = response.data.url;
     } catch (err) {
-      alert(`Lỗi khi kết nối với ${provider}`);
+      showNotification(`Lỗi khi kết nối với ${provider}`, 'error');
       setLoadingProvider(null);
     }
   };

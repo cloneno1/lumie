@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Settings, User, Package, Camera, Lock, Save, Loader2, XCircle } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
 
 const AccountSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const { showNotification } = useNotification();
+  
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -13,8 +16,6 @@ const AccountSettings: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -28,17 +29,16 @@ const AccountSettings: React.FC = () => {
     formData.append('avatar', file);
 
     setLoading(true);
-    setMessage(null);
     try {
       const response = await api.post('/user/upload-avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setAvatar(response.data.avatar);
-      setMessage({ type: 'success', text: 'Tải ảnh lên thành công!' });
+      showNotification('Tải ảnh lên thành công!', 'success');
       await refreshUser();
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message || 'Lỗi tải ảnh';
-      setMessage({ type: 'error', text: errorMsg });
+      showNotification(errorMsg, 'error');
     } finally {
       setLoading(false);
     }
@@ -48,17 +48,19 @@ const AccountSettings: React.FC = () => {
     e.preventDefault();
     
     // Validations
-    if (!username.trim()) return setMessage({ type: 'error', text: 'Tên hiển thị không được để trống' });
-    if (!validateEmail(email)) return setMessage({ type: 'error', text: 'Định dạng email không hợp lệ' });
-    if (user?.has_password && !currentPassword) return setMessage({ type: 'error', text: 'Vui lòng nhập mật khẩu hiện tại để xác thực' });
+    if (!username.trim()) return showNotification('Tên hiển thị không được để trống', 'error');
+    if (!validateEmail(email)) return showNotification('Định dạng email không hợp lệ', 'error');
+    
+    if (user?.has_password && !currentPassword) {
+      return showNotification('Vui lòng nhập mật khẩu hiện tại để xác thực', 'error');
+    }
     
     if (newPassword) {
-      if (newPassword.length < 6) return setMessage({ type: 'error', text: 'Mật khẩu mới phải từ 6 ký tự trở lên' });
-      if (newPassword !== confirmPassword) return setMessage({ type: 'error', text: 'Mật khẩu xác nhận không khớp' });
+      if (newPassword.length < 6) return showNotification('Mật khẩu mới phải từ 6 ký tự trở lên', 'error');
+      if (newPassword !== confirmPassword) return showNotification('Mật khẩu xác nhận không khớp', 'error');
     }
 
     setLoading(true);
-    setMessage(null);
 
     try {
       await api.post('/user/update-profile', {
@@ -67,13 +69,16 @@ const AccountSettings: React.FC = () => {
         currentPassword: user?.has_password ? currentPassword : undefined,
         newPassword: newPassword || undefined
       });
-      setMessage({ type: 'success', text: 'Cập nhật tài khoản thành công!' });
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      await refreshUser();
+      
+      showNotification('Cập nhật tài khoản thành công! Trang sẽ tải lại sau 2 giây...', 'success');
+      
+      // Auto reload after 2s
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Mật khẩu không chính xác hoặc lỗi hệ thống' });
+      showNotification(err.response?.data?.message || 'Lỗi hệ thống', 'error');
     } finally {
       setLoading(false);
     }
@@ -88,10 +93,12 @@ const AccountSettings: React.FC = () => {
     setLoading(true);
     try {
       await api.post('/user/delete-account', { password });
-      alert('Tài khoản của bạn đã được xóa.');
-      window.location.href = '/';
+      showNotification('Tài khoản của bạn đã được xóa thành công.', 'success');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi xóa tài khoản');
+      showNotification(err.response?.data?.message || 'Lỗi khi xóa tài khoản', 'error');
     } finally {
       setLoading(false);
     }
@@ -171,16 +178,6 @@ const AccountSettings: React.FC = () => {
 
           {/* Form Section */}
           <form onSubmit={handleUpdateProfile}>
-            {message && (
-              <div style={{ 
-                padding: '16px', borderRadius: '12px', marginBottom: '24px', 
-                background: message.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                border: `1px solid ${message.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
-                color: message.type === 'success' ? '#10b981' : '#ef4444'
-              }}>
-                {message.text}
-              </div>
-            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
               <div className="form-group">
