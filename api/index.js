@@ -717,6 +717,14 @@ router.post('/internal/bank-sync', async (req, res) => {
       message: `Nạp tiền VCB tự động: ${rawContent}`
     });
 
+    // 6. Gửi thông báo cho User Dashboard
+    await db.notifications.create({
+      userId: user.id,
+      title: 'Nạp tiền thành công',
+      content: `Số tiền ${finalAmount.toLocaleString()}đ đã được cộng tự động vào tài khoản từ giao dịch VCB.`,
+      type: 'topup'
+    });
+
     console.log(`[BANK_SYNC_SUCCESS] +${finalAmount} VND cho ${user.username} (ID: ${identifier})`);
     res.json({ success: true, user: user.username, balance: newBalance });
 
