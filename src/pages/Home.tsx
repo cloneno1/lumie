@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset, ShoppingBag } from 'lucide-react';
+import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
