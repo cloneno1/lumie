@@ -197,7 +197,8 @@ router.post('/auth/login', async (req, res) => {
           user = await db.users.update(user.id, { topup_id: tid });
         }
       } catch (err) {
-        console.log('[BANK] Login: Skip topup_id assignment, column might be missing');
+        console.error('[BANK_ERROR] Không thể gán topup_id cho User:', err.message);
+        console.log('[BANK] Hãy chắc chắn bạn đã chạy lệnh SQL trong Supabase để tạo cột topup_id.');
       }
     }
 
