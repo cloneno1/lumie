@@ -130,18 +130,8 @@ router.post('/auth/register', async (req, res) => {
     const { username, password, email } = req.body;
     if (!username || !password) return res.status(400).json({ message: 'Vui lòng cung cấp username và password.' });
 
-    // 2. Tự sinh ID 9 chữ số ngẫu nhiên duy nhất
-    let id;
-    let isUsed = true;
-    while (isUsed) {
-      id = Math.floor(100000000 + Math.random() * 900000000);
-      const checkId = await db.users.getById(id);
-      if (!checkId) isUsed = false;
-    }
-
     const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = await db.users.create({
-      id, // Gán ID ngẫu nhiên vừa tạo
       username,
       password: hashedPassword,
       email: email || '',
@@ -256,17 +246,7 @@ router.post('/auth/discord/callback', async (req, res) => {
           finalUsername = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
         }
 
-        // 2. Tự sinh ID 9 chữ số ngẫu nhiên duy nhất
-        let id;
-        let isUsed = true;
-        while (isUsed) {
-          id = Math.floor(100000000 + Math.random() * 900000000);
-          const checkId = await db.users.getById(id);
-          if (!checkId) isUsed = false;
-        }
-
         user = await db.users.create({
-          id,
           username: finalUsername,
           email: email || '',
           discord_id: discordId,
@@ -349,17 +329,7 @@ router.post('/auth/google/callback', async (req, res) => {
           finalUsername = `${finalUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
         }
 
-        // 2. Tự sinh ID 9 chữ số ngẫu nhiên duy nhất
-        let id;
-        let isUsed = true;
-        while (isUsed) {
-          id = Math.floor(100000000 + Math.random() * 900000000);
-          const checkId = await db.users.getById(id);
-          if (!checkId) isUsed = false;
-        }
-
         user = await db.users.create({
-          id, // Gán ID ngẫu nhiên vừa tạo
           username: finalUsername,
           email: email,
           google_id: googleId,
