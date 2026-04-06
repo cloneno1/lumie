@@ -86,8 +86,15 @@ export const db = {
     },
     create: async (order) => {
       const { data, error } = await supabase.from('orders').insert([{
-        ...order,
-        user_id: order.userId // Map camelCase to snake_case if necessary, or keep consistent
+        user_id: order.user_id || order.userId,
+        username: order.username,
+        product_id: order.product_id || order.productId,
+        product_name: order.product_name || order.productName,
+        price: order.price,
+        amount: order.amount,
+        options: order.options,
+        total: order.total,
+        status: order.status || 'pending'
       }]).select().single();
       if (error) throw error;
       return data;
@@ -142,9 +149,11 @@ export const db = {
     },
     create: async (notification) => {
       const { data, error } = await supabase.from('notifications').insert([{
-        ...notification,
-        user_id: notification.userId,
-        read: false
+        user_id: notification.user_id || notification.userId,
+        title: notification.title,
+        content: notification.content,
+        type: notification.type,
+        read: notification.read !== undefined ? notification.read : false
       }]).select().single();
       if (error) throw error;
       return data;
@@ -167,10 +176,12 @@ export const db = {
     },
     create: async (feedback) => {
       const { data, error } = await supabase.from('feedbacks').insert([{
-        ...feedback,
-        user_id: feedback.userId,
-        order_id: feedback.orderId,
-        product_name: feedback.productName
+        user_id: feedback.user_id || feedback.userId,
+        order_id: feedback.order_id || feedback.orderId,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        product_name: feedback.product_name || feedback.productName,
+        username: feedback.username
       }]).select().single();
       if (error) throw error;
       return data;
