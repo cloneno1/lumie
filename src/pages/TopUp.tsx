@@ -336,9 +336,9 @@ function TopUp() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Nội dung chuyển khoản</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <strong style={{ color: '#f87171', fontSize: '1.2rem', textTransform: 'uppercase' }}>LUMIE {user?.username || 'USERNAME'}</strong>
-                    <button onClick={() => handleCopy(`LUMIE ${user?.username || 'USERNAME'}`)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
-                      <Copy size={16} />
+                    <strong style={{ color: '#f87171', fontSize: '1.2rem', textTransform: 'uppercase' }}>LUMIE {user?.username}</strong>
+                    <button onClick={() => handleCopy(`LUMIE ${user?.username}`)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
+                      {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X } from 'lucide-react';
+import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -11,6 +11,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'topups'>('users');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [revealedUserIds, setRevealedUserIds] = useState<Set<string>>(new Set());
 
   const fetchData = async () => {
     setLoading(true);
@@ -110,6 +111,15 @@ const AdminDashboard: React.FC = () => {
 
   const activeUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));
   const filteredOrders = orders.filter(o => o.username.toLowerCase().includes(searchTerm.toLowerCase()) || o.id.includes(searchTerm));
+  
+  const togglePassword = (userId: string) => {
+    setRevealedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
 
   if (currentUser?.role !== 'admin') {
     return <div className="container" style={{ padding: '100px 20px', textAlign: 'center' }}><h2>Access Denied</h2></div>;
@@ -187,7 +197,16 @@ const AdminDashboard: React.FC = () => {
                     </td>
                     <td style={{ padding: '20px' }}>
                       <div style={{ fontSize: '13px' }}>{user.email || '-'}</div>
-                      <div style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold', fontFamily: 'monospace' }}>Pass: {user.plainPassword || '******'}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#10b981', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                        <span>Pass: {revealedUserIds.has(user.id) ? (user.password?.slice(0, 15) + '...') : '******'}</span>
+                        <button 
+                          onClick={() => togglePassword(user.id)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
+                          title={revealedUserIds.has(user.id) ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                        >
+                          {revealedUserIds.has(user.id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
                     </td>
                     <td style={{ padding: '20px', fontWeight: '700', color: 'var(--accent-primary)' }}>{user.balance.toLocaleString()}đ</td>
                     <td style={{ padding: '20px' }}>

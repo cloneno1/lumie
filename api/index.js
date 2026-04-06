@@ -29,6 +29,7 @@ app.use(hpp()); // Protect against HTTP Parameter Pollution attacks
 
 const SECRET_KEY = process.env.JWT_SECRET || 'LUMIE_STORE_SECRET_KEY';
 const ADMIN_SECRET = process.env.ADMIN_PATH_SECRET || 'lumie_adm_2024'; // Extra layer
+const INTERNAL_SYNC_SECRET = process.env.INTERNAL_SYNC_SECRET || 'lumie_auto_bank_secure_2024';
 
 // Rate Limiting
 const generalLimiter = rateLimit({
@@ -553,6 +554,101 @@ router.post('/callback/gachthe1s', async (req, res) => {
     }
     res.json({ status: 'OK' });
   } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ==========================================
+// API: AUTO BANKING SYNC (Email Watcher)
+// ==========================================
+/**
+ * Endpoint này được gọi từ script bank-monitoring.js
+ * Giúp cộng tiền tự động từ giao dịch ngân hàng (Ví dụ: BIDV)
+ */
+router.post('/internal/bank-sync', async (req, res) => {
+  try {
+    const { secret, amount, memo, transactionId, bankName, bankAccount } = req.body;
+
+    // 1. Kiểm tra mã bảo mật nội bộ
+    if (secret !== INTERNAL_SYNC_SECRET) {
+      return res.status(401).json({ message: 'Unauthorized sync request' });
+    }
+
+    if (!amount || !memo || !transactionId) {
+      return res.status(400).json({ message: 'Missing transaction data' });
+    }
+
+    // 2. Chống cộng tiền trùng lặp (Kiểm tra transactionId đã tồn tại trong DB chưa)
+    // transactionId ở đây là mã giao dịch từ email BIDV
+    const alreadyProcessed = await db.transactions.getByRequestId(transactionId);
+    if (alreadyProcessed) {
+      return res.status(200).json({ message: 'Transaction already processed', status: 'duplicate' });
+    }
+
+    // 3. Phân tích nội dung chuyển khoản (Memo)
+    // Quy chuẩn: LUMIE 123 (123 là ID User) hoặc LUMIE username
+    const match = memo.match(/LUMIE\s+(\w+)/i);
+    const identifier = match ? match[1] : null;
+
+    if (!identifier) {
+      console.log(`[BANK] No identifier found in memo: ${memo}`);
+      return res.status(400).json({ message: 'No user identifier found in memo' });
+    }
+
+    // 4. Tìm User
+    let user = await db.users.getByUsername(identifier);
+    if (!user && !isNaN(identifier)) {
+      user = await db.users.getById(identifier);
+    }
+
+    if (!user) {
+      console.log(`[BANK] User not found for identifier: ${identifier}`);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // 5. Tính toán số tiền và cập nhật số dư/VIP
+    const rechargeAmt = parseInt(amount);
+    const newBalance = (user.balance || 0) + rechargeAmt;
+    const newVipPoints = (user.vip_points || 0) + rechargeAmt;
+    const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
+    const newVipLevel = calculateVipLevel(newVipPoints);
+
+    await db.users.update(user.id, {
+      balance: newBalance,
+      vip_points: newVipPoints,
+      vip_level: newVipLevel,
+      total_topup: newTotalTopup,
+      last_topup_at: new Date().toISOString()
+    });
+
+    // 6. Lưu lịch sử giao dịch vào bảng transactions
+    await db.transactions.create({
+      userId: user.id,
+      telco: `BANK_${bankName || 'BIDV'}`,
+      amount: rechargeAmt,
+      serial: bankAccount || 'N/A', // Số tài khoản bank
+      code: transactionId,           // Mã giao dịch ngân hàng
+      request_id: transactionId,
+      status: 1, // Thành công
+      message: `Tự động cộng tiền từ Ngân hàng (Memo: ${memo})`
+    });
+
+    // 7. Gửi thông báo cho User
+    await db.notifications.create({
+      userId: user.id,
+      title: 'Nạp tiền ngân hàng thành công',
+      content: `Giao dịch ${rechargeAmt.toLocaleString()}đ từ ${bankName || 'BIDV'} đã được xử lý tự động.`,
+      type: 'topup'
+    });
+
+    console.log(`[BANK] Success: Added ${rechargeAmt.toLocaleString()}đ to ${user.username} (Bank ID: ${transactionId})`);
+    res.json({ message: 'Success', status: 'processed', username: user.username });
+
+  } catch (err) {
+    console.error('[BANK ERROR]', err);
+    res.status(500).json({ 
+      message: 'Internal Server Error',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
 });
 
 // ==========================================
