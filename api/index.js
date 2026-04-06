@@ -648,119 +648,77 @@ router.post('/callback/gachthe1s', async (req, res) => {
 // ==========================================
 // API: AUTO BANKING SYNC (Email Watcher)
 // ==========================================
-/**
- * Endpoint này được gọi từ script bank-monitoring.js
- * Giúp cộng tiền tự động từ giao dịch ngân hàng (Ví dụ: BIDV)
- */
+// INTERNAL API: BANK SYNC (From Android MacroDroid)
+// ==========================================
 router.post('/internal/bank-sync', async (req, res) => {
   try {
-    const { secret, amount, memo, transactionId, bankName, bankAccount } = req.body;
-
-    // 1. Kiểm tra mã bảo mật nội bộ
-    if (secret !== INTERNAL_SYNC_SECRET) {
-      return res.status(401).json({ message: 'Unauthorized sync request' });
-    }
-
-    if (!amount || !memo || !transactionId) {
-      return res.status(400).json({ message: 'Missing transaction data' });
-    }
-
-    // 2. Chống cộng tiền trùng lặp (Kiểm tra transactionId đã tồn tại trong DB chưa)
-    // transactionId ở đây là mã giao dịch từ email BIDV
-    const alreadyProcessed = await db.transactions.getByRequestId(transactionId);
-    if (alreadyProcessed) {
-      return res.status(200).json({ message: 'Transaction already processed', status: 'duplicate' });
-    }
-
-    // Phân tích Số tiền từ nội dung thô (MacroDroid)
-    let finalAmount = typeof amount === 'string' ? amount : String(amount || '');
-    const amountMatch = finalAmount.match(/\+([0-9,.]+)/);
-    if (amountMatch) {
-      finalAmount = amountMatch[1].replace(/[,.]/g, '');
-    } else {
-      const numbers = finalAmount.match(/\d+/g);
-      if (numbers) finalAmount = numbers.find(n => parseInt(n) >= 1000) || finalAmount;
-    }
-
-    // Phân tích Mã nạp (LUMIE ID) từ nội dung thô
-    let finalMemo = typeof memo === 'string' ? memo : String(memo || '');
-    // Regex linh hoạt hơn: Chấp nhận cả số và chuỗi UUID có gạch ngang
-    const memoMatch = finalMemo.toUpperCase().match(/LUMIE\s+([A-Z0-9-]+)/); 
-    const identifier = memoMatch ? memoMatch[1] : null;
-
-    if (!identifier || !finalAmount || isNaN(parseInt(finalAmount))) {
-      console.log(`[BANK_SYNC_ERROR] Parser failed: Amt=${finalAmount}, ID=${identifier}`);
-      return res.status(400).json({ 
-        message: 'Không tìm thấy tiền hoặc mã nạp trong thông báo',
-        debug: { identifier, finalAmount }
-      });
-    }
-
-    // 4. Tìm người dùng (Tra cứu đa tầng: topup_id -> id -> username)
-    let user = null;
+    const { secret, amount, memo, transactionId, notification_body } = req.body;
     
-    // Luôn ưu tiên tìm theo Mã nạp 9 số (topup_id)
-    if (!isNaN(identifier) && identifier.length === 9) {
-      user = await db.users.getByTopupId(identifier);
+    // 1. Bảo mật
+    const INTERNAL_SECRET = process.env.INTERNAL_SYNC_SECRET || 'lumie_auto_bank_secure_2024';
+    if (secret !== INTERNAL_SECRET) {
+      console.error('[BANK_SYNC_ERROR] Unauthorized secret attempt');
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // Nếu không thấy, tra cứu theo ID gốc (Chấp nhận cả UUID)
+    // Ưu tiên lấy nội dung thô để parse (vì MacroDroid thường gửi gộp vào body)
+    const rawContent = notification_body || memo || amount || '';
+    console.log('[BANK_RAW]', rawContent);
+
+    if (!rawContent || rawContent === '{not_body}') {
+      console.error('[BANK_SYNC_ERROR] Empty content or MacroDroid placeholder not replaced');
+      return res.status(400).json({ message: 'Nội dung thông báo trống hoặc MacroDroid chưa cấu hình đúng' });
+    }
+
+    // 2. Chống cộng tiền trùng lặp
+    if (transactionId && transactionId !== '{not_id}') {
+      const alreadyProcessed = await db.transactions.getByRequestId(transactionId);
+      if (alreadyProcessed) return res.status(200).json({ message: 'Processed', status: 'duplicate' });
+    }
+
+    // 3. PARSER (VCB)
+    const amountMatch = rawContent.match(/\+([\d,.]+)/);
+    const topupIdMatch = rawContent.match(/LUMIE\s*(\d{8,10})/i);
+
+    if (!amountMatch || !topupIdMatch) {
+      console.error(`[BANK_SYNC_ERROR] Parser failed. Content: "${rawContent}"`);
+      return res.status(400).json({ message: 'Không thể đọc số tiền hoặc mã nạp' });
+    }
+
+    const finalAmount = parseInt(amountMatch[1].replace(/[,.]/g, ''));
+    const identifier = topupIdMatch[1];
+
+    // 4. Tìm người dùng (Tra cứu đa tầng)
+    let user = await db.users.getByTopupId(identifier);
+    if (!user) user = await db.users.getByUsername(identifier);
     if (!user) {
-      try {
-        user = await db.users.getById(identifier);
-      } catch (err) {
-        console.log(`[BANK_SYNC] ID format skip...`);
-      }
-    }
-
-    // Cuối cùng, tìm theo Username nếu các mã trên không khớp
-    if (!user) {
-      user = await db.users.getByUsername(identifier);
+      try { user = await db.users.getById(identifier); } catch(e) {}
     }
 
     if (!user) {
-      console.log(`[BANK] User ${identifier} not found`);
-      return res.status(404).json({ message: 'Không tìm thấy người dùng với mã nạp này' });
+      console.error(`[BANK_SYNC_ERROR] User ${identifier} not found`);
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
-    // 5. Cập nhật số dư (Chỉ dùng cột balance để đảm bảo hoạt động)
-    const rechargeAmt = parseInt(finalAmount);
-    const newBalance = (user.balance || 0) + rechargeAmt;
+    // 5. Cộng tiền & Lưu lịch sử
+    const newBalance = (user.balance || 0) + finalAmount;
+    await db.users.update(user.id, { balance: newBalance });
 
-    await db.users.update(user.id, {
-      balance: newBalance
-    });
-
-    // 6. Lưu lịch sử giao dịch vào bảng transactions
     await db.transactions.create({
       user_id: user.id,
-      telco: `BANK_${bankName || 'BIDV'}`,
-      amount: rechargeAmt,
-      serial: bankAccount || 'N/A', // Số tài khoản bank
-      code: transactionId,           // Mã giao dịch ngân hàng
-      request_id: transactionId,
-      status: 1, // Thành công
-      message: `Tự động cộng tiền từ Ngân hàng (Memo: ${memo})`
+      amount: finalAmount,
+      request_id: transactionId !== '{not_id}' ? transactionId : `vcb_${Date.now()}`,
+      type: 'bank_transfer',
+      status: 'completed',
+      description: `Nạp tiền VCB tự động: ${rawContent}`
     });
 
-    // 7. Gửi thông báo cho User
-    await db.notifications.create({
-      userId: user.id,
-      title: 'Nạp tiền ngân hàng thành công',
-      content: `Giao dịch ${rechargeAmt.toLocaleString()}đ từ ${bankName || 'BIDV'} đã được xử lý tự động.`,
-      type: 'topup'
-    });
-
-    console.log(`[BANK] Success: Added ${rechargeAmt.toLocaleString()}đ to ${user.username} (Bank ID: ${transactionId})`);
-    res.json({ message: 'Success', status: 'processed', username: user.username });
+    console.log(`[BANK_SYNC_SUCCESS] +${finalAmount} VND cho ${user.username} (ID: ${identifier})`);
+    res.json({ success: true, user: user.username, balance: newBalance });
 
   } catch (err) {
-    console.error('[BANK ERROR]', err);
-    res.status(500).json({ 
-      message: 'Lỗi hệ thống (Sync)',
-      error: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
+    console.error('[BANK_SYNC_CRITICAL]', err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 

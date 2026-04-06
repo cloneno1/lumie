@@ -1,47 +1,51 @@
-# 🚀 Hướng Dẫn Tạm Biệt Email - Nạp Tiền Qua Android 24/7 (Vietcombank)
+# 🚀 Hướng Dẫn Nạp Tiền Qua Android 24/7 (Vietcombank) - CẬP NHẬT
 
-Đây là phương pháp **nhanh nhất, an toàn và ổn định nhất** hiện nay cho các Website Store cá nhân.
+Đây là phương pháp **nhanh nhất và ổn định nhất** để tự động cộng tiền khi khách chuyển khoản.
 
 ### 📋 Bước 1: Chuẩn bị Điện thoại Android
-1.  Dùng 1 chiếc điện thoại Android có kết nối WiFi/3G ổn định (nên để ở nhà cắm sạc treo).
-2.  Cài đặt Ứng dụng **Vietcombank (Digibank)** và đăng nhập.
-3.  **QUAN TRỌNG:** Phải bật tính năng **"Thông báo biến động số dư qua App (Push Notification)"** trong phần Cài đặt của Vietcombank (tắt thông báo qua SMS đi để tiết kiệm phí).
-4.  Cài đặt Ứng dụng **MacroDroid** (Miễn phí trên Google Play Store).
+1.  Dùng 1 điện thoại Android luôn bật (để ở nhà cắm sạc).
+2.  Cài App **Vietcombank (Digibank)**: Bật tính năng **"Thông báo biến động số dư qua App (OTT)"** (Tắt SMS để tiết kiệm phí).
+3.  Cài App **MacroDroid** từ Google Play.
 
-### ⚙️ Bước 2: Cài đặt MacroDroid (Làm theo đúng 3 bước)
+### ⚙️ Bước 2: Cấu hình MacroDroid (QUAN TRỌNG)
 
-#### 1. Tạo Triggers (Kích hoạt):
-*   Bấm **Add Macro** -> Chọn tab **Triggers**.
-*   Chọn **Notification** -> **Notification Received**.
-*   Chọn **Select Application** -> Tìm và chọn App **Vietcombank**.
-*   Phần **Text Content** -> Chọn **Any**.
+#### 1. Triggers (Kích hoạt):
+*   Add Macro -> **Triggers** -> Notification -> **Notification Received**.
+*   Chọn App **Vietcombank**.
+*   Text Content: Chọn **Any**.
 
-#### 2. Tạo Actions (Hành động):
-*   Chọn tab **Actions** -> Chọn **HTTP Request**.
-*   **Method:** Chọn `POST`.
-*   **URL:** `https://lumiestore.uk/api/internal/bank-sync`
-*   **Content Type:** `application/json`
-*   **Body:** (Copy và dán nguyên văn đoạn dưới đây):
+#### 2. Actions (Hành động):
+*   **Actions** -> **HTTP Request**.
+*   Method: `POST`.
+*   URL: `https://lumiestore.uk/api/internal/bank-sync`
+*   Content Type: `application/json`
+*   **Body (Phần này quan trọng nhất - KHÔNG ĐƯỢC NHẬP TAY):**
+
+Copy đoạn dưới đây dán vào Body:
 ```json
 {
   "secret": "lumie_auto_bank_secure_2024",
-  "amount": "{not_body}",
-  "memo": "{not_body}",
-  "transactionId": "{not_id}",
-  "bankName": "Vietcombank_Android"
+  "notification_body": "{not_body}",
+  "transactionId": "{not_id}"
 }
 ```
-*(Lưu ý: Thay `lumie_auto_bank_secure_2024` bằng mã Secret bạn đã đặt trong backend)*.
 
-#### 3. Tạo Constraints (Điều kiện - Để tránh báo sai):
-*   Chọn tab **Constraints** -> Chọn **Notification Content**.
-*   Phần **Text Content Match** -> Gõ: `LUMIE` (Để máy chỉ gửi khi thấy nội dung chuyển khoản có chữ LUMIE).
+> [!IMPORTANT]
+> **LƯU Ý CỰC KỲ QUAN TRỌNG:** 
+> Sau khi dán đoạn trên, nếu bạn thấy Server báo lỗi `Amt={not_body}`, có nghĩa là MacroDroid chưa tự động điền tin nhắn vào.
+> 
+> **Cách sửa:** Trong ô nhập Body của MacroDroid, bạn hãy xóa chữ `{not_body}`, sau đó nhấn vào nút **"ba chấm (...)"** hoặc nút **"Special Strings"** ở góc phải -> Chọn **Notification** -> **Notification Body**.
+> 
+> Tương tự với `{not_id}`, hãy xóa đi và chọn **Notification** -> **Notification ID**.
 
-### 🏁 Hoàn tất
-1.  Đặt tên cho Macro là `Gửi thông báo VCB lên Store`. Bấm dấu cộng để **Save (Lưu)**.
-2.  Bây giờ, hễ bạn nhận được tiền mà có nội dung `LUMIE [ID]`, thì trong vòng **0.5 giây**, tiền sẽ được cộng ngay lập tức vào Store!
+#### 3. Constraints (Điều kiện lọc):
+*   **Constraints** -> Notification Content -> **Text Content Match**.
+*   Nhập: `LUMIE` (Để máy chỉ gửi tin nhắn khi khách ghi đúng mã nạp).
+
+### 🏁 Kiểm tra
+1.  Lưu Macro với tên `Auto Bank Lumie`.
+2.  Thử chuyển khoản 1.000đ với nội dung: `LUMIE [ID_CỦA_BẠN]` (Lấy ID trong trang Nạp tiền).
+3.  Nếu thành công, Server sẽ báo `[BANK_SYNC_SUCCESS]` trong console.
 
 ---
-**LƯU Ý:** 
-- Đảm bảo App Vietcombank và MacroDroid không bị điện thoại tự động tắt (Hãy cho phép chạy ngầm và bỏ tối ưu pin).
-- Bạn không cần treo máy tính cá nhân để nhận Mail nữa!
+**Mẹo:** Nếu vẫn lỗi, hãy kiểm tra xem bạn đã cấp quyền "Truy cập thông báo" cho MacroDroid trong cài đặt điện thoại chưa.
