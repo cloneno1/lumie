@@ -678,15 +678,16 @@ router.post('/internal/bank-sync', async (req, res) => {
 
     // 3. PARSER (VCB)
     const amountMatch = rawContent.match(/\+([\d,.]+)/);
-    const topupIdMatch = rawContent.match(/LUMIE\s*(\d{8,10})/i);
+    // Hỗ trợ cả Topup ID (9 số) và UUID dài
+    const identifierMatch = rawContent.match(/LUMIE\s*([a-z0-9-]+)/i);
 
-    if (!amountMatch || !topupIdMatch) {
-      console.error(`[BANK_SYNC_ERROR] Parser failed. Content: "${rawContent}"`);
-      return res.status(400).json({ message: 'Không thể đọc số tiền hoặc mã nạp' });
+    if (!amountMatch || !identifierMatch) {
+      console.error(`[BANK_SYNC_ERROR] Parser failed to extract data from: "${rawContent}"`);
+      return res.status(400).json({ message: 'Không thể đọc số tiền hoặc mã định danh LUMIE' });
     }
 
     const finalAmount = parseInt(amountMatch[1].replace(/[,.]/g, ''));
-    const identifier = topupIdMatch[1];
+    const identifier = identifierMatch[1].trim();
 
     // 4. Tìm người dùng (Tra cứu đa tầng)
     let user = await db.users.getByTopupId(identifier);

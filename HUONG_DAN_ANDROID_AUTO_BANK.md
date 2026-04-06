@@ -25,18 +25,13 @@ Copy đoạn dưới đây dán vào Body:
 ```json
 {
   "secret": "lumie_auto_bank_secure_2024",
-  "notification_body": "{not_body}",
+  "notification_body": "{not_text}",
   "transactionId": "{not_id}"
 }
 ```
 
-> [!IMPORTANT]
-> **LƯU Ý CỰC KỲ QUAN TRỌNG:** 
-> Sau khi dán đoạn trên, nếu bạn thấy Server báo lỗi `Amt={not_body}`, có nghĩa là MacroDroid chưa tự động điền tin nhắn vào.
-> 
-> **Cách sửa:** Trong ô nhập Body của MacroDroid, bạn hãy xóa chữ `{not_body}`, sau đó nhấn vào nút **"ba chấm (...)"** hoặc nút **"Special Strings"** ở góc phải -> Chọn **Notification** -> **Notification Body**.
-> 
-> Tương tự với `{not_id}`, hãy xóa đi và chọn **Notification** -> **Notification ID**.
+> [!CAUTION]
+> **DẤU NGOẶC KÉP QUAN TRỌNG:** Trong ô Body của MacroDroid, bạn PHẢI để dấu ngoặc kép bao quanh các biến, ví dụ: **`"{not_text}"`**. Nếu thiếu dấu **`"`**, hệ thống sẽ báo lỗi `Syntax Error` và không cộng tiền được.
 
 #### 3. Constraints (Điều kiện lọc):
 *   **Constraints** -> Notification Content -> **Text Content Match**.
