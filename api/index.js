@@ -579,40 +579,38 @@ router.post('/internal/bank-sync', async (req, res) => {
       return res.status(200).json({ message: 'Transaction already processed', status: 'duplicate' });
     }
 
-    // 3. Phân tích nội dung chuyển khoản (Memo)
-    // Hỗ trợ cả ND: LUMIE 4 hoặc đơn giản là LUMIE 4 (thường thấy trên push notification)
-    let identifier = null;
-    const match = memo.match(/LUMIE\s+([\w.]+)/i);
-    identifier = match ? match[1] : null;
-
-    if (!identifier) {
-      // Thử tìm trong toàn bộ text nếu memo không có tiền tố ND:
-      const rawMatch = memo.match(/LUMIE\s+([\w.]+)/i);
-      identifier = rawMatch ? rawMatch[1] : null;
+    // Phân tích Số tiền từ nội dung thô (MacroDroid)
+    let finalAmount = typeof amount === 'string' ? amount : String(amount || '');
+    const amountMatch = finalAmount.match(/\+([0-9,.]+)/);
+    if (amountMatch) {
+      finalAmount = amountMatch[1].replace(/[,.]/g, '');
+    } else {
+      const numbers = finalAmount.match(/\d+/g);
+      if (numbers) finalAmount = numbers.find(n => parseInt(n) >= 1000) || finalAmount;
     }
 
-    if (!identifier) {
-      console.log(`[BANK] No identifier found in memo: ${memo}`);
-      return res.status(400).json({ message: 'No user identifier found in memo' });
+    // Phân tích Mã nạp (LUMIE ID) từ nội dung thô
+    let finalMemo = typeof memo === 'string' ? memo : String(memo || '');
+    const memoMatch = finalMemo.toUpperCase().match(/LUMIE\s+(\d+)/);
+    const identifier = memoMatch ? memoMatch[1] : null;
+
+    if (!identifier || !finalAmount || isNaN(parseInt(finalAmount))) {
+      console.log(`[BANK_SYNC_ERROR] Parser failed: Amt=${finalAmount}, ID=${identifier}`);
+      return res.status(400).json({ 
+        message: 'Không tìm thấy tiền hoặc mã nạp trong thông báo',
+        debug: { amount, memo }
+      });
     }
 
-    // 4. Tìm người dùng (Ưu tiên ID, sau đó tới Username)
-    let user = null;
-    if (!isNaN(identifier)) {
-      user = await db.users.getById(parseInt(identifier));
-    }
-    
+    // 4. Tìm người dùng
+    const user = await db.users.getById(parseInt(identifier));
     if (!user) {
-      user = await db.users.getByUsername(identifier);
-    }
-
-    if (!user) {
-      console.log(`[BANK] User not found for identifier: ${identifier}`);
-      return res.status(404).json({ message: 'User not found' });
+      console.log(`[BANK] User ${identifier} not found`);
+      return res.status(404).json({ message: 'User (Mã nạp) không tồn tại' });
     }
 
     // 5. Cập nhật số dư (Chỉ dùng cột balance để đảm bảo hoạt động)
-    const rechargeAmt = parseInt(amount);
+    const rechargeAmt = parseInt(finalAmount);
     const newBalance = (user.balance || 0) + rechargeAmt;
 
     await db.users.update(user.id, {
