@@ -380,8 +380,8 @@ function TopUp() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Nội dung chuyển khoản</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <strong style={{ color: '#f87171', fontSize: '1.2rem', textTransform: 'uppercase' }}>LUMIE {user?.username}</strong>
-                    <button onClick={() => handleCopy(`LUMIE ${user?.username}`)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
+                    <strong style={{ color: '#f87171', fontSize: '1.2rem', textTransform: 'uppercase' }}>LUMIE {user?.id}</strong>
+                    <button onClick={() => handleCopy(`LUMIE ${user?.id}`)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
                       {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
@@ -413,7 +413,7 @@ function TopUp() {
                 marginBottom: '16px'
               }}>
                 <img 
-                  src={`https://img.vietqr.io/image/BIDV-${BANKS.BIDV.number}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`LUMIE ${user?.username || 'USERNAME'}`)}&accountName=${encodeURIComponent(BANKS.BIDV.accountName)}`}
+                  src={`https://img.vietqr.io/image/BIDV-${BANKS.BIDV.number}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`LUMIE ${user?.id}`)}&accountName=${encodeURIComponent(BANKS.BIDV.accountName)}`}
                   alt="VietQR Payment BIDV"
                   style={{ width: '100%', maxWidth: '240px', borderRadius: '12px', display: 'block' }}
                 />

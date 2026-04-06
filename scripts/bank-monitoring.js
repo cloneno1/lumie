@@ -92,30 +92,32 @@ const main = async () => {
     let lock = await client.getMailboxLock('INBOX');
 
     try {
-      // Mỗi khi có email mới (Event 'exists' hoặc 'idle' tùy bản cập nhật)
+      // Mỗi khi có email mới
       client.on('exists', async (data) => {
         const count = data.count;
-        console.log(`📩 Có ${count} email mới trong hòm thư.`);
+        console.log(`📩 [Mail Box] Phát hiện thấy tổng cộng ${count} thư.`);
 
         // Lấy email mới nhất
         const message = await client.fetchOne(count.toString(), { source: true });
         const parsed = await simpleParser(message.source);
 
-        const from = parsed.from.value[0].address;
-        const subject = parsed.subject.toLowerCase();
-        const body = parsed.text || parsed.html;
+        const from = (parsed.from?.value?.[0]?.address || '').toLowerCase();
+        const subject = (parsed.subject || '').toLowerCase();
+        const body = parsed.text || parsed.html || '';
 
-        // Kiểm tra xem có đúng là mail từ BIDV không
-        const isFromBank = from.includes('bidv.com.vn');
-        const hasKeywords = CONFIG.bank.subjectKeywords.some(k => subject.includes(k));
+        console.log(`📬 [Mới] Từ: ${from} | Tiêu đề: ${parsed.subject}`);
+
+        // Bộ lọc BIDV lỏng hơn để không sót
+        const isFromBank = from.includes('bidv.com.vn') || from.includes('contact@bidv.com.vn') || from.includes('notification@bidv.com.vn');
+        const hasKeywords = subject.includes('bien dong') || subject.includes('thong bao') || subject.includes('giao dich') || body.toLowerCase().includes('nd:');
 
         if (isFromBank && hasKeywords) {
-          console.log('🔍 Phát hiện email thông báo biến động số dư BIDV.');
+          console.log('🔍 [BIDV] Khớp Mail thông báo! Đang phân tích dữ liệu...');
 
           const data = parseBIDVEmail(body);
 
           if (data && parseInt(data.amount) > 0) {
-            console.log(`💰 Giao dịch: +${parseInt(data.amount).toLocaleString()}đ | ND: ${data.memo}`);
+            console.log(`💰 [GD] +${parseInt(data.amount).toLocaleString()}đ | ND: ${data.memo}`);
 
             // Gửi sang API Store
             try {
@@ -129,16 +131,19 @@ const main = async () => {
               });
 
               if (response.data.status === 'processed') {
-                console.log(`✅ Thành công: Đã cộng tiền cho ${response.data.username}`);
+                console.log(`✅ [OK] Đã nạp thành công cho: ${response.data.username}`);
               } else if (response.data.status === 'duplicate') {
-                console.log('⚠️ Bỏ qua: Giao dịch này đã được xử lý trước đó.');
+                console.log('⚠️ [Bỏ qua] Giao dịch này đã được ghi nhận trước đó.');
               }
             } catch (apiErr) {
-              console.error('❌ Lỗi API Store:', apiErr.response?.data?.message || apiErr.message);
+              const errMsg = apiErr.response?.data?.message || apiErr.message;
+              console.error(`❌ [Lỗi Server] ${errMsg}`);
             }
           } else {
-            console.log('⚠️ Bỏ qua: Không phải giao dịch nạp tiền hoặc không đọc được số tiền.');
+            console.log('⚠️ [Skip] Không tìm thấy số tiền hoặc nội dung mã nạp.');
           }
+        } else {
+          console.log('📧 [Skip] Thư này không phải thông báo BIDV.');
         }
       });
 

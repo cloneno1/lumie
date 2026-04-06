@@ -589,10 +589,14 @@ router.post('/internal/bank-sync', async (req, res) => {
       return res.status(400).json({ message: 'No user identifier found in memo' });
     }
 
-    // 4. Tìm User
-    let user = await db.users.getByUsername(identifier);
-    if (!user && !isNaN(identifier)) {
-      user = await db.users.getById(identifier);
+    // 4. Tìm người dùng (Ưu tiên ID, sau đó tới Username)
+    let user = null;
+    if (!isNaN(identifier)) {
+      user = await db.users.getById(parseInt(identifier));
+    }
+    
+    if (!user) {
+      user = await db.users.getByUsername(identifier);
     }
 
     if (!user) {
