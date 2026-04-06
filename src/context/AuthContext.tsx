@@ -11,6 +11,7 @@ interface User {
   vip_points?: number;
   total_topup?: number;
   last_topup_at?: string;
+  topup_id?: number | string;
   role: 'user' | 'admin' | 'staff';
   has_password?: boolean;
   created_at: string;

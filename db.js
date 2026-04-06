@@ -22,6 +22,11 @@ export const db = {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
+    getByTopupId: async (topupId) => {
+      const { data, error } = await supabase.from('users').select('*').eq('topup_id', topupId).single();
+      if (error && error.code !== 'PGRST116') return null;
+      return data;
+    },
     getByUsername: async (username) => {
       const { data, error } = await supabase
         .from('users')

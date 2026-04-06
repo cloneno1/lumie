@@ -130,12 +130,22 @@ router.post('/auth/register', async (req, res) => {
     const { username, password, email } = req.body;
     if (!username || !password) return res.status(400).json({ message: 'Vui lòng cung cấp username và password.' });
 
+    // 2. Sinh mã nạp (topup_id) 9 chữ số duy nhất
+    let topup_id;
+    let isUsed = true;
+    while (isUsed) {
+      topup_id = Math.floor(100000000 + Math.random() * 900000000);
+      const checkId = await db.users.getByTopupId(topup_id);
+      if (!checkId) isUsed = false;
+    }
+
     const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = await db.users.create({
       username,
       password: hashedPassword,
       email: email || '',
       balance: 0,
+      topup_id, // Gán mã nạp 9 số
       role: username.toLowerCase() === 'lumie' ? 'admin' : 'user',
       banned: false
     });
@@ -163,9 +173,16 @@ router.post('/auth/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Tên người dùng hoặc mật khẩu không đúng.' });
 
-    // Special case: Lumie is always Admin
-    if (user.username.toLowerCase() === 'lumie' && user.role !== 'admin') {
-      user = await db.users.update(user.id, { role: 'admin' });
+    // Tự động cấp Mã nạp 9 số cho người dùng cũ nếu chưa có
+    if (!user.topup_id) {
+      let tid;
+      let isUsed = true;
+      while (isUsed) {
+        tid = Math.floor(100000000 + Math.random() * 900000000);
+        const check = await db.users.getByTopupId(tid);
+        if (!check) isUsed = false;
+      }
+      user = await db.users.update(user.id, { topup_id: tid });
     }
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
@@ -599,17 +616,24 @@ router.post('/internal/bank-sync', async (req, res) => {
       });
     }
 
-    // 4. Tìm người dùng (Cực kỳ chính xác với Mã số nạp 9 chữ số)
+    // 4. Tìm người dùng (Tra cứu đa tầng: topup_id -> id -> username)
     let user = null;
     
-    // Luôn ưu tiên tìm ID trước (Chấp nhận cả con số 9 chữ số chuẩn hoặc UUID cũ)
-    try {
-      user = await db.users.getById(identifier);
-    } catch (err) {
-      console.log(`[BANK_SYNC] ID format skip, falling back to username...`);
+    // Luôn ưu tiên tìm theo Mã nạp 9 số (topup_id)
+    if (!isNaN(identifier) && identifier.length === 9) {
+      user = await db.users.getByTopupId(identifier);
     }
 
-    // Nếu không tìm thấy theo ID, tìm theo username (Phòng trường hợp khách gõ tên)
+    // Nếu không thấy, tra cứu theo ID gốc (Chấp nhận cả UUID)
+    if (!user) {
+      try {
+        user = await db.users.getById(identifier);
+      } catch (err) {
+        console.log(`[BANK_SYNC] ID format skip...`);
+      }
+    }
+
+    // Cuối cùng, tìm theo Username nếu các mã trên không khớp
     if (!user) {
       user = await db.users.getByUsername(identifier);
     }
