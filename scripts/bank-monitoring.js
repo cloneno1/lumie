@@ -31,8 +31,8 @@ const CONFIG = {
 
   // Cấu hình lọc Email ngân hàng
   bank: {
-    sender: 'contact@bidv.com.vn', // Email chính thức của BIDV (Vui lòng kiểm tra lại chính xác)
-    subjectKeywords: ['bien dong so du', 'thong bao'] // Từ khóa trong tiêu đề email
+    sender: 'vietcombank.com.vn', // Miền email Vietcombank
+    subjectKeywords: ['bien dong', 'thong bao', 'giao dich'] // Từ khóa
   }
 };
 
@@ -48,41 +48,38 @@ const client = new ImapFlow({
 });
 
 /**
- * Hàm phân tích nội dung Email BIDV
- * BIDV thường có định dạng: TK: ... | GD: +...VND | SD: ... | ND: ...
+ * Hàm phân tích nội dung Email VCB
+ * VCB: TK 9344559968 +10,000 VND luc ... ND: LUMIE 4. Ma GD: 123...
  */
-const parseBIDVEmail = (text) => {
+const parseVCBEmail = (text) => {
   try {
-    // 1. Phân tích số tiền (Dấu + đi kèm con số và chữ VND)
+    // 1. Phân tích số tiền
     const amountMatch = text.match(/\+([0-9,.]+)\s*VND/i);
     if (!amountMatch) return null;
 
     // 2. Phân tích nội dung (ND: ...)
-    // BIDV thường dùng ND: hoặc No i dung:
-    const memoMatch = text.match(/(?:ND|Noi dung|ND:)\s*(.*?)(?=\s*\||$)/i);
+    const memoMatch = text.match(/ND:\s*(.*?)(?:\.\s*Ma GD:|\.\s*luc|\s*\||$)/i);
 
-    // 3. Phân tích số tài khoản (TK: ...)
-    const accountMatch = text.match(/TK:\s*(\d+)/i);
+    // 3. Phân tích số tài khoản (TK ...)
+    const accountMatch = text.match(/TK\s*(\d+)/i);
 
-    // 4. Mã giao dịch (Nếu có, hoặc tự tạo từ timestamp để tránh trùng lặp nếu bank ko gửi ID)
-    // Thông thường mail bank sẽ có mã tham chiếu
-    const txIdMatch = text.match(/(?:Ma GD|Trace|Ref):\s*(\d+)/i);
+    // 4. Mã giao dịch (Ma GD: ...)
+    const txIdMatch = text.match(/Ma GD:\s*([a-zA-Z0-9]+)/i);
 
     const amount = amountMatch[1].replace(/[,.]/g, '');
     const memo = memoMatch ? memoMatch[1].trim() : '';
-    const bankAccount = accountMatch ? accountMatch[1] : 'Unknown';
-    // Nếu BIDV không có mã GD trong mail, ta băm nội dung để tạo ID duy nhất
-    const transactionId = txIdMatch ? txIdMatch[1] : `BIDV_${Date.now()}_${amount}`;
+    const bankAccount = accountMatch ? accountMatch[1] : '9344559968';
+    const transactionId = txIdMatch ? txIdMatch[1] : `VCB_${Date.now()}_${amount}`;
 
     return { amount, memo, transactionId, bankAccount };
   } catch (err) {
-    console.error('Lỗi khi phân tích Email:', err);
+    console.error('Lỗi khi phân tích Email VCB:', err);
     return null;
   }
 };
 
 const main = async () => {
-  console.log('🚀 Đang khởi động hệ thống theo dõi BIDV...');
+  console.log('🚀 Đang khởi động hệ thống theo dõi Vietcombank...');
 
   try {
     await client.connect();
@@ -107,14 +104,14 @@ const main = async () => {
 
         console.log(`📬 [Mới] Từ: ${from} | Tiêu đề: ${parsed.subject}`);
 
-        // Bộ lọc BIDV lỏng hơn để không sót
-        const isFromBank = from.includes('bidv.com.vn') || from.includes('contact@bidv.com.vn') || from.includes('notification@bidv.com.vn');
+        // Bộ lọc VCB
+        const isFromBank = from.includes('vietcombank.com.vn');
         const hasKeywords = subject.includes('bien dong') || subject.includes('thong bao') || subject.includes('giao dich') || body.toLowerCase().includes('nd:');
 
         if (isFromBank && hasKeywords) {
-          console.log('🔍 [BIDV] Khớp Mail thông báo! Đang phân tích dữ liệu...');
+          console.log('🔍 [VCB] Khớp Mail thông báo! Đang phân tích dữ liệu...');
 
-          const data = parseBIDVEmail(body);
+          const data = parseVCBEmail(body);
 
           if (data && parseInt(data.amount) > 0) {
             console.log(`💰 [GD] +${parseInt(data.amount).toLocaleString()}đ | ND: ${data.memo}`);
@@ -126,7 +123,7 @@ const main = async () => {
                 amount: data.amount,
                 memo: data.memo,
                 transactionId: data.transactionId,
-                bankName: 'BIDV',
+                bankName: 'Vietcombank',
                 bankAccount: data.bankAccount
               });
 

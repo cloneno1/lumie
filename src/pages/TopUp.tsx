@@ -16,7 +16,7 @@ const VALID_AMOUNTS = [
 ];
 
 const BANKS = {
-  BIDV: { name: 'BIDV (Ngân hàng Đầu tư và Phát triển Việt Nam)', number: '8835052912', bin: 'BIDV', accountName: 'PHAM VINH PHU' }
+  VCB: { name: 'Vietcombank (Ngân hàng Ngoại thương Việt Nam)', number: '9344559968', bin: 'VCB', accountName: 'PHAM VINH PHU' }
 };
 
 function TopUp() {
@@ -362,17 +362,17 @@ function TopUp() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Ngân hàng</span>
-                  <strong style={{ color: '#3b82f6' }}>{BANKS.BIDV.name}</strong>
+                  <strong style={{ color: '#3b82f6' }}>{BANKS.VCB.name}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Chủ tài khoản</span>
-                  <strong style={{ letterSpacing: '0.5px' }}>{BANKS.BIDV.accountName}</strong>
+                  <strong style={{ letterSpacing: '0.5px' }}>{BANKS.VCB.accountName}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Số tài khoản</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <strong style={{ fontSize: '1.2rem', letterSpacing: '1px', color: 'var(--accent-primary)' }}>{BANKS.BIDV.number}</strong>
-                    <button onClick={() => handleCopy(BANKS.BIDV.number)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
+                    <strong style={{ fontSize: '1.2rem', letterSpacing: '1px', color: 'var(--accent-primary)' }}>{BANKS.VCB.number}</strong>
+                    <button onClick={() => handleCopy(BANKS.VCB.number)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px' }}>
                       {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
@@ -413,8 +413,8 @@ function TopUp() {
                 marginBottom: '16px'
               }}>
                 <img 
-                  src={`https://img.vietqr.io/image/BIDV-${BANKS.BIDV.number}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`LUMIE ${user?.id}`)}&accountName=${encodeURIComponent(BANKS.BIDV.accountName)}`}
-                  alt="VietQR Payment BIDV"
+                  src={`https://img.vietqr.io/image/VCB-${BANKS.VCB.number}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`LUMIE ${user?.id}`)}&accountName=${encodeURIComponent(BANKS.VCB.accountName)}`}
+                  alt="VietQR Payment VCB"
                   style={{ width: '100%', maxWidth: '240px', borderRadius: '12px', display: 'block' }}
                 />
               </div>
