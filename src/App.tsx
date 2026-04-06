@@ -138,7 +138,7 @@ function AppContent() {
                   borderRadius: '50%', 
                   border: '1px solid var(--glass-border)', 
                   background: 'rgba(255,255,255,0.05)', 
-                  color: totalItems > 0 ? 'var(--accent-primary)' : '#4a90a4',
+                  color: totalItems > 0 ? 'var(--accent-primary)' : 'rgba(16, 185, 129, 0.5)',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   display: 'flex',
@@ -166,7 +166,7 @@ function AppContent() {
                       borderRadius: '50%', 
                       border: '1px solid var(--glass-border)', 
                       background: 'rgba(255,255,255,0.05)', 
-                      color: unreadCount > 0 ? 'var(--accent-primary)' : '#4a90a4',
+                      color: unreadCount > 0 ? 'var(--accent-primary)' : 'rgba(16, 185, 129, 0.5)',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       display: 'flex',
@@ -248,7 +248,7 @@ function AppContent() {
                         <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: '600' }}>{user.balance.toLocaleString()}đ</span>
                       </div>
                       <svg 
-                        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a90a4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
+                        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
                         style={{ marginTop: '2px', transition: 'transform 0.3s', transform: showUserMenu ? 'rotate(180deg)' : 'none' }}
                       >
                         <path d="m6 9 6 6 6-6"></path>
