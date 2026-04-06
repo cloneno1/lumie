@@ -19,6 +19,9 @@ const upload = multer({
 
 const app = express();
 
+// Trust proxy for rate-limiting (ESSENTIAL for Vercel/proxies)
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(helmet()); // Sets various HTTP headers for security
 app.use(hpp()); // Protect against HTTP Parameter Pollution attacks
