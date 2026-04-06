@@ -705,13 +705,16 @@ router.post('/internal/bank-sync', async (req, res) => {
     const newBalance = (user.balance || 0) + finalAmount;
     await db.users.update(user.id, { balance: newBalance });
 
+    const rechargeId = transactionId !== '{not_id}' ? transactionId : `vcb_${Date.now()}`;
     await db.transactions.create({
       user_id: user.id,
       amount: finalAmount,
-      request_id: transactionId !== '{not_id}' ? transactionId : `vcb_${Date.now()}`,
-      type: 'bank_transfer',
-      status: 'completed',
-      description: `Nạp tiền VCB tự động: ${rawContent}`
+      telco: 'VCB',
+      serial: 'N/A',
+      code: rechargeId,
+      request_id: rechargeId,
+      status: 1, // 1 = Thành công (Integer)
+      message: `Nạp tiền VCB tự động: ${rawContent}`
     });
 
     console.log(`[BANK_SYNC_SUCCESS] +${finalAmount} VND cho ${user.username} (ID: ${identifier})`);
