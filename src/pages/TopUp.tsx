@@ -309,8 +309,28 @@ function TopUp() {
               <Landmark size={28} style={{ color: '#3b82f6', display: 'block' }} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản Ngân hàng (BIDV)</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Hệ thống tự động quét và cộng tiền qua QR</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Chuyển khoản BIDV</h2>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  padding: '4px 10px', 
+                  background: 'rgba(16, 185, 129, 0.1)', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(16, 185, 129, 0.2)'
+                }}>
+                  <span className="pulse-dot" style={{ 
+                    width: '6px', 
+                    height: '6px', 
+                    background: '#10b981', 
+                    borderRadius: '50%',
+                    boxShadow: '0 0 8px #10b981'
+                  }}></span>
+                  <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>TỰ ĐỘNG 24/7</span>
+                </div>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0, marginTop: '4px' }}>Hệ thống quét QR và cộng tiền tức thì</p>
             </div>
           </div>
           
