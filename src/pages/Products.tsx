@@ -26,7 +26,7 @@ const Products: React.FC = () => {
     // --- DISCORD ---
     {
       id: 1,
-      title: 'Discord Nitro Premium (Boost) - 1 Tháng',
+      title: 'Discord Nitro Boost - 1 Tháng',
       category: 'Discord',
       desc: '1 Tháng Full Nitro. Nâng cấp server nhanh chóng.',
       price: 199000,
@@ -38,7 +38,7 @@ const Products: React.FC = () => {
     },
     {
       id: 11,
-      title: 'Discord Nitro Premium (Boost) - 1 Năm',
+      title: 'Discord Nitro Boost - 1 Năm',
       category: 'Discord',
       desc: '1 Năm Full Nitro + Server Boosts. Tiết kiệm hơn.',
       price: 1890000,
