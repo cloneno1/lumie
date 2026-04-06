@@ -527,10 +527,7 @@ router.post('/callback/gachthe1s', async (req, res) => {
           const newVipLevel = calculateVipLevel(newVipPoints);
           
           await db.users.update(user.id, { 
-            balance: newBalance,
-            vip_points: newVipPoints,
-            vip_level: newVipLevel,
-            total_topup: newTotalTopup
+            balance: newBalance
           });
 
           await db.notifications.create({
@@ -603,18 +600,12 @@ router.post('/internal/bank-sync', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // 5. Tính toán số tiền và cập nhật số dư/VIP
+    // 5. Cập nhật số dư (Chỉ dùng cột balance để đảm bảo hoạt động)
     const rechargeAmt = parseInt(amount);
     const newBalance = (user.balance || 0) + rechargeAmt;
-    const newVipPoints = (user.vip_points || 0) + rechargeAmt;
-    const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
-    const newVipLevel = calculateVipLevel(newVipPoints);
 
     await db.users.update(user.id, {
-      balance: newBalance,
-      vip_points: newVipPoints,
-      vip_level: newVipLevel,
-      total_topup: newTotalTopup
+      balance: newBalance
     });
 
     // 6. Lưu lịch sử giao dịch vào bảng transactions
@@ -700,9 +691,6 @@ router.post(`${ADMIN_BASE}/b-up-s`, authenticateAdmin, async (req, res) => {
     const updates = {};
     if (action === 'add') {
       updates.balance = (user.balance || 0) + amount;
-      updates.vip_points = (user.vip_points || 0) + amount;
-      updates.total_topup = (user.total_topup || 0) + amount;
-      updates.vip_level = calculateVipLevel(updates.vip_points);
     } else {
       updates.balance = amount;
     }
