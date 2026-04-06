@@ -301,6 +301,26 @@ router.post('/auth/discord/callback', async (req, res) => {
 
     if (user.banned) return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });
 
+    // Tự động cấp Mã nạp 9 số cho người dùng Discord cũ nếu chưa có
+    if (!user.topup_id) {
+      try {
+        let tid;
+        let isUsed = true;
+        let attempts = 0;
+        while (isUsed && attempts < 5) {
+          tid = Math.floor(100000000 + Math.random() * 900000000);
+          const check = await db.users.getByTopupId(tid);
+          if (!check) isUsed = false;
+          attempts++;
+        }
+        if (tid) {
+          user = await db.users.update(user.id, { topup_id: tid });
+        }
+      } catch (err) {
+        console.log('[BANK] Discord Login ID assign skip');
+      }
+    }
+
     // Issue JWT
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
     const { password: _, ...userWithoutPassword } = user;
@@ -357,11 +377,33 @@ router.post('/auth/google/callback', async (req, res) => {
 
       if (!user) {
         // Create new user if not exists
-        let finalUsername = name.replace(/\s+/g, '_').toLowerCase();
-        const existing = await db.users.getByUsername(finalUsername);
-        if (existing) {
-          finalUsername = `${finalUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+        let nameSlug = name.replace(/\s+/g, '_').toLowerCase();
+        let finalUsername = nameSlug;
+        
+        // Loop to find a truly unique username
+        let isUnique = false;
+        let attempts = 0;
+        while (!isUnique && attempts < 10) {
+          const existing = await db.users.getByUsername(finalUsername);
+          if (existing) {
+            finalUsername = `${nameSlug}${Math.floor(1000 + Math.random() * 9000)}`;
+            attempts++;
+          } else {
+            isUnique = true;
+          }
         }
+
+        // Sinh mã nạp 9 số an toàn cho người dùng Google mới
+        let tid = null;
+        try {
+          tid = Math.floor(100000000 + Math.random() * 900000000);
+          const check = await db.users.getByTopupId(tid);
+          if (!check) {
+            // we'll keep tid as is
+          } else {
+             tid = Math.floor(100000000 + Math.random() * 900000000); // 1 extra try
+          }
+        } catch (e) {}
 
         user = await db.users.create({
           username: finalUsername,
@@ -371,6 +413,7 @@ router.post('/auth/google/callback', async (req, res) => {
           password: await bcrypt.hash(uuidv4(), 12),
           has_password: false,
           balance: 0,
+          topup_id: tid,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
         });
@@ -383,6 +426,26 @@ router.post('/auth/google/callback', async (req, res) => {
     }
 
     if (user.banned) return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });
+
+    // Tự động cấp Mã nạp 9 số cho người dùng Google cũ nếu chưa có
+    if (!user.topup_id) {
+      try {
+        let tid;
+        let isUsed = true;
+        let attempts = 0;
+        while (isUsed && attempts < 5) {
+          tid = Math.floor(100000000 + Math.random() * 900000000);
+          const check = await db.users.getByTopupId(tid);
+          if (!check) isUsed = false;
+          attempts++;
+        }
+        if (tid) {
+          user = await db.users.update(user.id, { topup_id: tid });
+        }
+      } catch (err) {
+        console.log('[BANK] Google Login ID assign skip');
+      }
+    }
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
     const { password: _, ...userWithoutPassword } = user;
@@ -945,19 +1008,17 @@ router.get('/stats/vip-rankings', async (req, res) => {
 
 router.get('/stats/recent-activity', async (req, res) => {
   try {
-    const [orders, feedbacks] = await Promise.all([
-      db.orders.getAll(),
-      db.feedbacks.getAll()
-    ]);
+    const orders = await db.orders.getAll().catch(() => []);
+    const feedbacks = await db.feedbacks.getAll().catch(() => []);
 
     const activity = [
-      ...orders.slice(0, 5).map(o => ({ 
+      ...(orders || []).slice(0, 5).map(o => ({ 
         type: 'order', 
         username: o.username, 
         productName: o.product_name || o.productName, 
         created_at: o.created_at 
       })),
-      ...feedbacks.slice(0, 5).map(f => ({ 
+      ...(feedbacks || []).slice(0, 5).map(f => ({ 
         type: 'feedback', 
         username: f.username, 
         productName: f.product_name || f.productName, 
@@ -967,22 +1028,27 @@ router.get('/stats/recent-activity', async (req, res) => {
     ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     res.json(activity.slice(0, 10));
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { 
+    console.error('Stats Activity Error:', err);
+    res.json([]); // Return empty instead of 500
+  }
 });
 
 router.get('/feedbacks', async (req, res) => {
   try {
-    const feedbacks = await db.feedbacks.getAll();
-    res.json(feedbacks);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    const feedbacks = await db.feedbacks.getAll().catch(() => []);
+    res.json(feedbacks || []);
+  } catch (err) { res.json([]); }
 });
 
 router.get('/stats', async (req, res) => {
   try {
-    const feedbacks = await db.feedbacks.getAll();
-    const count = feedbacks.length;
-    res.json({ totalFeedbacks: 5000 + count }); // Static base + real count
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    const feedbacks = await db.feedbacks.getAll().catch(() => []);
+    const count = (feedbacks || []).length;
+    res.json({ totalFeedbacks: 5000 + count });
+  } catch (err) { 
+    res.json({ totalFeedbacks: 5000 }); // Safety default
+  }
 });
 
 // ==========================================
