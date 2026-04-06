@@ -50,7 +50,7 @@ const AccountSettings: React.FC = () => {
     // Validations
     if (!username.trim()) return setMessage({ type: 'error', text: 'Tên hiển thị không được để trống' });
     if (!validateEmail(email)) return setMessage({ type: 'error', text: 'Định dạng email không hợp lệ' });
-    if (!currentPassword) return setMessage({ type: 'error', text: 'Vui lòng nhập mật khẩu hiện tại để xác thực' });
+    if (user?.has_password && !currentPassword) return setMessage({ type: 'error', text: 'Vui lòng nhập mật khẩu hiện tại để xác thực' });
     
     if (newPassword) {
       if (newPassword.length < 6) return setMessage({ type: 'error', text: 'Mật khẩu mới phải từ 6 ký tự trở lên' });
@@ -64,7 +64,7 @@ const AccountSettings: React.FC = () => {
       await api.post('/user/update-profile', {
         username,
         email,
-        currentPassword,
+        currentPassword: user?.has_password ? currentPassword : undefined,
         newPassword: newPassword || undefined
       });
       setMessage({ type: 'success', text: 'Cập nhật tài khoản thành công!' });
@@ -200,10 +200,14 @@ const AccountSettings: React.FC = () => {
             </div>
 
             <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: '1.1rem', color: 'var(--accent-primary)' }}>Thay đổi mật khẩu</h3>
+              <h3 style={{ margin: '0 0 16px', fontSize: '1.1rem', color: 'var(--accent-primary)' }}>
+                {user?.has_password ? 'Thay đổi mật khẩu' : 'Cài đặt mật khẩu đầu tiên'}
+              </h3>
               
               <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label className="form-label">Mật khẩu hiện tại (Bắt buộc để lưu thay đổi)</label>
+                <label className="form-label">
+                  {user?.has_password ? 'Mật khẩu hiện tại (Bắt buộc để lưu thay đổi)' : 'Mật khẩu hiện tại (Chưa có mật khẩu - Bỏ qua)'}
+                </label>
                 <div className="input-icon-wrapper">
                   <div className="icon"><Lock size={18} /></div>
                   <input 
@@ -211,7 +215,9 @@ const AccountSettings: React.FC = () => {
                     className="form-control" 
                     value={currentPassword} 
                     onChange={(e) => setCurrentPassword(e.target.value)} 
-                    placeholder="Nhập mật khẩu hiện tại của bạn..."
+                    placeholder={user?.has_password ? "Nhập mật khẩu hiện tại của bạn..." : "Bỏ qua nếu bạn là thành viên mới chưa cài pass..."}
+                    disabled={!user?.has_password}
+                    style={!user?.has_password ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                   />
                 </div>
               </div>

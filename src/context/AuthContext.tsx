@@ -8,6 +8,7 @@ interface User {
   avatar?: string;
   balance: number;
   role: 'user' | 'admin' | 'staff';
+  has_password?: boolean;
   created_at: string;
 }
 
