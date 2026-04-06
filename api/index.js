@@ -103,6 +103,14 @@ app.use(cors({
   credentials: true
 }));
 
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'http://localhost:5173/auth/callback/discord';
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5173/auth/callback/google';
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -140,8 +148,13 @@ router.post('/auth/register', async (req, res) => {
 router.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await db.users.getByUsername(username);
-    if (!user) return res.status(400).json({ message: 'Tên người dùng hoặc mật khẩu không đúng.' });
+    // Try to find user by username or email
+    let user = await db.users.getByUsername(username);
+    if (!user) {
+      user = await db.users.getByEmail(username);
+    }
+    
+    if (!user) return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không đúng.' });
     if (user.banned) return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -163,6 +176,142 @@ router.get('/auth/me', authenticateToken, async (req, res) => {
     res.json(userWithoutPassword);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/auth/discord/url', (req, res) => {
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(DISCORD_REDIRECT_URI)}&response_type=code&scope=identify%20email`;
+  res.json({ url });
+});
+
+router.post('/auth/discord/callback', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: 'Thiếu mã xác thực từ Discord.' });
+
+    // Exchange code for access token
+    const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', new URLSearchParams({
+      client_id: DISCORD_CLIENT_ID,
+      client_secret: DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: DISCORD_REDIRECT_URI,
+    }), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    const accessToken = tokenResponse.data.access_token;
+
+    // Get user info from Discord
+    const userResponse = await axios.get('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const discordUser = userResponse.data;
+    const { id: discordId, username, email, avatar } = discordUser;
+
+    // Find or create user in our DB
+    let user = await db.users.getByDiscordId(discordId);
+
+    if (!user) {
+      // If user doesn't exist by Discord ID, check by email if available
+      if (email) {
+        // Note: For simplicity, we just create a new user if discordId doesn't match.
+        // You could also try matching by email here if you want to link accounts.
+      }
+
+      // Create new user
+      const avatarUrl = avatar ? `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${parseInt(discordId) % 5}.png`;
+      
+      // Check if username taken, if so append random digits
+      let finalUsername = username;
+      const existing = await db.users.getByUsername(finalUsername);
+      if (existing) {
+        finalUsername = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
+      }
+
+      user = await db.users.create({
+        username: finalUsername,
+        email: email || '',
+        discord_id: discordId,
+        avatar: avatarUrl,
+        password: await bcrypt.hash(uuidv4(), 12), // Random password
+        balance: 0,
+        role: 'user',
+        banned: false
+      });
+    }
+
+    if (user.banned) return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });
+
+    // Issue JWT
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.json({ token, user: userWithoutPassword });
+  } catch (err) {
+    console.error('Discord Auth Error:', err.response?.data || err.message);
+    res.status(500).json({ message: 'Lỗi đăng nhập Discord.' });
+  }
+});
+
+// GOOGLE AUTH
+router.get('/auth/google/url', (req, res) => {
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(GOOGLE_REDIRECT_URI)}&response_type=code&scope=profile%20email&access_type=offline`;
+  res.json({ url });
+});
+
+router.post('/auth/google/callback', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: 'Missing code' });
+
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: GOOGLE_REDIRECT_URI,
+    });
+
+    const accessToken = tokenResponse.data.access_token;
+    const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const googleUser = userResponse.data;
+    const { id: googleId, name, email, picture } = googleUser;
+
+    let user = await db.users.getByGoogleId(googleId);
+
+    if (!user) {
+      // Create new user if not exists
+      let finalUsername = name.replace(/\s+/g, '_').toLowerCase();
+      const existing = await db.users.getByUsername(finalUsername);
+      if (existing) {
+        finalUsername = `${finalUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+      }
+
+      user = await db.users.create({
+        username: finalUsername,
+        email: email,
+        google_id: googleId,
+        avatar: picture,
+        password: await bcrypt.hash(uuidv4(), 12),
+        balance: 0,
+        role: 'user',
+        banned: false
+      });
+    }
+
+    if (user.banned) return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });
+
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ token, user: userWithoutPassword });
+  } catch (err) {
+    console.error('Google Auth Error:', err.response?.data || err.message);
+    res.status(500).json({ message: 'Lỗi đăng nhập Google.' });
   }
 });
 

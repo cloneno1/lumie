@@ -1,161 +1,85 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
-import { UserPlus, User, Lock, Mail, ArrowRight } from 'lucide-react';
 
 const Register: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (password !== confirmPassword) {
-      setError('Mật khẩu không khớp.');
-      return;
-    }
-
-    setLoading(true);
-
+  const handleSocialLogin = async (provider: 'discord' | 'google') => {
+    setLoadingProvider(provider);
     try {
-      await api.post('/auth/register', {
-        username,
-        email,
-        password
-      });
-      setSuccess(true);
-      setTimeout(() => navigate('/login'), 3000);
-    } catch (err: any) {
-      const message = err.response?.data?.message || err.message || 'Không thể kết nối đến máy chủ!';
-      setError(message);
-    } finally {
-      setLoading(false);
+      const response = await api.get(`/auth/${provider}/url`);
+      window.location.href = response.data.url;
+    } catch (err) {
+      alert(`Lỗi khi kết nối với ${provider}`);
+      setLoadingProvider(null);
     }
   };
 
   return (
     <div className="auth-container">
-      <div className="glass-card auth-card">
-        <div className="auth-header">
-          <div className="auth-icon-box">
-            <UserPlus size={32} />
+      <div className="glass-card" style={{ 
+        width: '100%', 
+        maxWidth: '560px', 
+        padding: '60px 40px',
+        background: 'white',
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+        textAlign: 'center'
+      }}>
+        <h1 style={{ 
+          fontSize: '32px', 
+          fontWeight: '900', 
+          color: '#1f2937', 
+          lineHeight: '1.2',
+          marginBottom: '15px'
+        }}>
+          Bạn muốn có câu trả lời cho câu hỏi của mình?
+        </h1>
+        
+        <h2 style={{ 
+          fontSize: '28px', 
+          fontWeight: '800', 
+          color: '#84cc16', 
+          marginBottom: '40px'
+        }}>
+          Hãy tạo tài khoản miễn phí với:
+        </h2>
+
+        <div className="auth-choices" style={{ gap: '25px', marginBottom: '40px' }}>
+          {/* Discord Choice */}
+          <div 
+            className={`auth-choice-item ${loadingProvider === 'discord' ? 'active' : ''}`}
+            onClick={() => handleSocialLogin('discord')}
+            style={{ width: '100px', height: '100px' }}
+          >
+            <div className="auth-choice-icon" style={{ width: '40px', height: '40px' }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="#5865F2">
+                <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1971.3728.2914a.077.077 0 01-.0066.1277 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3333-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3333-.946 2.4189-2.1568 2.4189z" />
+              </svg>
+            </div>
+            <span className="auth-choice-label" style={{ fontSize: '14px' }}>Discord</span>
           </div>
-          <h2 className="auth-title">Tham gia ngay</h2>
-          <p className="auth-subtitle">Tạo tài khoản để bắt đầu mua sắm</p>
+
+          {/* Email / Google Choice */}
+          <div 
+            className={`auth-choice-item ${loadingProvider === 'google' ? 'active' : ''}`}
+            onClick={() => handleSocialLogin('google')}
+            style={{ width: '100px', height: '100px' }}
+          >
+            <div className="auth-choice-icon" style={{ width: '40px', height: '40px' }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="#10b981">
+                 <circle cx="12" cy="8" r="4" />
+                 <path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" />
+              </svg>
+            </div>
+            <span className="auth-choice-label" style={{ fontSize: '14px' }}>Email</span>
+          </div>
         </div>
 
-        {error && (
-          <div style={{ 
-            background: 'rgba(239, 68, 68, 0.1)', 
-            border: '1px solid rgba(239, 68, 68, 0.2)', 
-            color: '#ef4444', 
-            padding: '12px', 
-            borderRadius: '12px', 
-            marginBottom: '24px',
-            fontSize: '14px',
-            textAlign: 'center'
-          }}>
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div style={{ 
-            background: 'rgba(16, 185, 129, 0.1)', 
-            border: '1px solid rgba(16, 185, 129, 0.2)', 
-            color: 'var(--accent-primary)', 
-            padding: '12px', 
-            borderRadius: '12px', 
-            marginBottom: '24px',
-            fontSize: '14px',
-            textAlign: 'center'
-          }}>
-            Đăng ký thành công! Đang chuyển hướng...
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Tên đăng nhập</label>
-            <div className="input-icon-wrapper">
-              <div className="icon"><User size={20} /></div>
-              <input 
-                type="text" 
-                className="form-control" 
-                placeholder="Nhập tên đăng nhập" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Email (tùy chọn)</label>
-            <div className="input-icon-wrapper">
-              <div className="icon"><Mail size={20} /></div>
-              <input 
-                type="email" 
-                className="form-control" 
-                placeholder="email@example.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Mật khẩu</label>
-            <div className="input-icon-wrapper">
-              <div className="icon"><Lock size={20} /></div>
-              <input 
-                type="password" 
-                className="form-control" 
-                placeholder="Mật khẩu ít nhất 6 ký tự" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={6}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Xác nhận mật khẩu</label>
-            <div className="input-icon-wrapper">
-              <div className="icon"><Lock size={20} /></div>
-              <input 
-                type="password" 
-                className="form-control" 
-                placeholder="Nhập lại mật khẩu" 
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%', padding: '16px', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '1.05rem' }}
-            disabled={loading || success}
-          >
-            {loading ? 'Đang tạo tài khoản...' : (
-              <>Tạo tài khoản <ArrowRight size={20} /></>
-            )}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          Đã có tài khoản? <Link to="/login" className="auth-link">Đăng nhập ngay</Link>
+        <div className="auth-footer-text" style={{ fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          Hoặc nếu đã có tài khoản <Link to="/login" style={{ color: '#84cc16', fontWeight: '700', textDecoration: 'underline' }}>Hãy đăng nhập ngay!</Link>
         </div>
       </div>
     </div>

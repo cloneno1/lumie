@@ -12,6 +12,7 @@ import TopUpHistory from './pages/user/TopUpHistory';
 import AccountSettings from './pages/user/AccountSettings';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Products from './pages/Products';
+import AuthCallback from './pages/AuthCallback';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
@@ -285,6 +286,8 @@ function AppContent() {
           <Route path="/nap-tien" element={<TopUp />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/callback/discord" element={<AuthCallback provider="discord" />} />
+          <Route path="/auth/callback/google" element={<AuthCallback provider="google" />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/orders" element={<OrdersHistory />} />
           <Route path="/profile/topups" element={<TopUpHistory />} />

@@ -31,6 +31,33 @@ export const db = {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
+    getByDiscordId: async (discordId) => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('discord_id', discordId)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    getByGoogleId: async (googleId) => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('google_id', googleId)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    getByEmail: async (email) => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
     create: async (user) => {
       const { data, error } = await supabase.from('users').insert([user]).select().single();
       if (error) throw error;
