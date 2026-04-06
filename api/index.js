@@ -530,8 +530,7 @@ router.post('/callback/gachthe1s', async (req, res) => {
             balance: newBalance,
             vip_points: newVipPoints,
             vip_level: newVipLevel,
-            total_topup: newTotalTopup,
-            last_topup_at: new Date().toISOString()
+            total_topup: newTotalTopup
           });
 
           await db.notifications.create({
@@ -615,8 +614,7 @@ router.post('/internal/bank-sync', async (req, res) => {
       balance: newBalance,
       vip_points: newVipPoints,
       vip_level: newVipLevel,
-      total_topup: newTotalTopup,
-      last_topup_at: new Date().toISOString()
+      total_topup: newTotalTopup
     });
 
     // 6. Lưu lịch sử giao dịch vào bảng transactions
@@ -705,7 +703,6 @@ router.post(`${ADMIN_BASE}/b-up-s`, authenticateAdmin, async (req, res) => {
       updates.vip_points = (user.vip_points || 0) + amount;
       updates.total_topup = (user.total_topup || 0) + amount;
       updates.vip_level = calculateVipLevel(updates.vip_points);
-      updates.last_topup_at = new Date().toISOString();
     } else {
       updates.balance = amount;
     }
@@ -834,23 +831,10 @@ router.get('/user/vip-status', authenticateToken, async (req, res) => {
     // Simulate Decaying Point Logic: If not topup for > 15 days, lose 5% points 
     // This is a simplified approach, in a real app use a CRON job.
     let currentPoints = user.vip_points || 0;
-    const lastTopup = user.last_topup_at ? new Date(user.last_topup_at) : new Date(0);
-    const dayDiff = Math.floor((new Date() - lastTopup) / (1000 * 60 * 60 * 24));
-    
-    if (dayDiff > 14 && currentPoints > 0) {
-       // Just update or warn. Let's update and notify.
-       const pointsToLose = Math.floor(currentPoints * 0.01 * (dayDiff - 13)); // 1% per day after 14 days
-       const finalPoints = Math.max(0, currentPoints - pointsToLose);
-       const finalVipLevel = calculateVipLevel(finalPoints);
-       
-       if (finalPoints !== currentPoints) {
-         await db.users.update(user.id, { 
-           vip_points: finalPoints,
-           vip_level: finalVipLevel
-         });
-         currentPoints = finalPoints;
-       }
-    }
+    /* Decaying logic disabled due to missing column
+    const lastTopup = ...
+    ...
+    */
 
     const nextLevel = VIP_LEVELS.find(v => v.level === (user.vip_level || 0) + 1) || null;
     const currentLevelData = VIP_LEVELS.find(v => v.level === (user.vip_level || 0));
@@ -859,7 +843,6 @@ router.get('/user/vip-status', authenticateToken, async (req, res) => {
       vipLevel: user.vip_level || 0,
       vipPoints: currentPoints,
       totalTopup: user.total_topup || 0,
-      lastTopupAt: user.last_topup_at,
       nextLevel: nextLevel,
       currentLevelData: currentLevelData,
       allLevels: VIP_LEVELS
