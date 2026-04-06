@@ -111,8 +111,14 @@ export const db = {
     },
     create: async (transaction) => {
       const { data, error } = await supabase.from('transactions').insert([{
-        ...transaction,
-        user_id: transaction.userId
+        user_id: transaction.user_id || transaction.userId,
+        telco: transaction.telco,
+        amount: transaction.amount,
+        serial: transaction.serial,
+        code: transaction.code,
+        request_id: transaction.request_id || transaction.requestId,
+        status: transaction.status,
+        message: transaction.message
       }]).select().single();
       if (error) throw error;
       return data;

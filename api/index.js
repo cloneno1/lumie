@@ -610,7 +610,7 @@ router.post('/internal/bank-sync', async (req, res) => {
 
     // 6. Lưu lịch sử giao dịch vào bảng transactions
     await db.transactions.create({
-      userId: user.id,
+      user_id: user.id,
       telco: `BANK_${bankName || 'BIDV'}`,
       amount: rechargeAmt,
       serial: bankAccount || 'N/A', // Số tài khoản bank
