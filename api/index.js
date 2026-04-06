@@ -130,13 +130,21 @@ router.post('/auth/register', async (req, res) => {
     const { username, password, email } = req.body;
     if (!username || !password) return res.status(400).json({ message: 'Vui lòng cung cấp username và password.' });
 
-    // 2. Sinh mã nạp (topup_id) 9 chữ số duy nhất
-    let topup_id;
-    let isUsed = true;
-    while (isUsed) {
-      topup_id = Math.floor(100000000 + Math.random() * 900000000);
-      const checkId = await db.users.getByTopupId(topup_id);
-      if (!checkId) isUsed = false;
+    // 2. Sinh mã nạp (topup_id) 9 chữ số (Thử nghiệm an toàn)
+    let topup_id = null;
+    try {
+      let tid;
+      let isUsed = true;
+      let attempts = 0;
+      while (isUsed && attempts < 5) {
+        tid = Math.floor(100000000 + Math.random() * 900000000);
+        const check = await db.users.getByTopupId(tid);
+        if (!check) isUsed = false;
+        attempts++;
+      }
+      topup_id = tid;
+    } catch (err) {
+      console.log('[BANK] Skip topup_id generation: column might be missing');
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -145,7 +153,7 @@ router.post('/auth/register', async (req, res) => {
       password: hashedPassword,
       email: email || '',
       balance: 0,
-      topup_id, // Gán mã nạp 9 số
+      ...(topup_id ? { topup_id } : {}), // Chỉ thêm nếu thành công
       role: username.toLowerCase() === 'lumie' ? 'admin' : 'user',
       banned: false
     });
@@ -173,16 +181,24 @@ router.post('/auth/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Tên người dùng hoặc mật khẩu không đúng.' });
 
-    // Tự động cấp Mã nạp 9 số cho người dùng cũ nếu chưa có
+    // 2. Cố gắng cấp Mã nạp 9 số cho người dùng cũ (Thử nghiệm an toàn)
     if (!user.topup_id) {
-      let tid;
-      let isUsed = true;
-      while (isUsed) {
-        tid = Math.floor(100000000 + Math.random() * 900000000);
-        const check = await db.users.getByTopupId(tid);
-        if (!check) isUsed = false;
+      try {
+        let tid;
+        let isUsed = true;
+        let attempts = 0;
+        while (isUsed && attempts < 5) {
+          tid = Math.floor(100000000 + Math.random() * 900000000);
+          const check = await db.users.getByTopupId(tid);
+          if (!check) isUsed = false;
+          attempts++;
+        }
+        if (tid) {
+          user = await db.users.update(user.id, { topup_id: tid });
+        }
+      } catch (err) {
+        console.log('[BANK] Login: Skip topup_id assignment, column might be missing');
       }
-      user = await db.users.update(user.id, { topup_id: tid });
     }
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
