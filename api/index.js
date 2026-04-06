@@ -617,19 +617,27 @@ router.post('/internal/bank-sync', async (req, res) => {
 
     // Phân tích Mã nạp (LUMIE ID) từ nội dung thô
     let finalMemo = typeof memo === 'string' ? memo : String(memo || '');
-    const memoMatch = finalMemo.toUpperCase().match(/LUMIE\s+(\d+)/);
+    // Regex linh hoạt hơn: Chấp nhận cả số và chuỗi UUID có gạch ngang
+    const memoMatch = finalMemo.toUpperCase().match(/LUMIE\s+([A-Z0-9-]+)/); 
     const identifier = memoMatch ? memoMatch[1] : null;
 
     if (!identifier || !finalAmount || isNaN(parseInt(finalAmount))) {
       console.log(`[BANK_SYNC_ERROR] Parser failed: Amt=${finalAmount}, ID=${identifier}`);
       return res.status(400).json({ 
         message: 'Không tìm thấy tiền hoặc mã nạp trong thông báo',
-        debug: { amount, memo }
+        debug: { identifier, finalAmount }
       });
     }
 
     // 4. Tìm người dùng
-    const user = await db.users.getById(parseInt(identifier));
+    let user = null;
+    // Thử tìm theo ID trước (vì mã nạp hiện tại gắn với ID)
+    user = await db.users.getById(identifier);
+    
+    // Nếu không tìm thấy theo ID, tìm theo username (làm phương án dự phòng)
+    if (!user) {
+      user = await db.users.getByUsername(identifier);
+    }
     if (!user) {
       console.log(`[BANK] User ${identifier} not found`);
       return res.status(404).json({ message: 'User (Mã nạp) không tồn tại' });
