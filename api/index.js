@@ -1250,7 +1250,15 @@ const refreshRankingsInBackground = async () => {
 // Initial run
 refreshRankingsInBackground();
 
-router.get('/stats/vip-rankings', async (req, res) => {
+// Middleware to disable caching for stats
+const noCache = (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+};
+
+router.get('/stats/vip-rankings', noCache, async (req, res) => {
   // If cache is older than 5 minutes, trigger a background refresh but return old data instantly
   const now = Date.now();
   if (now - rankingCache.lastUpdated > 5 * 60 * 1000) {
@@ -1259,10 +1267,10 @@ router.get('/stats/vip-rankings', async (req, res) => {
   res.json(rankingCache.data);
 });
 
-router.get('/stats/recent-activity', async (req, res) => {
+router.get('/stats/recent-activity', noCache, async (req, res) => {
   try {
-    const orders = await db.orders.getAll().catch(() => []);
-    const feedbacks = await db.feedbacks.getAll().catch(() => []);
+    const orders = await supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(50).then(res => res.data || []);
+    const feedbacks = await supabase.from('feedbacks').select('*').order('created_at', { ascending: false }).limit(50).then(res => res.data || []);
 
     const activity = [
       ...(orders || []).slice(0, 15).map(o => ({ 
@@ -1355,7 +1363,7 @@ router.get('/settings/public', async (req, res) => {
   }
 });
 
-router.get('/stats', async (req, res) => {
+router.get('/stats', noCache, async (req, res) => {
   try {
     const feedbacks = await db.feedbacks.getAll().catch(() => []);
     const count = (feedbacks || []).length;

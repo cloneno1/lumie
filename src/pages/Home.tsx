@@ -49,38 +49,47 @@ const Home: React.FC = () => {
         });
         showNotification('Cảm ơn bạn đã ủng hộ Lumie Store! ❤️ Đóng góp của bạn rất có ý nghĩa.', 'success');
         refreshUser();
-        fetchStats(); // Refresh activity feed
+        fetchStats(true); // Silent refresh
       } catch (err: any) {
         showNotification(err.response?.data?.message || 'Có lỗi xảy ra khi thực hiện.', 'error');
       }
     }
   };
 
-  const fetchStats = async () => {
+  const fetchStats = async (silent = false) => {
     try {
-      setLoadingStats(true);
-      const [statsRes, rankRes, activityRes] = await Promise.all([
+      if (!silent) setLoadingStats(true);
+      
+      const results = await Promise.allSettled([
         api.get('/stats'),
         api.get('/stats/vip-rankings'),
         api.get('/stats/recent-activity')
       ]);
+
+      const statsRes = results[0].status === 'fulfilled' ? results[0].value : { data: { totalFeedbacks: 5000 } };
+      const rankRes = results[1].status === 'fulfilled' ? results[1].value : { data: { total: [], monthly: [], weekly: [] } };
+      const activityRes = results[2].status === 'fulfilled' ? results[2].value : { data: [] };
       
-      setStats(rankRes.data);
-      setTopRechargers(rankRes.data[leaderboardType] || []);
-      setRecentActivity(activityRes.data);
+      const rankData = rankRes.data || { total: [], monthly: [], weekly: [] };
+      setStats(rankData);
+      setTopRechargers(rankData[leaderboardType] || []);
+      setRecentActivity(activityRes.data || []);
       
-      if (statsRes.data.totalFeedbacks) {
+      if (statsRes.data?.totalFeedbacks) {
         setFeedbackCount(statsRes.data.totalFeedbacks.toLocaleString() + '+');
       }
     } catch (err) {
-      console.error('Lỗi tải thống kê:', err);
+      console.error('Lỗi khi tải thống kê:', err);
     } finally {
-      setLoadingStats(false);
+      if (!silent) setLoadingStats(false);
     }
   };
 
   useEffect(() => {
     fetchStats();
+    // Refresh stats every 5 mins silently
+    const interval = setInterval(() => fetchStats(true), 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // Instant switch without re-fetching
@@ -318,25 +327,30 @@ const Home: React.FC = () => {
               <Trophy size={40} color="#f59e0b" style={{ marginBottom: '16px' }} />
               <h3 style={{ fontSize: '1.4rem', marginBottom: '16px', color: '#f59e0b' }}>BẢNG VINH DANH</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {stats?.total?.slice(0, 5).map((u: any, idx: number) => (
-                  <div key={idx} style={{ 
-                    display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', 
-                    background: 'rgba(255,255,255,0.02)', borderRadius: '12px',
-                    border: idx === 0 ? '1px solid rgba(245,158,11,0.2)' : 'none'
-                  }}>
-                    <div style={{ 
-                      width: '24px', height: '24px', borderRadius: '6px', 
-                      background: idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                      fontWeight: 'bold', fontSize: '10px', color: '#000'
+                {loadingStats ? (
+                  [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '40px', borderRadius: '12px' }}></div>)
+                ) : stats?.total?.length > 0 ? (
+                  stats.total.slice(0, 5).map((u: any, idx: number) => (
+                    <div key={idx} style={{ 
+                      display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', 
+                      background: 'rgba(255,255,255,0.02)', borderRadius: '12px',
+                      border: idx === 0 ? '1px solid rgba(245,158,11,0.2)' : 'none'
                     }}>
-                      {idx + 1}
+                      <div style={{ 
+                        width: '24px', height: '24px', borderRadius: '6px', 
+                        background: idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        fontWeight: 'bold', fontSize: '10px', color: '#000'
+                      }}>
+                        {idx + 1}
+                      </div>
+                      <div style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: '13px' }}>{u.username}</div>
+                      <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700 }}>{u.amount.toLocaleString()}đ</div>
                     </div>
-                    <div style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: '13px' }}>{u.username}</div>
-                    <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700 }}>{u.amount.toLocaleString()}đ</div>
-                  </div>
-                ))}
-                {!stats?.total?.length && <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Chưa có dữ liệu</p>}
+                  ))
+                ) : (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Chưa có dữ liệu</p>
+                )}
               </div>
             </div>
           </div>
