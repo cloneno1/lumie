@@ -666,7 +666,9 @@ router.post('/callback/gachthe1s', async (req, res) => {
           const newBalance = (user.balance || 0) + rechargeAmt;
           const newVipPoints = (user.vip_points || 0) + rechargeAmt;
           const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
-          const newVipLevel = calculateVipLevel(newVipPoints);
+          const { currentLevelData } = calculateVipLevel(newVipPoints);
+          const newVipLevel = currentLevelData.level;
+          rankingCache.lastUpdated = 0; // Clear leaderboard cache on success🛡️⚡🏆✨
           
           try {
             await db.users.update(user.id, { 
@@ -773,7 +775,9 @@ router.post('/internal/bank-sync', async (req, res) => {
     const newBalance = (user.balance || 0) + rechargeAmt;
     const newVipPoints = (user.vip_points || 0) + rechargeAmt;
     const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
-    const newVipLevel = calculateVipLevel(newVipPoints);
+    const { currentLevelData } = calculateVipLevel(newVipPoints);
+    const newVipLevel = currentLevelData.level;
+    rankingCache.lastUpdated = 0; // Clear leaderboard cache on success🛡️⚡🏆✨
     
     try {
       await db.users.update(user.id, { 
@@ -1149,7 +1153,7 @@ let rankingCache = { data: null, lastUpdated: 0 };
 
 router.get('/stats/vip-rankings', async (req, res) => {
   try {
-    const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+    const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes
     const now = Date.now();
 
     // Return cached if still valid
