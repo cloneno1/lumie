@@ -53,7 +53,6 @@ const TopUpHistory: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
-                  <th style={{ textAlign: 'left', padding: '16px' }}>Mã nạp</th>
                   <th style={{ textAlign: 'left', padding: '16px' }}>Nhà mạng</th>
                   <th style={{ textAlign: 'left', padding: '16px' }}>Mệnh giá</th>
                   <th style={{ textAlign: 'left', padding: '16px' }}>Số dư nhận</th>
@@ -64,7 +63,6 @@ const TopUpHistory: React.FC = () => {
               <tbody>
                 {transactions.map((tx) => (
                   <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>{tx.request_id}</td>
                     <td style={{ padding: '16px', fontWeight: 600 }}>{tx.telco}</td>
                     <td style={{ padding: '16px' }}>{tx.amount.toLocaleString()}đ</td>
                     <td style={{ padding: '16px', color: 'var(--accent-primary)', fontWeight: 700 }}>+{tx.amount.toLocaleString()}đ</td>
