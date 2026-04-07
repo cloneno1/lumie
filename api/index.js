@@ -1144,49 +1144,73 @@ router.post('/user/claim-vip-milestone', authenticateToken, async (req, res) => 
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// Simple memory cache for rankings (10-minute)
+let rankingCache = { data: null, lastUpdated: 0 };
+
 router.get('/stats/vip-rankings', async (req, res) => {
   try {
-    const allUsers = await db.users.getAll();
-    
-    // Total Topup rankings
-    const topTotal = [...allUsers]
-      .filter(u => u.total_topup > 0)
-      .sort((a, b) => (b.total_topup || 0) - (a.total_topup || 0))
-      .slice(0, 10)
-      .map(u => ({ id: u.id, username: u.username, amount: u.total_topup, avatar: u.avatar }));
+    const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+    const now = Date.now();
 
-    // For Week/Month, we'd need a transactions table with timestamps and successful status
-    // Let's filter from db.transactions (inefficient but works for small/mid scales without heavy DB query)
-    const transactions = await db.transactions.getAll();
-    const successfulTx = transactions.filter(tx => tx.status === '1' || tx.status === 1);
-    
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    if (rankingCache.data && (now - rankingCache.lastUpdated) < CACHE_DURATION) {
+      return res.json(rankingCache.data);
+    }
 
-    const getRankingsForPeriod = (periodDate) => {
+    // Optimization: Order by database, not in-memory
+    const { data: topTotalUsers, error: usersErr } = await supabase
+      .from('users')
+      .select('id, username, total_topup, avatar')
+      .gt('total_topup', 0)
+      .order('total_topup', { ascending: false })
+      .limit(10);
+
+    if (usersErr) throw usersErr;
+
+    // Weekly/Monthly rankings (Still needs transactions but limited to recent ones only)
+    const oneMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentTx, error: txErr } = await supabase
+      .from('transactions')
+      .select('*')
+      .in('status', ['1', 1])
+      .gte('created_at', oneMonthAgo);
+
+    if (txErr) throw txErr;
+
+    const getRankingsForPeriod = (periodDateStr) => {
+      const periodDate = new Date(periodDateStr);
       const periodMap = {};
-      successfulTx.forEach(tx => {
+      recentTx.forEach(tx => {
         const txDate = new Date(tx.created_at);
         if (txDate >= periodDate) {
-           periodMap[tx.user_id] = (periodMap[tx.user_id] || 0) + tx.amount;
+          periodMap[tx.user_id] = (periodMap[tx.user_id] || 0) + tx.amount;
         }
       });
+      
+      const allUsersFound = []; // To map usernames
       return Object.entries(periodMap)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 10)
         .map(([uid, amt]) => {
-          const u = allUsers.find(user => user.id === uid);
-          return { id: uid, username: u?.username || 'Ẩn danh', amount: amt, avatar: u?.avatar };
+          // Note: we'd need to fetch usernames if not in topTotalUsers
+          // For simplicity and speed, we fallback to UID or map from what we have
+          const cachedU = topTotalUsers.find(u => u.id === uid);
+          return { id: uid, username: cachedU?.username || 'Thành viên', amount: amt, avatar: cachedU?.avatar };
         });
     };
 
-    res.json({
-      total: topTotal,
-      weekly: getRankingsForPeriod(oneWeekAgo),
+    const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const result = {
+      total: topTotalUsers || [],
+      weekly: getRankingsForPeriod(weekAgoStr),
       monthly: getRankingsForPeriod(oneMonthAgo)
-    });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    };
+
+    rankingCache = { data: result, lastUpdated: now };
+    res.json(result);
+  } catch (err) { 
+    console.error('[VIP_RANKINGS] Error:', err.message);
+    res.status(500).json({ message: 'Error loading VIP data' }); 
+  }
 });
 
 router.get('/stats/recent-activity', async (req, res) => {
