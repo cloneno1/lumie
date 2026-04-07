@@ -1223,7 +1223,18 @@ app.post('/api/upload-proof', authenticateToken, orderUpload.single('file'), asy
 // API: SETTINGS
 // ==========================================
 router.get('/settings', authenticateAdmin, async (req, res) => {
-  try { res.json(await db.settings.getAll()); } catch (err) { res.status(500).json({ message: 'Error' }); }
+  try {
+    let settings = await db.settings.getAll();
+    if (settings.length === 0) {
+      // Auto-initialize defaults if empty
+      await db.settings.update('roblox_group_link', 'https://www.roblox.com/groups/33719487');
+      await db.settings.update('robux_tutorial_link', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+      settings = await db.settings.getAll();
+    }
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ message: 'Error' });
+  }
 });
 
 router.get('/settings/public', async (req, res) => {

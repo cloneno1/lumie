@@ -417,9 +417,9 @@ const AdminDashboard: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                  <th style={{ padding: '20px' }}>Request ID</th>
+                  <th style={{ padding: '20px' }}>Mã GD / ID</th>
                   <th style={{ padding: '20px' }}>User</th>
-                  <th style={{ padding: '20px' }}>Nhà mạng</th>
+                  <th style={{ padding: '20px' }}>Loại / Nhà mạng</th>
                   <th style={{ padding: '20px' }}>Số tiền</th>
                   <th style={{ padding: '20px' }}>Trạng thái</th>
                   <th style={{ padding: '20px' }}>Thời gian</th>
@@ -427,9 +427,9 @@ const AdminDashboard: React.FC = () => {
               </thead>
               <tbody>
                 {transactions.map(tx => (
-                  <tr key={tx.request_id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                    <td style={{ padding: '20px', fontSize: '12px' }}>{tx.request_id}</td>
-                    <td style={{ padding: '20px', fontWeight: '600' }}>{(tx.user_id || tx.userId || '').slice(0,8)}</td>
+                  <tr key={tx.request_id || tx.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                    <td style={{ padding: '20px', fontSize: '11px', color: 'var(--text-muted)' }}>{tx.request_id || 'GIAO DICH BANK'}</td>
+                    <td style={{ padding: '20px', fontWeight: '600' }}>{tx.username || (tx.user_id || tx.userId || '').slice(0,8)}</td>
                     <td style={{ padding: '20px' }}>{tx.telco}</td>
                     <td style={{ padding: '20px', fontWeight: '700' }}>{tx.amount.toLocaleString()}đ</td>
                     <td style={{ padding: '20px' }}>
