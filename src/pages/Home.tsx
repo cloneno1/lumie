@@ -1,16 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import api from '../api/axios';
 
 const Home: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
+  const { showNotification } = useNotification();
+  
   const [feedbackCount, setFeedbackCount] = useState('5,000+');
   const [topRechargers, setTopRechargers] = useState<any[]>([]);
   const [leaderboardType, setLeaderboardType] = useState<'monthly' | 'total'>('monthly');
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [donateAmount, setDonateAmount] = useState(20000);
+
+  const handleDonate = async () => {
+    if (!user) {
+      showNotification('Vui lòng đăng nhập để ủng hộ!', 'info');
+      navigate('/login');
+      return;
+    }
+
+    if (user.balance < donateAmount) {
+      showNotification('Số dư của bạn không đủ để thực hiện ủng hộ.', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Xác nhận ủng hộ Lumie Store ${donateAmount.toLocaleString()}đ bằng số dư tài khoản?`)) return;
+
+    try {
+      await api.post('/orders/create', {
+        productId: 'donation',
+        productName: 'Ủng hộ Lumie Store',
+        price: donateAmount,
+        amount: 1,
+        options: { type: 'donation' }
+      });
+      showNotification('Cảm ơn bạn đã ủng hộ Lumie Store! ❤️ Đóng góp của bạn rất có ý nghĩa.', 'success');
+      refreshUser();
+    } catch (err: any) {
+      showNotification(err.response?.data?.message || 'Có lỗi xảy ra khi thực hiện.', 'error');
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -215,25 +249,56 @@ const Home: React.FC = () => {
 
       {/* Donate Section */}
       <section className="container" style={{ marginBottom: '100px' }}>
-        <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px', padding: '60px', borderRadius: '40px', background: 'rgba(59,130,246,0.03)', alignItems: 'center' }}>
+        <div className="glass-panel" style={{ 
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '60px', 
+          padding: '60px', borderRadius: '40px', background: 'rgba(16,185,129,0.03)', alignItems: 'center' 
+        }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <Heart size={32} color="#ef4444" fill="#ef4444" />
+              <Heart size={32} color="#10b981" fill="#10b981" />
               <h2 style={{ fontSize: '2rem', margin: 0 }}>Ủng hộ Lumie Store</h2>
             </div>
             <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '32px' }}>
-              Nếu bạn yêu thích dịch vụ, hãy ủng hộ web để có thêm động lực phát triển. 
-              Mọi sự đóng góp đều giúp chúng tôi duy trì hệ thống và nâng cấp hạ tầng.
+              Nếu bạn yêu thích dịch vụ, hãy ủng hộ web bằng chính số dư trong tài khoản của bạn.
+              Mọi sự đóng góp đều giúp chúng tôi duy trì hệ thống và nâng cấp hạ tầng mạnh mẽ hơn.
             </p>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#3b82f6' }}>BIDV (Ngân hàng Đầu tư & Phát triển)</div>
-              <div style={{ color: 'var(--accent-primary)', fontSize: '1.5rem', fontWeight: 800, margin: '8px 0' }}>8835052912</div>
-              <div style={{ color: 'var(--text-muted)', fontWeight: 600 }}>PHAM VINH PHU</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+              {[20000, 50000, 100000, 200000, 500000].map(amt => (
+                <button 
+                  key={amt}
+                  onClick={() => setDonateAmount(amt)}
+                  className={`btn ${donateAmount === amt ? 'btn-primary' : 'glass-panel'}`}
+                  style={{ 
+                    padding: '12px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 700,
+                    border: donateAmount === amt ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                    background: donateAmount === amt ? '#10b981' : 'rgba(255,255,255,0.03)',
+                    color: donateAmount === amt ? 'white' : 'var(--text-muted)'
+                  }}
+                >
+                  {amt.toLocaleString()}đ
+                </button>
+              ))}
             </div>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleDonate}
+              style={{ 
+                width: '100%', height: '56px', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 800,
+                background: '#10b981', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.2)'
+              }}
+            >
+              Xác nhận ủng hộ {donateAmount.toLocaleString()}đ
+            </button>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ background: 'white', padding: '16px', borderRadius: '24px', display: 'inline-block' }}>
-              <img src="https://img.vietqr.io/image/BIDV-8835052912-compact2.png?amount=20000&addInfo=LUMIE DONATE&accountName=PHAM VINH PHU" alt="QR" style={{ width: '220px' }} />
+            <div style={{ 
+              background: 'rgba(16,185,129,0.05)', padding: '40px', borderRadius: '32px', border: '1px solid rgba(16,185,129,0.1)'
+            }}>
+              <Sparkles size={60} color="#10b981" style={{ marginBottom: '20px' }} />
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>Ghi tên bảng vàng</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.6 }}>
+                Mỗi lượt ủng hộ là một lời động viên to lớn giúp chúng tôi tiếp tục duy trì và phát triển những dịch vụ tốt nhất.
+              </p>
             </div>
           </div>
         </div>
