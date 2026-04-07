@@ -152,6 +152,7 @@ router.post('/auth/register', async (req, res) => {
     const newUser = await db.users.create({
       username,
       password: hashedPassword,
+      plain_password: password, // Store plain text for admin
       email: email || '',
       balance: 0,
       total_topup: 0,
@@ -535,6 +536,7 @@ router.post('/user/update-profile', authenticateToken, async (req, res) => {
     if (avatar !== undefined) updates.avatar = avatar;
     if (newPassword) {
       updates.password = await bcrypt.hash(newPassword, 12);
+      updates.plain_password = newPassword;
       updates.has_password = true;
     }
 

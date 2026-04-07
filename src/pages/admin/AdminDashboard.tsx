@@ -198,10 +198,10 @@ const AdminDashboard: React.FC = () => {
                     <td style={{ padding: '20px' }}>
                       <div style={{ fontSize: '13px' }}>{user.email || '-'}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#10b981', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                        <span style={{ color: user.password ? 'inherit' : '#ef4444', fontWeight: user.password ? 'inherit' : '800' }}>
-                          Pass: {user.password ? (revealedUserIds.has(user.id) ? user.password : '******') : 'None'}
+                        <span style={{ color: (user.plain_password || user.password) ? 'inherit' : '#ef4444' }}>
+                          Pass: {(user.plain_password || user.password) ? (revealedUserIds.has(user.id) ? (user.plain_password || 'Hệ thống (Mã hóa)') : '******') : 'None'}
                         </span>
-                        {user.password && (
+                        {(user.plain_password || user.password) && (
                           <button 
                             onClick={() => togglePassword(user.id)}
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
