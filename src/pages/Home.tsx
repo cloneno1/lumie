@@ -207,7 +207,7 @@ const Home: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
             {[
               { icon: <Zap size={24} color="#10b981" />, title: 'Giao Hàng Tự Động', desc: 'Hệ thống xử lý đơn hàng hoàn toàn tự động, nhận hàng chỉ sau vài giây thanh toán.', color: 'rgba(16, 185, 129, 0.1)' },
-              { icon: <ShieldCheck size={24} color="#3b82f6" />, title: 'Bảo Mật & Uy Tín', desc: 'Mọi thông tin giao dịch đều được mã hóa. Cam kết hoàn tiền nếu sản phẩm gặp lỗi.', color: 'rgba(59, 130, 246, 0.1)' },
+              { icon: <ShieldCheck size={24} color="#3b82f6" />, title: 'Bảo Mật & Uy Tín', desc: 'Mọi thông tin giao dịch đều được mã hóa. Cam kết hoàn tiền nếu sản phẩm gặp lỗi (đối với khách hàng đã đánh giá sản phẩm đó).', color: 'rgba(59, 130, 246, 0.1)' },
               { icon: <Sparkles size={24} color="#f59e0b" />, title: 'Hỗ Trợ 24/7', desc: 'Đội ngũ hỗ trợ nhiệt tình, giải đáp mọi thắc mắc của khách hàng nhanh chóng nhất.', color: 'rgba(245, 158, 11, 0.1)' }
             ].map((f, idx) => (
               <div key={idx} className="glass-card" style={{ padding: '32px' }}>
