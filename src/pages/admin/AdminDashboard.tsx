@@ -151,7 +151,13 @@ const AdminDashboard: React.FC = () => {
   };
 
   const activeUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));
-  const filteredOrders = orders.filter(o => o.username.toLowerCase().includes(searchTerm.toLowerCase()) || o.id.includes(searchTerm));
+  const filteredOrders = orders.filter(o => {
+    const searchLow = searchTerm.toLowerCase();
+    const uname = (o.username || '').toLowerCase();
+    const oid = String(o.id || '');
+    const pname = (o.product_name || o.productName || '').toLowerCase();
+    return uname.includes(searchLow) || oid.includes(searchLow) || pname.includes(searchLow);
+  });
   
   const togglePassword = (userId: string) => {
     setRevealedUserIds(prev => {
@@ -423,12 +429,12 @@ const AdminDashboard: React.FC = () => {
                 {filteredOrders.map(order => (
                   <tr key={order.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                     <td style={{ padding: '20px' }}>
-                      <div style={{ fontWeight: '600' }}>{order.username}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ID: {order.userId.slice(0,6)}</div>
+                      <div style={{ fontWeight: '600' }}>{order.username || 'N/A'}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ID: {String(order.user_id || order.userId || '').slice(0,8)}</div>
                     </td>
                     <td style={{ padding: '20px' }}>
-                      <div style={{ fontWeight: '600', color: 'var(--accent-primary)' }}>{order.productName}</div>
-                      <div style={{ fontSize: '12px', marginBottom: '8px' }}>SL: {order.amount} - {order.price.toLocaleString()}đ</div>
+                      <div style={{ fontWeight: '600', color: 'var(--accent-primary)' }}>{order.product_name || order.productName}</div>
+                      <div style={{ fontSize: '12px', marginBottom: '8px' }}>SL: {order.amount} - {(order.price || 0).toLocaleString()}đ</div>
                       {order.options && (
                         <div style={{ 
                           fontSize: '11px', background: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '8px',

@@ -469,45 +469,63 @@ function TopUp() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {txHistory.map((tx) => (
-              <div 
-                key={tx.id || tx.request_id}
-                style={{ 
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  padding: '16px 20px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  border: '1px solid rgba(255,255,255,0.03)'
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
-                    {['VCB', 'BIDV', 'BANK'].some(b => tx.telco?.includes(b)) ? `Nạp ${tx.telco}` : `Nạp thẻ ${tx.telco}`}
+            {txHistory.map((tx) => {
+              const isCard = !['VCB', 'BIDV', 'BANK'].some(b => tx.telco?.includes(b));
+              const isSuccess = tx.status === 1 || tx.status === '1';
+              const isPending = tx.status === 99 || tx.status === '99';
+              
+              // Calculate received amount after discount
+              let receivedAmt = parseInt(tx.amount);
+              if (isCard) {
+                const discount = tx.telco === 'GARENA' ? 0 : 0.22;
+                receivedAmt = Math.floor(receivedAmt * (1 - discount));
+              }
+
+              return (
+                <div 
+                  key={tx.id || tx.request_id}
+                  style={{ 
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    padding: '16px 20px',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    border: '1px solid rgba(255,255,255,0.03)'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
+                      {!isCard ? `Nạp ${tx.telco}` : `${tx.telco} - ${parseInt(tx.amount).toLocaleString()}đ`}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {new Date(tx.created_at).toLocaleString('vi-VN')}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    {new Date(tx.created_at).toLocaleString('vi-VN')}
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ 
+                      fontWeight: 700, 
+                      fontSize: '1.1rem', 
+                      color: isSuccess ? '#10b981' : isPending ? '#3b82f6' : 'var(--text-muted)', 
+                      marginBottom: '4px' 
+                    }}>
+                      {isSuccess ? '+' : ''}{receivedAmt.toLocaleString()}đ
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      padding: '4px 10px', 
+                      borderRadius: '20px',
+                      display: 'inline-block',
+                      background: isSuccess ? 'rgba(16, 185, 129, 0.15)' : isPending ? 'rgba(59, 130, 246, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: isSuccess ? '#10b981' : isPending ? '#3b82f6' : '#ef4444',
+                      fontWeight: 600
+                    }}>
+                      {isSuccess ? 'Thành công' : isPending ? 'Đang duyệt' : 'Thất bại'}
+                    </div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'white', marginBottom: '4px' }}>
-                    +{parseInt(tx.amount).toLocaleString()}đ
-                  </div>
-                  <div style={{ 
-                    fontSize: '0.75rem', 
-                    padding: '4px 10px', 
-                    borderRadius: '20px',
-                    display: 'inline-block',
-                    background: tx.status === 1 || tx.status === '1' ? 'rgba(16, 185, 129, 0.15)' : tx.status === 99 || tx.status === '99' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                    color: tx.status === 1 || tx.status === '1' ? '#10b981' : tx.status === 99 || tx.status === '99' ? '#3b82f6' : '#ef4444',
-                    fontWeight: 600
-                  }}>
-                    {tx.status === 1 || tx.status === '1' ? 'Thành công' : tx.status === 99 || tx.status === '99' ? 'Đang xử lý' : 'Thất bại'}
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         <p style={{ marginTop: '20px', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
