@@ -1031,44 +1031,58 @@ router.get('/stats/top-rechargers', async (req, res) => {
 
 router.get('/user/vip-status', authenticateToken, async (req, res) => {
   try {
-    const user = await db.users.getById(req.user.id);
+    const user = await db.users.getById(req.user.id).catch(() => null);
     if (!user) return res.status(404).json({ message: 'User not found' });
     
     // Monthly Gacha Tickets Logic: "Số vip = số vé hàng tháng"
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
-    let updates = {};
     let gachaTickets = user.gacha_tickets || 0;
 
     if (user.last_ticket_month !== currentMonth && (user.vip_level || 0) > 0) {
-      gachaTickets = user.vip_level || 0; // Number of tickets = VIP level
-      updates.gacha_tickets = gachaTickets;
-      updates.last_ticket_month = currentMonth;
-      
-      await db.notifications.create({
-        userId: user.id,
-        title: 'Nhận vé Gacha tháng mới',
-        content: `Chào tháng mới! Bạn đã nhận được ${gachaTickets} vé Gacha dựa trên cấp độ VIP ${user.vip_level}.`,
-        type: 'gacha_ticket'
-      });
-      
-      await db.users.update(user.id, updates);
+      try {
+        gachaTickets = user.vip_level || 0; // Number of tickets = VIP level
+        await db.users.update(user.id, {
+          gacha_tickets: gachaTickets,
+          last_ticket_month: currentMonth
+        });
+        
+        await db.notifications.create({
+          userId: user.id,
+          title: 'Nhận vé Gacha tháng mới',
+          content: `Chào tháng mới! Bạn đã nhận được ${gachaTickets} vé Gacha dựa trên cấp độ VIP ${user.vip_level}.`,
+          type: 'gacha_ticket'
+        }).catch(() => {});
+      } catch (innerErr) { console.error('[VIP_TICKET_ERROR]', innerErr); }
     }
 
-    const nextLevel = VIP_LEVELS.find(v => v.level === (user.vip_level || 0) + 1) || null;
-    const currentLevelData = VIP_LEVELS.find(v => v.level === (user.vip_level || 0));
+    const vipInfo = calculateVipLevel(user.vip_points || 0);
 
     res.json({
       vipLevel: user.vip_level || 0,
       vipPoints: user.vip_points || 0,
       totalTopup: user.total_topup || 0,
       gachaTickets: gachaTickets,
-      nextLevel: nextLevel,
-      currentLevelData: currentLevelData,
-      allLevels: VIP_LEVELS,
+      nextLevel: vipInfo.nextLevel,
+      currentLevelData: vipInfo.currentLevelData,
+      allLevels: vipInfo.allLevels,
       claimedMilestones: user.claimed_milestones || []
     });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { 
+    console.error('[VIP_STATUS_ERROR]', err);
+    // Return Neutral Default instead of 500
+    const neutral = calculateVipLevel(0);
+    res.json({
+      vipLevel: 0,
+      vipPoints: 0,
+      totalTopup: 0,
+      gachaTickets: 0,
+      nextLevel: neutral.nextLevel,
+      currentLevelData: neutral.currentLevelData,
+      allLevels: neutral.allLevels,
+      claimedMilestones: []
+    });
+  }
 });
 
 router.post('/gacha/roll', authenticateToken, async (req, res) => {
