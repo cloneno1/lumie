@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff } from 'lucide-react';
+import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff, Settings as SettingsIcon } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'topups'>('users');
+  const [settings, setSettings] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'topups' | 'settings'>('users');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [revealedUserIds, setRevealedUserIds] = useState<Set<string>>(new Set());
@@ -19,14 +20,16 @@ const AdminDashboard: React.FC = () => {
       // Security: Constructing secret paths to avoid simple string scrapers
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      const [usersRes, ordersRes, transRes] = await Promise.all([
+      const [usersRes, ordersRes, transRes, settingsRes] = await Promise.all([
         api.get(`${a_b}/u-list-s`, adminHeaders),
         api.get(`${a_b}/o-list-s`, adminHeaders),
-        api.get(`${a_b}/t-list-s`, adminHeaders)
+        api.get(`${a_b}/t-list-s`, adminHeaders),
+        api.get(`${a_b}/settings`, adminHeaders)
       ]);
       setUsers(usersRes.data);
       setOrders(ordersRes.data);
       setTransactions(transRes.data);
+      setSettings(settingsRes.data);
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu admin:', error);
     } finally {
@@ -107,6 +110,18 @@ const AdminDashboard: React.FC = () => {
     } catch (err) {
       alert('Lỗi cập nhật vai trò.');
     }
+  };
+
+  const handleUpdateSetting = async (key: string, currentValue: string) => {
+    const newValue = prompt(`Nhập giá trị mới cho ${key}:`, currentValue);
+    if (newValue === null || newValue === currentValue) return;
+    try {
+      const a_b = '/internal' + '-sys-' + 'mz9';
+      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+      await api.post(`${a_b}/settings/update`, { key, value: newValue }, adminHeaders);
+      alert('Cập nhật cài đặt thành công!');
+      fetchData();
+    } catch (err) { alert('Lỗi cập nhật cài đặt.'); }
   };
 
   const activeUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -197,7 +212,8 @@ const AdminDashboard: React.FC = () => {
         {[
           { id: 'users', label: 'Người dùng', icon: <Users size={18} /> },
           { id: 'orders', label: 'Đơn hàng', icon: <ShoppingBag size={18} /> },
-          { id: 'topups', label: 'Nạp thẻ', icon: <CreditCard size={18} /> }
+          { id: 'topups', label: 'Nạp thẻ', icon: <CreditCard size={18} /> },
+          { id: 'settings', label: 'Cấu hình', icon: <SettingsIcon size={18} /> }
         ].map(tab => (
           <button 
             key={tab.id}
@@ -223,6 +239,24 @@ const AdminDashboard: React.FC = () => {
       <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải dữ liệu...</div>
+        ) : activeTab === 'settings' ? (
+          <div style={{ padding: '32px' }}>
+            <h3 style={{ marginBottom: '24px' }}>Cấu hình hệ thống</h3>
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {settings.map(s => (
+                <div key={s.key} className="glass-panel" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>{s.key}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{s.value}</div>
+                  </div>
+                  <button className="btn btn-primary" onClick={() => handleUpdateSetting(s.key, s.value)}>Chỉnh sửa</button>
+                </div>
+              ))}
+              {settings.length === 0 && (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có cấu hình nào. Hãy chạy SQL để khởi tạo.</div>
+              )}
+            </div>
+          </div>
         ) : activeTab === 'users' ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

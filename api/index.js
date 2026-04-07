@@ -1195,6 +1195,25 @@ router.get('/feedbacks', async (req, res) => {
   } catch (err) { res.json([]); }
 });
 
+// ==========================================
+// API: SETTINGS
+// ==========================================
+router.get('/settings', authenticateAdmin, async (req, res) => {
+  try { res.json(await db.settings.getAll()); } catch (err) { res.status(500).json({ message: 'Error' }); }
+});
+
+router.get('/settings/public', async (req, res) => {
+  try { res.json(await db.settings.getAll()); } catch (err) { res.status(500).json({ message: 'Error' }); }
+});
+
+router.post('/settings/update', authenticateAdmin, async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    await db.settings.update(key, value);
+    res.json({ message: 'Cập nhật thành công!' });
+  } catch (err) { res.status(500).json({ message: 'Error' }); }
+});
+
 router.get('/stats', async (req, res) => {
   try {
     const feedbacks = await db.feedbacks.getAll().catch(() => []);

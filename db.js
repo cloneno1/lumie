@@ -191,5 +191,22 @@ export const db = {
       if (error) throw error;
       return data;
     }
+  },
+  settings: {
+    getAll: async () => {
+      const { data, error } = await supabase.from('settings').select('*');
+      if (error) throw error;
+      return data;
+    },
+    getByKey: async (key) => {
+      const { data, error } = await supabase.from('settings').select('*').eq('key', key).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    update: async (key, value) => {
+      const { data, error } = await supabase.from('settings').upsert({ key, value }).select().single();
+      if (error) throw error;
+      return data;
+    }
   }
 };

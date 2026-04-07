@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
-import { Zap, ShieldCheck, Headphones, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Zap, ShieldCheck, Headphones, Image as ImageIcon, Loader2, Play } from 'lucide-react';
 
 const RobuxGamepass: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -16,9 +16,20 @@ const RobuxGamepass: React.FC = () => {
   const [gamepassLink, setGamepassLink] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tutorialLink, setTutorialLink] = useState('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/settings/public');
+        const link = res.data.find((s: any) => s.key === 'robux_tutorial_link')?.value;
+        if (link) setTutorialLink(link);
+      } catch (err) { console.error('Error fetching settings'); }
+    };
+    fetchSettings();
+  }, []);
 
   const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * RATE : 0;
-
   const quickPackages = [100, 500, 1000, 2000, 5000, 10000];
 
   const handleBuy = async () => {
@@ -99,7 +110,7 @@ const RobuxGamepass: React.FC = () => {
               />
               <span style={{ 
                 position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)',
-                color: '#ef4444', fontWeight: 800, fontSize: '1.2rem'
+                color: '#10b981', fontWeight: 800, fontSize: '1.2rem'
               }}>R$</span>
             </div>
             <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
@@ -110,7 +121,7 @@ const RobuxGamepass: React.FC = () => {
           {/* Quick Package Section */}
           <div>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '24px', fontWeight: 700 }}>Hoặc chọn gói nhanh</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               {quickPackages.map(pkg => (
                 <div 
                   key={pkg}
@@ -118,11 +129,11 @@ const RobuxGamepass: React.FC = () => {
                   className="glass-card robux-pkg-card"
                   style={{ 
                     padding: '24px', textAlign: 'center', cursor: 'pointer',
-                    transition: 'all 0.2s', border: robuxAmount === pkg ? '2px solid #ef4444' : '1px solid rgba(255,255,255,0.05)',
-                    background: robuxAmount === pkg ? 'rgba(239, 68, 68, 0.05)' : 'rgba(255,255,255,0.02)'
+                    transition: 'all 0.2s', border: robuxAmount === pkg ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.05)',
+                    background: robuxAmount === pkg ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255,255,255,0.02)'
                   }}
                 >
-                  <div style={{ color: '#ef4444', fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>
+                  <div style={{ color: '#10b981', fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>
                     {pkg.toLocaleString()} <span style={{ fontSize: '1rem' }}>R$</span>
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600 }}>
@@ -131,6 +142,20 @@ const RobuxGamepass: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* Tutorial Section */}
+            <a href={tutorialLink} target="_blank" rel="noopener noreferrer" className="glass-card" style={{ 
+              display: 'flex', alignItems: 'center', gap: '20px', padding: '24px', 
+              textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(16, 185, 129, 0.2)'
+            }} onMouseOver={(e) => e.currentTarget.style.borderColor = '#10b981'} onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.2)'}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: '16px', color: '#10b981' }}>
+                <Play size={32} />
+              </div>
+              <div style={{ flexGrow: 1 }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: '1.1rem', color: 'white' }}>Hướng dẫn tạo Gamepass Roblox</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-muted)' }}>Xem video hướng dẫn chi tiết cách tạo gamepass để nhận Robux</p>
+              </div>
+            </a>
           </div>
         </div>
 
@@ -192,11 +217,11 @@ const RobuxGamepass: React.FC = () => {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Số lượng:</span>
-                <span style={{ fontWeight: 800, color: '#ef4444' }}>{Number(robuxAmount).toLocaleString()} R$</span>
+                <span style={{ fontWeight: 800, color: '#10b981' }}>{Number(robuxAmount).toLocaleString()} R$</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Tổng thanh toán:</span>
-                <span style={{ fontWeight: 900, fontSize: '1.2rem', color: '#ef4444' }}>{totalPrice.toLocaleString()} VNĐ</span>
+                <span style={{ fontWeight: 900, fontSize: '1.2rem', color: '#10b981' }}>{totalPrice.toLocaleString()} VNĐ</span>
               </div>
             </div>
 
@@ -205,9 +230,9 @@ const RobuxGamepass: React.FC = () => {
               onClick={handleBuy}
               disabled={loading}
               style={{ 
-                height: '56px', borderRadius: '16px', background: '#f43f5e', 
+                height: '56px', borderRadius: '16px', background: '#10b981', 
                 border: 'none', fontSize: '1.1rem', fontWeight: 800,
-                boxShadow: '0 10px 25px rgba(244, 63, 94, 0.3)'
+                boxShadow: '0 10px 25px rgba(16, 185, 129, 0.3)'
               }}
             >
               {loading ? <Loader2 size={24} className="spin" /> : 'Thanh Toán Ngay'}
