@@ -418,7 +418,7 @@ const AdminDashboard: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
-                  <th style={{ padding: '20px' }}>User</th>
+                  <th style={{ padding: '20px' }}>Tên tài khoản</th>
                   <th style={{ padding: '20px' }}>Sản phẩm</th>
                   <th style={{ padding: '20px' }}>Tổng tiền</th>
                   <th style={{ padding: '20px' }}>Trạng thái</th>
@@ -484,7 +484,7 @@ const AdminDashboard: React.FC = () => {
               <thead>
                 <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
                   <th style={{ padding: '20px' }}>Mã GD / ID</th>
-                  <th style={{ padding: '20px' }}>User</th>
+                  <th style={{ padding: '20px' }}>Tên tài khoản</th>
                   <th style={{ padding: '20px' }}>Loại / Nhà mạng</th>
                   <th style={{ padding: '20px' }}>Số tiền</th>
                   <th style={{ padding: '20px' }}>Trạng thái</th>
@@ -495,7 +495,13 @@ const AdminDashboard: React.FC = () => {
                 {transactions.map(tx => (
                   <tr key={tx.request_id || tx.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                     <td style={{ padding: '20px', fontSize: '11px', color: 'var(--text-muted)' }}>{tx.request_id || 'GIAO DICH BANK'}</td>
-                    <td style={{ padding: '20px', fontWeight: '600' }}>{tx.username || (tx.user_id || tx.userId || '').slice(0,8)}</td>
+                    <td style={{ padding: '20px', fontWeight: '600' }}>
+                      {(() => {
+                        const uid = tx.user_id || tx.userId;
+                        const u = users.find(u => u.id === uid);
+                        return u ? u.username : (uid || '').slice(0,8);
+                      })()}
+                    </td>
                     <td style={{ padding: '20px' }}>{tx.telco}</td>
                     <td style={{ padding: '20px', fontWeight: '700' }}>{tx.amount.toLocaleString()}đ</td>
                     <td style={{ padding: '20px' }}>
