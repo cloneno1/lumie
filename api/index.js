@@ -1220,9 +1220,10 @@ app.post('/api/upload-proof', authenticateToken, orderUpload.single('file'), asy
 });
 
 // ==========================================
-// API: SETTINGS
+// API: SETTINGS (ADMIN ONLY)
 // ==========================================
-router.get('/settings', authenticateAdmin, async (req, res) => {
+
+router.get(`${ADMIN_BASE}/settings`, authenticateAdmin, async (req, res) => {
   try {
     let settings = await db.settings.getAll();
     if (settings.length === 0) {
@@ -1237,6 +1238,15 @@ router.get('/settings', authenticateAdmin, async (req, res) => {
   }
 });
 
+router.post(`${ADMIN_BASE}/settings/update`, authenticateAdmin, async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    await db.settings.update(key, value);
+    res.json({ message: 'Cập nhật thành công!' });
+  } catch (err) { res.status(500).json({ message: 'Error' }); }
+});
+
+// For frontend displays
 router.get('/settings/public', async (req, res) => {
   try {
     const gl = await db.settings.getByKey('roblox_group_link').catch(() => null);
@@ -1251,14 +1261,6 @@ router.get('/settings/public', async (req, res) => {
       robux_tutorial_link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     });
   }
-});
-
-router.post('/settings/update', authenticateAdmin, async (req, res) => {
-  try {
-    const { key, value } = req.body;
-    await db.settings.update(key, value);
-    res.json({ message: 'Cập nhật thành công!' });
-  } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
 router.get('/stats', async (req, res) => {
