@@ -842,13 +842,16 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
 
     if (!user || user.balance < price * amount) return res.status(400).json({ message: 'Số dư không đủ.' });
 
-    const order = await db.orders.create({
-      userId, username: user.username, productId, productName, price,
-      amount, options, total: price * amount, status: 'completed'
-    });
-
     const spent = price * amount;
     const isDonation = productId === 'donation' || options?.type === 'donation';
+    
+    // Only set 'completed' for donations automatically
+    const status = isDonation ? 'completed' : 'pending';
+
+    const order = await db.orders.create({
+      userId, username: user.username, productId, productName, price,
+      amount, options, total: spent, status
+    });
     
     const updates = { 
       balance: user.balance - spent 
