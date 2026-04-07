@@ -641,9 +641,18 @@ router.post('/topup-card', authenticateToken, async (req, res) => {
     const signString = PARTNER_KEY + code + command + PARTNER_ID + request_id + serial + telco.toUpperCase();
     const sign = crypto.createHash('md5').update(signString).digest('hex');
 
-    const response = await axios.post('https://gachthe1s.com/chargingws/v2', {
-      telco: telco.toUpperCase(), code: code.trim(), serial: serial.trim(),
-      amount: numAmount, request_id, partner_id: PARTNER_ID, sign, command
+    // Use GET for submission to gachthe1s V2 as it is more reliable
+    const response = await axios.get('https://gachthe1s.com/chargingws/v2', {
+      params: {
+        telco: telco.toUpperCase(),
+        code: code.trim(),
+        serial: serial.trim(),
+        amount: numAmount,
+        request_id,
+        partner_id: PARTNER_ID,
+        sign,
+        command
+      }
     });
 
     await db.transactions.create({
@@ -656,30 +665,23 @@ router.post('/topup-card', authenticateToken, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-router.post('/callback/gachthe1s', async (req, res) => {
+// Unified callback handler for both POST and GET
+const handleGachthe1sCallback = async (req, res) => {
   try {
-    // Collect possible parameter names from different providers/versions
-    const request_id = req.body.request_id || req.body.requestId || req.body.content || req.query.request_id;
-    const status = req.body.status;
-    const amount = req.body.amount || req.body.value || req.body.declared_value;
-    const callback_sign = req.body.callback_sign || req.body.sign;
-
+    // Combine body and query to support both POST and GET callbacks
+    const data = { ...req.query, ...req.body };
+    const request_id = data.request_id || data.requestId || data.content;
+    const status = data.status;
+    const amount = data.amount || data.value || data.declared_value;
+    
     console.log(`[CALLBACK_RECEIVED] ID: ${request_id}, Status: ${status}, Amount: ${amount}`);
     
-    if (!request_id) {
-      return res.status(400).json({ message: 'Missing request_id' });
-    }
-
-    // SECURITY: Verify callback signature (Optional but recommended)
-    // if (!callback_sign) {
-    //   console.error('SEC-WARN: Callback received without signature!');
-    //   return res.status(401).json({ message: 'Missing signature' });
-    // }
-
-    // Update transaction status in DB
+    if (!request_id) return res.status(400).json({ message: 'Missing request_id' });
+    
+    // Update status mapping regardless of value type (string vs number)
     await db.transactions.update(request_id, { 
       status: status, 
-      callback_data: req.body, 
+      callback_data: data, 
       callback_at: new Date().toISOString() 
     });
     
@@ -742,7 +744,10 @@ router.post('/callback/gachthe1s', async (req, res) => {
     console.error('[CALLBACK_ERROR]', err.message);
     res.status(500).json({ message: err.message }); 
   }
-});
+};
+
+router.post('/callback/gachthe1s', handleGachthe1sCallback);
+router.get('/callback/gachthe1s', handleGachthe1sCallback);
 
 // ==========================================
 // API: AUTO BANKING SYNC (Email Watcher)
