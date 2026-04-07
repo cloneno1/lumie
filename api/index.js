@@ -1211,92 +1211,65 @@ const refreshRankingsInBackground = async () => {
   
   try {
     const now = Date.now();
-    // 1. Fetch Top Users (Total)
-    let topTotalUsers = [];
-    try {
-      const { data } = await supabase
-        .from('users')
-        .select('id, username, total_topup, avatar')
-        .gt('total_topup', 0)
-        .order('total_topup', { ascending: false })
-        .limit(50);
-      topTotalUsers = data || [];
-    } catch (e) { console.error('[BG_QUERY_TOTAL] Error:', e); }
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
 
-    // 2. Fetch Recent Transactions
-    let recentTx = [];
-    const oneMonthAgo = new Date(now - 31 * 24 * 60 * 60 * 1000).toISOString();
-    try {
-      const { data } = await supabase
-        .from('transactions')
-        .select('user_id, amount, created_at')
-        .in('status', ['1', 1])
-        .gte('created_at', oneMonthAgo);
-      recentTx = data || [];
-    } catch (e) { console.error('[BG_QUERY_TX] Error:', e); }
+    // 1. Fetch EVERYTHING needed for accurate aggregation
+    const [txRes, orderRes, userRes] = await Promise.all([
+      supabase.from('transactions').select('*').in('status', ['1', 1]),
+      supabase.from('orders').select('*').eq('status', 'completed').eq('product_id', 'donation'),
+      supabase.from('users').select('id, username, avatar, total_topup')
+    ]);
 
-    // 3. Find missing names
-    const monthlyUids = Object.entries(recentTx.reduce((acc, tx) => {
-      acc[tx.user_id] = (acc[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
-      return acc;
-    }, {})).sort(([,a],[,b]) => b - a).slice(0, 10).map(([uid]) => uid);
-
-    const missingUids = monthlyUids.filter(uid => !topTotalUsers.find(ut => ut.id === uid));
-    if (missingUids.length > 0) {
-      try {
-        const { data: missingUsers } = await supabase.from('users').select('id, username, avatar').in('id', missingUids);
-        if (missingUsers) topTotalUsers = [...topTotalUsers, ...missingUsers];
-      } catch (e) { }
-    }
-
+    const txData = txRes.data || [];
+    const donationData = orderRes.data || [];
+    const userData = userRes.data || [];
+    
     const nameMap = {};
-    topTotalUsers.forEach(u => { nameMap[u.id] = u; });
+    userData.forEach(u => { nameMap[u.id] = { username: u.username, avatar: u.avatar, total_topup: u.total_topup || 0 }; });
 
-    const getRankingsForPeriod = (periodDateStr) => {
-      const pDate = new Date(periodDateStr);
-      const pMap = {};
-      recentTx.forEach(tx => {
-        if (new Date(tx.created_at) >= pDate) {
-          pMap[tx.user_id] = (pMap[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
-        }
+    const aggregateRanking = (records, filterFn = null) => {
+      const map = {};
+      records.forEach(r => {
+        const time = new Date(r.created_at).getTime();
+        if (filterFn && !filterFn(time)) return;
+        const uid = r.user_id || r.userId;
+        if (!uid) return;
+        map[uid] = (map[uid] || 0) + (parseInt(r.amount) || parseInt(r.total) || 0);
       });
-      return Object.entries(pMap).sort(([, a], [, b]) => b - a).slice(0, 10).map(([uid, amt]) => {
-        const u = nameMap[uid];
-        return { 
-          id: uid, username: u?.username || 'Gấu Lumie', 
-          amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` 
-        };
-      });
+      return map;
     };
 
-    // 4. Fetch Top Donors ( productId='donation' )
-    let topDonors = [];
-    try {
-      const { data: donorData } = await supabase
-        .from('orders')
-        .select('user_id, username, total')
-        .eq('product_id', 'donation');
-        
-      const donorMap = {};
-      (donorData || []).forEach(d => {
-        donorMap[d.user_id] = (donorMap[d.user_id] || 0) + (d.total || 0);
-      });
-      
-      topDonors = Object.entries(donorMap).sort(([, a], [, b]) => b - a).slice(0, 10).map(([uid, amt]) => {
-        const u = nameMap[uid];
-        return { 
-          id: uid, username: u?.username || 'Ẩn danh', 
-          amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` 
-        };
-      });
-    } catch (e) { console.error('[BG_QUERY_DONORS] Error:', e); }
+    // Combine Tx and Donations for accurate time-based boards
+    const allRecords = [...txData, ...donationData];
+    
+    // For "Total", we use the user's total_topup column BUT we ensure it's at least as high as current transactions
+    const totalMap = aggregateRanking(allRecords);
+    const weeklyMap = aggregateRanking(allRecords, (t) => t >= weekAgo);
+    const monthlyMap = aggregateRanking(allRecords, (t) => t >= monthAgo);
 
-    const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const mapToRankList = (map) => {
+      return Object.entries(map)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10) // Only top 10
+        .map(([uid, amt]) => {
+          const u = nameMap[uid];
+          return { id: uid, username: u?.username || 'Ẩn danh', amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` };
+        });
+    };
+
+    // For the "Total" board specifically, we prioritize the aggregated total if higher than DB column
+    const finalTotalList = Object.entries(nameMap).map(([uid, u]) => {
+      const aggAmt = totalMap[uid] || 0;
+      const dbAmt = u.total_topup || 0;
+      return { id: uid, username: u.username, amount: Math.max(aggAmt, dbAmt), avatar: u.avatar };
+    }).sort((a, b) => b.amount - a.amount).slice(0, 10);
+
     rankingCache.data = {
-      total: topTotalUsers.slice(0, 10).map(u => ({ id: u.id, username: u.username, amount: u.total_topup || 0, avatar: u.avatar })),
-      weekly: getRankingsForPeriod(weekAgoStr),
-      monthly: getRankingsForPeriod(oneMonthAgo),
-      topDonors // NEW 🛡️⚡🏆✨
+      total: finalTotalList,
+      weekly: mapToRankList(weeklyMap),
+      monthly: mapToRankList(monthlyMap),
+      topDonors: mapToRankList(aggregateRanking(donationData))
     };
     rankingCache.lastUpdated = now;
   } catch (err) {

@@ -92,13 +92,15 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: any) => {
     switch (status) {
       case 'completed': return '#10b981';
       case 'pending': return '#f59e0b';
       case 'cancelled': return '#ef4444';
-      case '1': return '#10b981';
-      case '99': return '#f59e0b';
+      case '1': 
+      case 1: return '#10b981';
+      case '99': 
+      case 99: return '#f59e0b';
       default: return '#6b7280';
     }
   };
@@ -200,7 +202,7 @@ const AdminDashboard: React.FC = () => {
           },
           { 
             label: 'Tổng nạp (Thẻ + Bank)', 
-            value: transactions.filter(t => t.status === '1').reduce((s, t) => s + (t.amount || 0), 0).toLocaleString() + 'đ', 
+            value: transactions.filter(t => String(t.status) === '1').reduce((s, t) => s + (t.amount || 0), 0).toLocaleString() + 'đ', 
             icon: <CreditCard size={20} />, 
             color: '#10b981' 
           },
@@ -496,7 +498,7 @@ const AdminDashboard: React.FC = () => {
                         background: `${getStatusColor(tx.status)}20`, color: getStatusColor(tx.status),
                         border: `1px solid ${getStatusColor(tx.status)}30`
                       }}>
-                        {tx.status === '1' ? 'Thành công' : tx.status === '99' ? 'Chờ xử lý' : 'Thất bại'}
+                        {String(tx.status) === '1' ? 'Thành công' : String(tx.status) === '99' ? 'Chờ xử lý' : 'Thất bại'}
                       </span>
                     </td>
                     <td style={{ padding: '20px', color: 'var(--text-muted)' }}>{new Date(tx.created_at).toLocaleString()}</td>
