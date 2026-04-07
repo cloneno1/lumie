@@ -16,15 +16,22 @@ export const VIP_LEVELS = [
 ];
 
 export const calculateVipLevel = (points) => {
-  let userLevel = 0;
-  // Duyệt từ cao xuống thấp để tìm mốc phù hợp nhất
+  let currentLevelIdx = 0;
   for (let i = VIP_LEVELS.length - 1; i >= 0; i--) {
     if (points >= VIP_LEVELS[i].minPoints) {
-      userLevel = VIP_LEVELS[i].level;
+      currentLevelIdx = i;
       break;
     }
   }
-  return userLevel;
+
+  const currentLevelData = VIP_LEVELS[currentLevelIdx];
+  const nextLevel = VIP_LEVELS[currentLevelIdx + 1] || null;
+
+  return {
+    currentLevelData,
+    nextLevel,
+    allLevels: VIP_LEVELS
+  };
 };
 
 export const getVipPerks = (level) => {
