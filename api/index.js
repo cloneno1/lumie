@@ -1199,8 +1199,9 @@ router.post('/user/claim-vip-milestone', authenticateToken, async (req, res) => 
 });
 
 // FAST BACKGROUND CACHE FOR RANKINGS
+// FAST BACKGROUND CACHE FOR RANKINGS
 let rankingCache = { 
-  data: { total: [], weekly: [], monthly: [] }, 
+  data: { total: [], weekly: [], monthly: [], topDonors: [] }, 
   lastUpdated: 0,
   isRefreshing: false
 };
@@ -1237,9 +1238,13 @@ const refreshRankingsInBackground = async () => {
         if (!uid) return;
         
         // Prioritize 'total' for orders (donation money) and 'amount' for transactions (bank money)
-        const money = r.total !== undefined ? parseInt(r.total) : parseInt(r.amount);
-        if (!isNaN(money)) {
-          map[uid] = (map[uid] || 0) + money;
+        // CRITICAL: Handle NULL values from Supabase safely
+        let moneyAmt = 0;
+        if (r.total !== undefined && r.total !== null) moneyAmt = parseInt(r.total);
+        else if (r.amount !== undefined && r.amount !== null) moneyAmt = parseInt(r.amount);
+        
+        if (!isNaN(moneyAmt) && moneyAmt > 0) {
+          map[uid] = (map[uid] || 0) + moneyAmt;
         }
       });
       return map;
@@ -1259,7 +1264,7 @@ const refreshRankingsInBackground = async () => {
         .slice(0, 10) // Only top 10
         .map(([uid, amt]) => {
           const u = nameMap[uid];
-          return { id: uid, username: u?.username || 'Ẩn danh', amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` };
+          return { id: uid, username: u?.username || 'Gấu Lumie', amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` };
         });
     };
 
@@ -1268,7 +1273,7 @@ const refreshRankingsInBackground = async () => {
       const aggAmt = totalMap[uid] || 0;
       const dbAmt = u.total_topup || 0;
       return { id: uid, username: u.username, amount: Math.max(aggAmt, dbAmt), avatar: u.avatar };
-    }).sort((a, b) => b.amount - a.amount).slice(0, 10);
+    }).filter(u => u.amount > 0).sort((a, b) => b.amount - a.amount).slice(0, 10);
 
     rankingCache.data = {
       total: finalTotalList,

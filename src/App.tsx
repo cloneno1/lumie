@@ -33,13 +33,18 @@ function AppContent() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  const [isFetchingNotifications, setIsFetchingNotifications] = useState(false);
+
   const fetchNotifications = async () => {
-    if (!user) return;
+    if (!user || isFetchingNotifications) return;
     try {
+      setIsFetchingNotifications(true);
       const res = await api.get('/user/notifications');
       setNotifications(res.data);
     } catch (err) {
       console.error('Lỗi tải thông báo:', err);
+    } finally {
+      setIsFetchingNotifications(false);
     }
   };
 
