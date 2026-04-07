@@ -226,8 +226,29 @@ router.post('/auth/login', async (req, res) => {
 
 router.get('/auth/me', authenticateToken, async (req, res) => {
   try {
-    const user = await db.users.getById(req.user.id);
+    let user = await db.users.getById(req.user.id);
     if (!user) return res.status(404).json({ message: 'Không tìm thấy user.' });
+
+    // Cố gắng gán topup_id cho người dùng cũ nếu chưa có
+    if (!user.topup_id) {
+      try {
+        let tid;
+        let attempts = 0;
+        let isUsed = true;
+        while (isUsed && attempts < 5) {
+          tid = Math.floor(100000000 + Math.random() * 900000000);
+          const check = await db.users.getByTopupId(tid);
+          if (!check) isUsed = false;
+          attempts++;
+        }
+        if (tid) {
+          user = await db.users.update(user.id, { topup_id: tid });
+        }
+      } catch (err) {
+        console.error('[BANK_AUTO_REPAIR] Error:', err.message);
+      }
+    }
+
     const { password: _, ...userWithoutPassword } = user;
     userWithoutPassword.has_password = !!user.has_password;
     res.json(userWithoutPassword);

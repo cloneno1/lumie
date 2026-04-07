@@ -386,7 +386,7 @@ function TopUp() {
                       fontSize: '1.2rem', 
                       textTransform: 'uppercase'
                     }}>
-                      LUMIE {user?.topup_id || user?.id}
+                      LUMIE {user?.topup_id || (user?.id ? user.id.slice(0, 8).toUpperCase() : '...')}
                     </strong>
                     <button onClick={() => handleCopy(`LUMIE ${user?.topup_id || user?.id}`)} className="btn-icon" style={{ padding: '6px', width: '32px', height: '32px', flexShrink: 0 }}>
                       {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
@@ -420,7 +420,7 @@ function TopUp() {
                 marginBottom: '16px'
               }}>
                 <img 
-                  src={`https://img.vietqr.io/image/VCB-${BANKS.VCB.number}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`LUMIE ${user?.id}`)}&accountName=${encodeURIComponent(BANKS.VCB.accountName)}`}
+                  src={`https://img.vietqr.io/image/VCB-${BANKS.VCB.number}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(`LUMIE ${user?.topup_id || user?.id}`)}&accountName=${encodeURIComponent(BANKS.VCB.accountName)}`}
                   alt="VietQR Payment VCB"
                   style={{ width: '100%', maxWidth: '240px', borderRadius: '12px', display: 'block' }}
                 />
@@ -472,7 +472,7 @@ function TopUp() {
               >
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '4px' }}>
-                    {tx.telco?.startsWith('BANK') ? 'Nạp tiền BIDV' : `Nạp thẻ ${tx.telco}`}
+                    {['VCB', 'BIDV', 'BANK'].some(b => tx.telco?.includes(b)) ? `Nạp ${tx.telco}` : `Nạp thẻ ${tx.telco}`}
                   </div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     {new Date(tx.created_at).toLocaleString('vi-VN')}
