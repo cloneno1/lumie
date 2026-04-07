@@ -844,10 +844,46 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
 
     const order = await db.orders.create({
       userId, username: user.username, productId, productName, price,
-      amount, options, total: price * amount, status: 'pending'
+      amount, options, total: price * amount, status: 'completed'
     });
 
-    await db.users.update(userId, { balance: user.balance - (price * amount) });
+    const spent = price * amount;
+    const isDonation = productId === 'donation' || options?.type === 'donation';
+    
+    const updates = { 
+      balance: user.balance - spent 
+    };
+
+    if (isDonation) {
+      updates.total_topup = (user.total_topup || 0) + spent;
+      updates.vip_points = (user.vip_points || 0) + spent;
+      const { currentLevelData } = calculateVipLevel(updates.vip_points);
+      updates.vip_level = currentLevelData.level;
+      
+      // Recognition notification
+      await db.notifications.create({
+        userId,
+        title: 'Cảm ơn sự ủng hộ của bạn!',
+        content: `Bạn vừa ủng hộ ${spent.toLocaleString()}đ. Số tiền này đã được ghi nhận vào tích lũy nạp và điểm VIP của bạn.`,
+        type: 'donation'
+      }).catch(() => {});
+      
+      // Create mock transaction for ranking tracking
+      await db.transactions.create({
+        user_id: userId,
+        amount: spent,
+        telco: 'DONATION',
+        serial: 'N/A',
+        code: `don_${order.id}`,
+        request_id: `don_${order.id}`,
+        status: 1,
+        message: 'Ủng hộ Lumie Store'
+      }).catch(() => {});
+
+      rankingCache.lastUpdated = 0; // Trigger leaderboard refresh
+    }
+
+    await db.users.update(userId, updates);
     res.json({ message: 'Đặt hàng thành công!', order });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -1233,11 +1269,34 @@ const refreshRankingsInBackground = async () => {
       });
     };
 
+    // 4. Fetch Top Donors ( productId='donation' )
+    let topDonors = [];
+    try {
+      const { data: donorData } = await supabase
+        .from('orders')
+        .select('user_id, username, total')
+        .eq('product_id', 'donation');
+        
+      const donorMap = {};
+      (donorData || []).forEach(d => {
+        donorMap[d.user_id] = (donorMap[d.user_id] || 0) + (d.total || 0);
+      });
+      
+      topDonors = Object.entries(donorMap).sort(([, a], [, b]) => b - a).slice(0, 10).map(([uid, amt]) => {
+        const u = nameMap[uid];
+        return { 
+          id: uid, username: u?.username || 'Ẩn danh', 
+          amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` 
+        };
+      });
+    } catch (e) { console.error('[BG_QUERY_DONORS] Error:', e); }
+
     const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
     rankingCache.data = {
-      total: topTotalUsers.slice(0, 10).map(u => ({ id: u.id, username: u.username, amount: u.total_topup, avatar: u.avatar })),
+      total: topTotalUsers.slice(0, 10).map(u => ({ id: u.id, username: u.username, amount: u.total_topup || 0, avatar: u.avatar })),
       weekly: getRankingsForPeriod(weekAgoStr),
-      monthly: getRankingsForPeriod(oneMonthAgo)
+      monthly: getRankingsForPeriod(oneMonthAgo),
+      topDonors // NEW 🛡️⚡🏆✨
     };
     rankingCache.lastUpdated = now;
   } catch (err) {
@@ -1259,10 +1318,14 @@ const noCache = (req, res, next) => {
 };
 
 router.get('/stats/vip-rankings', noCache, async (req, res) => {
-  // If cache is older than 5 minutes, trigger a background refresh but return old data instantly
   const now = Date.now();
-  if (now - rankingCache.lastUpdated > 5 * 60 * 1000) {
-    refreshRankingsInBackground();
+  // If cache is invalidated (0) or older than 5 mins
+  if (rankingCache.lastUpdated === 0 || now - rankingCache.lastUpdated > 5 * 60 * 1000) {
+    if (rankingCache.lastUpdated === 0) {
+      await refreshRankingsInBackground(); // Await if it was forced refresh (donation/topup) 🛡️⚡🏆✨
+    } else {
+      refreshRankingsInBackground(); // Background if just old
+    }
   }
   res.json(rankingCache.data);
 });

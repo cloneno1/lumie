@@ -60,10 +60,11 @@ const Home: React.FC = () => {
     try {
       if (!silent) setLoadingStats(true);
       
+      const t = Date.now();
       const results = await Promise.allSettled([
-        api.get('/stats'),
-        api.get('/stats/vip-rankings'),
-        api.get('/stats/recent-activity')
+        api.get(`/stats?t=${t}`),
+        api.get(`/stats/vip-rankings?t=${t}`),
+        api.get(`/stats/recent-activity?t=${t}`)
       ]);
 
       const statsRes = results[0].status === 'fulfilled' ? results[0].value : { data: { totalFeedbacks: 5000 } };
@@ -329,8 +330,8 @@ const Home: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {loadingStats ? (
                   [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '40px', borderRadius: '12px' }}></div>)
-                ) : stats?.total?.length > 0 ? (
-                  stats.total.slice(0, 5).map((u: any, idx: number) => (
+                ) : stats?.topDonors?.length > 0 ? (
+                  stats.topDonors.slice(0, 5).map((u: any, idx: number) => (
                     <div key={idx} style={{ 
                       display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', 
                       background: 'rgba(255,255,255,0.02)', borderRadius: '12px',
