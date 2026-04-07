@@ -142,14 +142,7 @@ const Home: React.FC = () => {
               ))
             )}
             
-            <div style={{ 
-              marginTop: '12px', padding: '12px', borderRadius: '12px', 
-              background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)',
-              fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center'
-            }}>
-              Mốc nạp <strong>2.5m</strong> & <strong>3.5m</strong>: Nhận quà Spotify Premium! 
-              <Link to="/nap-tien" style={{ marginLeft: '6px', color: '#60a5fa', fontWeight: 600 }}>Chi tiết</Link>
-            </div>
+
           </div>
         </div>
 
