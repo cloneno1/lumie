@@ -1191,27 +1191,51 @@ router.get('/stats/vip-rankings', async (req, res) => {
     const getRankingsForPeriod = (periodDateStr) => {
       const periodDate = new Date(periodDateStr);
       const periodMap = {};
+      const uniqueUids = new Set();
       
       recentTx.forEach(tx => {
         const txDate = new Date(tx.created_at);
         if (txDate >= periodDate) {
           periodMap[tx.user_id] = (periodMap[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
+          uniqueUids.add(tx.user_id);
         }
       });
       
+      // Add UIDs from topTotalUsers to a local map for quick lookup
+      const nameMap = {};
+      topTotalUsers.forEach(u => { nameMap[u.id] = u; });
+
       return Object.entries(periodMap)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 10)
         .map(([uid, amt]) => {
-          const u = topTotalUsers.find(ut => ut.id === uid);
+          const u = nameMap[uid];
           return { 
             id: uid, 
-            username: u?.username || 'Thành viên', 
+            username: u?.username || 'Gấu Lumie', // Better fallback
             amount: amt, 
             avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`
           };
         });
     };
+
+    // Optimization: Before generating results, identify any missing usernames in the Top 10 lists
+    const monthlyUids = Object.entries(recentTx.reduce((acc, tx) => {
+      acc[tx.user_id] = (acc[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
+      return acc;
+    }, {})).sort(([,a],[,b]) => b - a).slice(0, 10).map(([uid]) => uid);
+
+    const missingUids = monthlyUids.filter(uid => !topTotalUsers.find(ut => ut.id === uid));
+    
+    if (missingUids.length > 0) {
+      try {
+        const { data: missingUsers } = await supabase
+          .from('users')
+          .select('id, username, avatar')
+          .in('id', missingUids);
+        if (missingUsers) topTotalUsers = [...topTotalUsers, ...missingUsers];
+      } catch (e) { console.error('[VIP_NAME_FIX] Error:', e); }
+    }
 
     const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
     const result = {
