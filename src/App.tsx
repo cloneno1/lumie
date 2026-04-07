@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import api from './api/axios';
-import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, Headset, ShoppingCart, Crown } from 'lucide-react';
+import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, ShoppingCart, Crown } from 'lucide-react';
 import Home from './pages/Home';
 import TopUp from './pages/TopUp';
 import Login from './pages/Login';
@@ -22,6 +22,8 @@ import './index.css';
 import Discord from './pages/products/Discord';
 import RobuxGamepass from './pages/products/RobuxGamepass';
 import RobuxGroup from './pages/products/RobuxGroup';
+import CustomerSupport from './components/CustomerSupport';
+import Loading from './components/Loading';
 
 function AppContent() {
   const location = useLocation();
@@ -94,7 +96,7 @@ function AppContent() {
 
   // Auth Protection Wrappers
   const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>Đang tải...</div>;
+    if (loading) return <Loading fullScreen message="Đang tải dữ liệu người dùng..." />;
     if (!user) return <Navigate to="/login" replace />;
     return <>{children}</>;
   };
@@ -318,10 +320,7 @@ function AppContent() {
                       
                       <div style={{ margin: '8px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}></div>
                       
-                      {/* Support Item */}
-                      <a href="https://discord.gg/lumie" target="_blank" rel="noreferrer" className="dropdown-item" onClick={() => setShowUserMenu(false)}>
-                        <Headset size={18} /> <span>Hỗ trợ khách hàng</span>
-                      </a>
+                      {/* Support item is now moved to the global CustomerSupport widget floating at bottom right */}
 
                       {(user.role === 'admin' || user.role === 'staff') && (
                         <Link to={user.role === 'admin' ? "/admin" : "/staff"} className="dropdown-item" style={{ color: '#f59e0b' }} onClick={() => setShowUserMenu(false)}>
@@ -383,6 +382,8 @@ function AppContent() {
           <p>© 2026 Lumie Store. All rights reserved. Giao dịch an toàn & tự động 24/7.</p>
         </div>
       </footer>
+
+      <CustomerSupport />
     </>
   );
 }

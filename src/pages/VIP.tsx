@@ -3,6 +3,7 @@ import { Crown, TrendingUp, Trophy, Info, Gift, Zap, Ticket, Sparkles } from 'lu
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import Loading from '../components/Loading';
 
 interface VipLevel {
   level: number;
@@ -105,12 +106,7 @@ function VIP() {
   };
 
   if (loading) {
-    return (
-      <div className="container" style={{ padding: '100px 24px', textAlign: 'center' }}>
-        <div className="loader" style={{ margin: '0 auto' }}></div>
-        <p style={{ marginTop: '20px', color: 'var(--text-muted)' }}>Đang tải dữ liệu VIP...</p>
-      </div>
-    );
+    return <Loading fullScreen message="Đang kết nối kho dữ liệu VIP..." />;
   }
 
   const currentLevel = status?.vipLevel || 0;

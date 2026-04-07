@@ -20,13 +20,14 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+      background: 'rgba(10,10,15,0.75)', backdropFilter: 'blur(12px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 9999, padding: '20px', animation: 'fadeIn 0.2s ease-out'
     }}>
-      <div className="glass-panel" style={{
-        width: '100%', maxWidth: '400px', padding: '0', overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+      <div className="glass-card" style={{
+        width: '100%', maxWidth: '420px', padding: '0', overflow: 'hidden',
+        border: '1px solid rgba(16, 185, 129, 0.2)', boxShadow: '0 30px 60px rgba(0,0,0,0.6)',
+        borderRadius: '24px',
         animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
       }}>
         {/* Header */}
@@ -35,14 +36,16 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)',
           background: 'rgba(255,255,255,0.02)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <HelpCircle size={18} color="var(--accent-primary)" />
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{title}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '8px', borderRadius: '50%' }}>
+              <HelpCircle size={24} color="var(--accent-primary)" />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>{title}</h3>
           </div>
           <button onClick={onCancel} style={{ 
-            background: 'none', border: 'none', color: 'var(--text-muted)', 
-            cursor: 'pointer', padding: '4px' 
-          }}><X size={18} /></button>
+            background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', 
+            cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', transition: 'all 0.2s'
+          }} className="hover-scale"><X size={18} /></button>
         </div>
 
         {/* Content */}

@@ -50,18 +50,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             key={n.id} 
             className="animate-slide-in-right"
             style={{
-              background: 'rgba(13, 17, 23, 0.95)',
-              backdropFilter: 'blur(12px)',
+              background: 'rgba(20, 20, 30, 0.75)',
+              backdropFilter: 'blur(16px)',
               border: `1px solid ${
-                n.type === 'success' ? '#10b981' : n.type === 'error' ? '#ef4444' : '#3b82f6'
+                n.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : n.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'
               }`,
               padding: '16px',
-              borderRadius: '16px',
+              borderRadius: '20px',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              boxShadow: `0 20px 40px ${n.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : n.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)'}`,
               animation: 'slideInRight 0.3s forwards'
             }}
           >

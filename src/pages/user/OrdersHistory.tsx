@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Package, Star, X, Check, AlertTriangle } from 'lucide-react';
+import Loading from '../../components/Loading';
 
 const OrdersHistory: React.FC = () => {
   const { user } = useAuth();
@@ -94,7 +95,7 @@ const OrdersHistory: React.FC = () => {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải...</div>
+          <div style={{ padding: '40px 0' }}><Loading message="Đang tải lịch sử đơn hàng..." /></div>
         ) : orders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
             Bạn chưa có đơn hàng nào.

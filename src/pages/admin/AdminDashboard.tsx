@@ -3,6 +3,7 @@ import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../context/ConfirmContext';
+import Loading from '../../components/Loading';
 import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -158,6 +159,17 @@ const AdminDashboard: React.FC = () => {
     const pname = (o.product_name || o.productName || '').toLowerCase();
     return uname.includes(searchLow) || oid.includes(searchLow) || pname.includes(searchLow);
   });
+  const filteredTransactions = transactions.filter(t => {
+    const searchLow = searchTerm.toLowerCase();
+    const uid = t.user_id || t.userId;
+    const u = users.find(u => u.id === uid);
+    const uname = u ? u.username : String(uid || '').slice(0,8);
+    
+    return String(t.request_id || '').toLowerCase().includes(searchLow) ||
+           uname.toLowerCase().includes(searchLow) ||
+           String(t.telco || '').toLowerCase().includes(searchLow) ||
+           String(t.amount || '').includes(searchLow);
+  });
   
   const togglePassword = (userId: string) => {
     setRevealedUserIds(prev => {
@@ -270,7 +282,7 @@ const AdminDashboard: React.FC = () => {
 
       <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải dữ liệu...</div>
+          <Loading message="Đang tải dữ liệu quản trị..." />
         ) : activeTab === 'settings' ? (
           <div style={{ padding: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -492,7 +504,7 @@ const AdminDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map(tx => (
+                {filteredTransactions.map(tx => (
                   <tr key={tx.request_id || tx.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                     <td style={{ padding: '20px', fontSize: '11px', color: 'var(--text-muted)' }}>{tx.request_id || 'GIAO DICH BANK'}</td>
                     <td style={{ padding: '20px', fontWeight: '600' }}>

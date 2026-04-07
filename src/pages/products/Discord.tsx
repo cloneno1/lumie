@@ -5,12 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { Zap, Sparkles, ShoppingCart } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const Discord: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { addToCart } = useCart();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { confirm } = useConfirm();
 
   const handleBuy = async (product: any) => {
     if (!user) {
@@ -23,7 +25,13 @@ const Discord: React.FC = () => {
       navigate('/nap-tien');
       return;
     }
-    if (!confirm(`Xác nhận mua ${product.title}?`)) return;
+    
+    const confirmed = await confirm({
+      title: 'Xác nhận mua hàng',
+      message: `Bạn có chắc chắn muốn mua ${product.title} với giá ${product.price.toLocaleString()}đ không?`
+    });
+    
+    if (!confirmed) return;
 
     try {
       await api.post('/orders/create', {
