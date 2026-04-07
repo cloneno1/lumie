@@ -8,10 +8,13 @@ const AuthCallback: React.FC<{ provider: 'discord' | 'google' }> = ({ provider }
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const hasRun = React.useRef(false);
   const { login } = useAuth();
 
   useEffect(() => {
+    if (hasRun.current) return;
     const handleCallback = async () => {
+      hasRun.current = true;
       const params = new URLSearchParams(location.search);
       const code = params.get('code');
 
