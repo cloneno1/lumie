@@ -429,6 +429,18 @@ function TopUp() {
                 Quét mã QR để thanh toán nhanh<br/>
                 Số tiền: <strong>{parseInt(amount).toLocaleString()}đ</strong>
               </p>
+              <div style={{ 
+                color: '#ef4444', 
+                fontSize: '0.85rem', 
+                fontWeight: 800, 
+                marginTop: '8px',
+                padding: '4px 12px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                display: 'inline-block',
+                borderRadius: '8px'
+              }}>
+                ⚠ TUYỆT ĐỐI KHÔNG THAY ĐỔI NỘI DUNG
+              </div>
             </div>
           </div>
         </div>
