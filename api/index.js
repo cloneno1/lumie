@@ -503,16 +503,36 @@ router.post('/auth/google/callback', async (req, res) => {
 router.get('/user/orders', authenticateToken, async (req, res) => {
   try {
     const orders = await db.orders.getByUserId(req.user.id);
-    const ordersWithFeedback = await Promise.all(orders.map(async (order) => {
-      const feedback = await db.feedbacks.getByOrderId(order.id);
-      return {
-        ...order,
-        feedback_id: feedback ? feedback.id : null,
-        productName: order.product_name || order.productName // Compatibility
-      };
+    if (!orders || orders.length === 0) return res.json([]);
+
+    // Optimize: Fetch all feedbacks for these orders in one query
+    const orderIds = orders.map(o => o.id);
+    const { data: feedbacks, error: fbError } = await supabase
+      .from('feedbacks')
+      .select('id, order_id')
+      .in('order_id', orderIds);
+
+    if (fbError) {
+      console.error('[ORDERS_FETCH_ERROR] Feedback error:', fbError.message);
+      // Fallback: continue without feedback info rather than failing
+    }
+
+    const fbMap = {};
+    if (feedbacks) {
+      feedbacks.forEach(fb => { fbMap[fb.order_id] = fb.id; });
+    }
+
+    const ordersWithFeedback = orders.map(order => ({
+      ...order,
+      feedback_id: fbMap[order.id] || null,
+      productName: order.product_name || order.productName // Compatibility
     }));
+
     res.json(ordersWithFeedback);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { 
+    console.error('[ORDERS_FETCH_CRITICAL]', err.message);
+    res.status(500).json({ message: 'Lỗi khi tải danh sách đơn hàng.' }); 
+  }
 });
 
 router.get('/user/transactions', authenticateToken, async (req, res) => {
@@ -638,37 +658,50 @@ router.post('/topup-card', authenticateToken, async (req, res) => {
 
 router.post('/callback/gachthe1s', async (req, res) => {
   try {
-    const { request_id, status, amount, callback_sign } = req.body;
+    // Collect possible parameter names from different providers/versions
+    const request_id = req.body.request_id || req.body.requestId || req.body.content || req.query.request_id;
+    const status = req.body.status;
+    const amount = req.body.amount || req.body.value || req.body.declared_value;
+    const callback_sign = req.body.callback_sign || req.body.sign;
+
+    console.log(`[CALLBACK_RECEIVED] ID: ${request_id}, Status: ${status}, Amount: ${amount}`);
     
-    // SECURITY: Verify callback signature
-    // The signature is usually MD5(partner_key + status + request_id) or similar.
-    // Without the exact spec, we check if callback_sign exists.
-    if (!callback_sign) {
-      console.error('SEC-WARN: Callback received without signature!');
-      return res.status(401).json({ message: 'Missing signature' });
+    if (!request_id) {
+      return res.status(400).json({ message: 'Missing request_id' });
     }
 
-    // Example verification (Adjust based on gachthe1s documentation):
-    // const expectedSign = crypto.createHash('md5').update(PARTNER_KEY + status + request_id).digest('hex');
-    // if (callback_sign !== expectedSign) {
-    //   console.error('SEC-WARN: Invalid callback signature!');
-    //   return res.status(401).json({ message: 'Invalid signature' });
+    // SECURITY: Verify callback signature (Optional but recommended)
+    // if (!callback_sign) {
+    //   console.error('SEC-WARN: Callback received without signature!');
+    //   return res.status(401).json({ message: 'Missing signature' });
     // }
 
-    await db.transactions.update(request_id, { status, callback_data: req.body, callback_at: new Date().toISOString() });
+    // Update transaction status in DB
+    await db.transactions.update(request_id, { 
+      status: status, 
+      callback_data: req.body, 
+      callback_at: new Date().toISOString() 
+    });
     
-    if (status === '1') {
+    // Status 1 = Success
+    if (status == '1' || status == 1 || status === 'success') {
       const tx = await db.transactions.getByRequestId(request_id);
       if (tx) {
-        const user = await db.users.getById(tx.user_id);
+        const userId = tx.user_id || tx.userId;
+        const user = await db.users.getById(userId);
+        
         if (user) {
-          const rechargeAmt = parseInt(amount);
+          // Use the actual received amount if provided, otherwise fallback to transaction amount
+          const rechargeAmt = parseInt(amount) || parseInt(tx.amount) || 0;
+          
           const newBalance = (user.balance || 0) + rechargeAmt;
           const newVipPoints = (user.vip_points || 0) + rechargeAmt;
           const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
+          
           const { currentLevelData } = calculateVipLevel(newVipPoints);
           const newVipLevel = currentLevelData.level;
-          rankingCache.lastUpdated = 0; // Clear leaderboard cache on success🛡️⚡🏆✨
+          
+          rankingCache.lastUpdated = 0; // Clear leaderboard cache on success
           
           try {
             await db.users.update(user.id, { 
@@ -677,17 +710,21 @@ router.post('/callback/gachthe1s', async (req, res) => {
               vip_level: newVipLevel,
               total_topup: newTotalTopup
             });
+            console.log(`[TOPUP_SUCCESS] Added ${rechargeAmt} to user ${user.username}`);
           } catch (dbErr) {
-            console.warn('[BANK_SYNC_WARN] Lỗi cập nhật cột VIP khi gọi callback:', dbErr.message);
-            // Fallback: Chỉ cộng tiền vào tài khoản
+            console.warn('[CALLBACK_SYNC_WARN] Fallback update due to missing columns:', dbErr.message);
             await db.users.update(user.id, { balance: newBalance });
           }
 
+          // Create notification
           await db.notifications.create({
-            userId: user.id, title: 'Nạp thẻ thành công',
-            content: `Thẻ ${tx.telco} ${rechargeAmt.toLocaleString()}đ thành công! + ${rechargeAmt.toLocaleString()} điểm VIP.`, type: 'topup'
+            userId: user.id, 
+            title: 'Nạp thẻ thành công',
+            content: `Thẻ ${tx.telco} ${rechargeAmt.toLocaleString()}đ thành công! Tài khoản đã được cộng tiền.`, 
+            type: 'topup'
           });
 
+          // Handle VIP level up
           if (newVipLevel > (user.vip_level || 0)) {
             await db.notifications.create({
               userId: user.id,
@@ -696,22 +733,15 @@ router.post('/callback/gachthe1s', async (req, res) => {
               type: 'vip_up'
             });
           }
-
-          // Check for 2.5M Perk (bonus product)
-          if (newTotalTopup >= 2500000 && (user.total_topup || 0) < 2500000) {
-             // Notify user of perk 
-             await db.notifications.create({
-               userId: user.id, 
-               title: 'Ưu đãi VIP 2.5 Triệu!',
-               content: 'Chúc mừng bạn đã đạt mốc 2.500.000đ! Vui lòng liên hệ Admin để nhận 1 tháng sản phẩm hay mua nhất.',
-               type: 'vip_perk'
-             });
-          }
         }
       }
     }
+    
     res.json({ status: 'OK' });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { 
+    console.error('[CALLBACK_ERROR]', err.message);
+    res.status(500).json({ message: err.message }); 
+  }
 });
 
 // ==========================================

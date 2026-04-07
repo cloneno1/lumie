@@ -23,8 +23,9 @@ const TopUpHistory: React.FC = () => {
     if (user) fetchTransactions();
   }, [user]);
 
-  const getStatusBadge = (status: number) => {
-    switch (status) {
+  const getStatusBadge = (status: any) => {
+    const s = parseInt(status);
+    switch (s) {
       case 1: return <span style={{ color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>Thành công</span>;
       case 99: return <span style={{ color: '#60a5fa', background: 'rgba(96,165,250,0.1)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>Đang duyệt</span>;
       case 2: case 3: return <span style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>Thất bại</span>;
