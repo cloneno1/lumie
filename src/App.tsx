@@ -322,9 +322,14 @@ function AppContent() {
                       
                       {/* Support item is now moved to the global CustomerSupport widget floating at bottom right */}
 
-                      {(user.role === 'admin' || user.role === 'staff') && (
-                        <Link to={user.role === 'admin' ? "/admin" : "/staff"} className="dropdown-item" style={{ color: '#f59e0b' }} onClick={() => setShowUserMenu(false)}>
-                          <ShieldCheck size={18} /> <span>{user.role === 'admin' ? 'Trang quản trị' : 'Quản lý nhân viên'}</span>
+                      {(user.role === 'admin' || user.role === 'moderator' || user.role === 'supporter') && (
+                        <Link to="/admin" className="dropdown-item" style={{ color: '#f59e0b' }} onClick={() => setShowUserMenu(false)}>
+                          <ShieldCheck size={18} /> 
+                          <span>
+                            {user.role === 'admin' ? 'Trang quản trị' : 
+                             user.role === 'moderator' ? 'Trang quản lý' : 
+                             'Trang hỗ trợ'}
+                          </span>
                         </Link>
                       )}
 
@@ -372,7 +377,6 @@ function AppContent() {
           
           <Route path="/cart" element={<Cart />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/staff" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         </Routes>
       </main>
 

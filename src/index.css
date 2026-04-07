@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg-dark: #0a0a0f;
-  --bg-card: rgba(20, 20, 30, 0.6);
-  --bg-card-hover: rgba(30, 30, 45, 0.8);
+  --bg-dark: #07070a;
+  --bg-card: rgba(30, 30, 45, 0.7);
+  --bg-card-hover: rgba(40, 40, 60, 0.9);
   --text-main: #ffffff;
   --text-muted: #9494a0;
   --accent-primary: #10b981;
@@ -19,7 +19,7 @@
   --netflix-color: #E50914;
   --robux-color: #00A2FF;
 
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
@@ -54,21 +54,33 @@ ul {
 /* Utilities */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid var(--glass-border);
   border-radius: 16px;
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, background;
-  contain: content;
 }
 
 .glass-panel:hover {
   background: var(--bg-card-hover);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+}
+
+.nav-tab-inactive {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  backdrop-filter: blur(10px);
+}
+
+.nav-tab-inactive:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-main);
+  transform: translateY(-2px);
 }
 
 .gradient-text {

@@ -12,7 +12,7 @@ interface User {
   total_topup?: number;
   last_topup_at?: string;
   topup_id?: number | string;
-  role: 'user' | 'admin' | 'staff';
+  role: 'user' | 'admin' | 'moderator' | 'supporter';
   has_password?: boolean;
   created_at: string;
 }

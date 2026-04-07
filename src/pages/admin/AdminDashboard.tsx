@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import Loading from '../../components/Loading';
-import { Users, MessageCircle, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff, Settings as SettingsIcon, Send, User } from 'lucide-react';
+import { Users, MessageCircle, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff, Settings as SettingsIcon, Send, User, ShieldCheck } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -15,6 +15,15 @@ const AdminDashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'topups' | 'settings' | 'chats'>('users');
+  
+  useEffect(() => {
+    if (currentUser?.role === 'supporter') {
+      setActiveTab('chats');
+    } else if (currentUser?.role === 'moderator' || currentUser?.role === 'admin') {
+      setActiveTab('users');
+    }
+  }, [currentUser]);
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [revealedUserIds, setRevealedUserIds] = useState<Set<string>>(new Set());
@@ -25,6 +34,10 @@ const AdminDashboard: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  
+  // Role selector modal state
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -172,17 +185,19 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateRole = async (userId: string, currentRole: string) => {
-    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    const confirmed = await confirm({
-      title: 'Đổi vai trò',
-      message: `Chuyển người dùng này sang vai trò: ${newRole.toUpperCase()}?`
-    });
-    if (!confirmed) return;
+  const handleUpdateRole = (user: any) => {
+    setEditingUser(user);
+    setIsRoleModalOpen(true);
+  };
+
+  const saveRole = async (newRole: string) => {
+    if (!editingUser) return;
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/u-role-s`, { userId, role: newRole }, adminHeaders);
+      await api.post(`${a_b}/u-role-s`, { userId: editingUser.id, role: newRole }, adminHeaders);
+      showNotification('Cập nhật vai trò thành công!', 'success');
+      setIsRoleModalOpen(false);
       fetchData();
     } catch (err) {
       showNotification('Lỗi cập nhật vai trò.', 'error');
@@ -223,7 +238,9 @@ const AdminDashboard: React.FC = () => {
     });
   };
 
-  if (currentUser?.role !== 'admin') {
+  const isAuthorized = currentUser && ['admin', 'moderator', 'supporter'].includes(currentUser.role);
+
+  if (!isAuthorized) {
     return <div className="container" style={{ padding: '100px 20px', textAlign: 'center' }}><h2>Access Denied</h2></div>;
   }
 
@@ -247,10 +264,10 @@ const AdminDashboard: React.FC = () => {
           { label: 'Doanh thu', value: orders.filter(o => o.status === 'completed').reduce((s, o) => s + (o.total || 0), 0).toLocaleString() + 'đ', icon: <ShoppingBag size={20} />, color: '#f59e0b' },
           { label: 'Đang chờ', value: orders.filter(o => o.status === 'pending').length.toLocaleString(), icon: <Search size={20} />, color: '#ef4444' }
         ].map((stat, i) => (
-          <div key={i} className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', border: `1px solid ${stat.color}20`, background: `${stat.color}05` }}>
-            <div style={{ background: `${stat.color}20`, padding: '12px', borderRadius: '12px', color: stat.color }}>{stat.icon}</div>
+          <div key={i} className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', border: `1px solid ${stat.color}40`, background: `${stat.color}15` }}>
+            <div style={{ background: `${stat.color}30`, padding: '12px', borderRadius: '12px', color: stat.color }}>{stat.icon}</div>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '4px' }}>{stat.label}</div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '13px', marginBottom: '4px' }}>{stat.label}</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stat.value}</div>
             </div>
           </div>
@@ -259,13 +276,13 @@ const AdminDashboard: React.FC = () => {
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
         {[
-          { id: 'users', label: 'Người dùng', icon: <Users size={18} /> },
-          { id: 'orders', label: 'Đơn hàng', icon: <ShoppingBag size={18} /> },
-          { id: 'topups', label: 'Nạp thẻ', icon: <CreditCard size={18} /> },
-          { id: 'settings', label: 'Cấu hình', icon: <SettingsIcon size={18} /> },
-          { id: 'chats', label: 'Hỗ trợ', icon: <MessageCircle size={18} /> }
-        ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`btn ${activeTab === tab.id ? 'btn-primary' : 'glass-panel'}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 24px', borderRadius: '14px' }}>
+          { id: 'users', label: 'Người dùng', icon: <Users size={18} />, roles: ['admin', 'moderator'] },
+          { id: 'orders', label: 'Đơn hàng', icon: <ShoppingBag size={18} />, roles: ['admin', 'moderator'] },
+          { id: 'topups', label: 'Nạp thẻ', icon: <CreditCard size={18} />, roles: ['admin', 'moderator'] },
+          { id: 'settings', label: 'Cấu hình', icon: <SettingsIcon size={18} />, roles: ['admin'] },
+          { id: 'chats', label: 'Hỗ trợ', icon: <MessageCircle size={18} />, roles: ['admin', 'moderator', 'supporter'] }
+        ].filter(tab => tab.roles.includes(currentUser.role)).map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`btn ${activeTab === tab.id ? 'btn-primary' : 'nav-tab-inactive'}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 24px', borderRadius: '14px' }}>
             {tab.icon} {tab.label}
             {tab.id === 'chats' && chatSessions.length > 0 && <span style={{ marginLeft: '8px', background: 'var(--accent-primary)', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', color: 'black' }}>{chatSessions.length}</span>}
           </button>
@@ -372,7 +389,7 @@ const AdminDashboard: React.FC = () => {
                     <td style={{ padding: '20px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={() => handleUpdateBalance(user.id)} className="btn-icon" title="Cập nhật số dư"><Edit3 size={14} /></button>
-                        <button onClick={() => handleUpdateRole(user.id, user.role)} className="btn-icon" title="Đổi vai trò"><User size={14} /></button>
+                        <button onClick={() => handleUpdateRole(user)} className="btn-icon" title="Đổi vai trò"><User size={14} /></button>
                         <button onClick={() => handleBanUser(user.id, !!user.banned)} className="btn-icon" title={user.banned ? "Mở khóa" : "Khóa người dùng"}>{user.banned ? <Check size={14} /> : <X size={14} />}</button>
                       </div>
                     </td>
@@ -450,6 +467,63 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Role Selection Modal */}
+      {isRoleModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000
+        }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '400px', padding: '32px' }}>
+            <h3 style={{ marginBottom: '8px' }}>Chỉnh sửa vai trò</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px' }}>
+              Thay đổi vai trò cho tài khoản <strong>{editingUser?.username}</strong>
+            </p>
+            
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {[
+                { r: 'user', l: 'Người dùng (User)', icon: <User size={16} />, d: 'Vai trò mặc định cho khách hàng.' },
+                { r: 'admin', l: 'Quản trị viên (Admin)', icon: <ShieldCheck size={16} />, d: 'Toàn quyền sử dụng hệ thống.' },
+                { r: 'moderator', l: 'Điều hành (Moderator)', icon: <ShieldCheck size={16} />, d: 'Quản lý người dùng, đơn hàng & nạp thẻ.' },
+                { r: 'supporter', l: 'Hỗ trợ (Supporter)', icon: <MessageCircle size={16} />, d: 'Chỉ truy cập được trang hỗ trợ chat.' }
+              ].map(roleItem => (
+                <button 
+                  key={roleItem.r}
+                  onClick={() => saveRole(roleItem.r)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '16px', padding: '16px',
+                    borderRadius: '16px', border: editingUser?.role === roleItem.r ? '2px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+                    background: editingUser?.role === roleItem.r ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.03)',
+                    color: 'white', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                  className="hover-scale"
+                >
+                  <div style={{ 
+                    padding: '10px', borderRadius: '12px', 
+                    background: editingUser?.role === roleItem.r ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)',
+                    color: editingUser?.role === roleItem.r ? 'black' : 'white'
+                  }}>
+                    {roleItem.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '15px' }}>{roleItem.l}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{roleItem.d}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setIsRoleModalOpen(false)}
+              className="btn glass-panel" 
+              style={{ width: '100%', marginTop: '24px', padding: '12px' }}
+            >
+              Hủy bỏ
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
