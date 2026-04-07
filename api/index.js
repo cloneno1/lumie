@@ -1214,10 +1214,10 @@ const refreshRankingsInBackground = async () => {
     const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
     const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
 
-    // 1. Fetch EVERYTHING needed for accurate aggregation
+    // 1. Fetch EVERYTHING needed for accurate aggregation - LIMIT to last 1000 for performance
     const [txRes, orderRes, userRes] = await Promise.all([
-      supabase.from('transactions').select('*').in('status', ['1', 1]),
-      supabase.from('orders').select('*').eq('status', 'completed').eq('product_id', 'donation'),
+      supabase.from('transactions').select('*').in('status', ['1', 1]).order('created_at', { ascending: false }).limit(1000),
+      supabase.from('orders').select('*').eq('status', 'completed').eq('product_id', 'donation').order('created_at', { ascending: false }).limit(1000),
       supabase.from('users').select('id, username, avatar, total_topup')
     ]);
 

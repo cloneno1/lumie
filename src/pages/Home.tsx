@@ -56,8 +56,12 @@ const Home: React.FC = () => {
     }
   };
 
+  const [isRefetching, setIsRefetching] = useState(false);
+
   const fetchStats = async (silent = false) => {
+    if (isRefetching) return;
     try {
+      setIsRefetching(true);
       if (!silent) setLoadingStats(true);
       
       const t = Date.now();
@@ -83,6 +87,7 @@ const Home: React.FC = () => {
       console.error('Lỗi khi tải thống kê:', err);
     } finally {
       if (!silent) setLoadingStats(false);
+      setIsRefetching(false);
     }
   };
 
