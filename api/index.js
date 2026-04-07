@@ -1458,6 +1458,60 @@ router.get('/staff/orders', authenticateStaff, async (req, res) => {
 // Apply auth rate limiting specifically to these routes
 router.use('/auth/login', authLimiter);
 router.use('/auth/register', authLimiter);
+router.use('/admin', adminStoreLimiter);
+
+// ==========================================
+// API: CHAT (Support System)
+// ==========================================
+
+// Customer Endpoints
+router.get('/chat/messages', authenticateToken, async (req, res) => {
+  try {
+    const msgs = await db.chats.getMessages(req.user.id);
+    res.json(msgs);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.post('/chat/send', authenticateToken, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ message: 'Message empty' });
+    const msg = await db.chats.sendMessage({
+      user_id: req.user.id,
+      sender_role: 'user',
+      message
+    });
+    res.json(msg);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Staff Endpoints (Using Admin Secret logic for security)
+router.get('/internal-sys-mz9/chats', authenticateAdmin, async (req, res) => {
+  try {
+    const sessions = await db.chats.getAdminSessions();
+    res.json(sessions);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/internal-sys-mz9/chats/:userId', authenticateAdmin, async (req, res) => {
+  try {
+    const msgs = await db.chats.getMessages(req.params.userId);
+    res.json(msgs);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.post('/internal-sys-mz9/chats/:userId/send', authenticateAdmin, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ message: 'Message empty' });
+    const msg = await db.chats.sendMessage({
+      user_id: req.params.userId,
+      sender_role: 'staff',
+      message
+    });
+    res.json(msg);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
 
 // Use the router for both /api and / routes to be safe on Vercel
 app.use('/api', router);

@@ -208,5 +208,47 @@ export const db = {
       if (error) throw error;
       return data;
     }
+  },
+  chats: {
+    getAdminSessions: async () => {
+      // Get unique users who have sent messages
+      const { data, error } = await supabase
+        .from('chats')
+        .select('user_id, users(username, avatar)')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Deduplicate by user_id
+      const seen = new Set();
+      return data.filter(item => {
+        if (seen.has(item.user_id)) return false;
+        seen.add(item.user_id);
+        return true;
+      });
+    },
+    getMessages: async (userId) => {
+      const { data, error } = await supabase
+        .from('chats')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    sendMessage: async (msg) => {
+      const { data, error } = await supabase
+        .from('chats')
+        .insert([{
+          user_id: msg.user_id || msg.userId,
+          sender_role: msg.sender_role || msg.senderRole,
+          message: msg.message,
+          is_read: false
+        }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    }
   }
 };
