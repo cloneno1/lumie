@@ -198,14 +198,18 @@ const AdminDashboard: React.FC = () => {
                     <td style={{ padding: '20px' }}>
                       <div style={{ fontSize: '13px' }}>{user.email || '-'}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#10b981', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                        <span>Pass: {revealedUserIds.has(user.id) ? (user.password?.slice(0, 15) + '...') : '******'}</span>
-                        <button 
-                          onClick={() => togglePassword(user.id)}
-                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
-                          title={revealedUserIds.has(user.id) ? "Ẩn mật khẩu" : "Xem mật khẩu"}
-                        >
-                          {revealedUserIds.has(user.id) ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
+                        <span style={{ color: user.password ? 'inherit' : '#ef4444', fontWeight: user.password ? 'inherit' : '800' }}>
+                          Pass: {user.password ? (revealedUserIds.has(user.id) ? user.password : '******') : 'None'}
+                        </span>
+                        {user.password && (
+                          <button 
+                            onClick={() => togglePassword(user.id)}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}
+                            title={revealedUserIds.has(user.id) ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                          >
+                            {revealedUserIds.has(user.id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td style={{ padding: '20px', fontWeight: '700', color: 'var(--accent-primary)' }}>{user.balance.toLocaleString()}đ</td>
