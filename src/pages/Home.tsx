@@ -5,12 +5,16 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import api from '../api/axios';
 
+import { useConfirm } from '../context/ConfirmContext';
+
 const Home: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { confirm } = useConfirm();
   
   const [feedbackCount, setFeedbackCount] = useState('5,000+');
+  const [stats, setStats] = useState<any>(null);
   const [topRechargers, setTopRechargers] = useState<any[]>([]);
   const [leaderboardType, setLeaderboardType] = useState<'monthly' | 'total'>('monthly');
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
@@ -28,21 +32,27 @@ const Home: React.FC = () => {
       showNotification('Số dư của bạn không đủ để thực hiện ủng hộ.', 'error');
       return;
     }
+    
+    const confirmed = await confirm({
+      title: 'Xác nhận ủng hộ',
+      message: `Xác nhận ủng hộ Lumie Store ${donateAmount.toLocaleString()}đ bằng số dư tài khoản?`
+    });
 
-    if (!window.confirm(`Xác nhận ủng hộ Lumie Store ${donateAmount.toLocaleString()}đ bằng số dư tài khoản?`)) return;
-
-    try {
-      await api.post('/orders/create', {
-        productId: 'donation',
-        productName: 'Ủng hộ Lumie Store',
-        price: donateAmount,
-        amount: 1,
-        options: { type: 'donation' }
-      });
-      showNotification('Cảm ơn bạn đã ủng hộ Lumie Store! ❤️ Đóng góp của bạn rất có ý nghĩa.', 'success');
-      refreshUser();
-    } catch (err: any) {
-      showNotification(err.response?.data?.message || 'Có lỗi xảy ra khi thực hiện.', 'error');
+    if (confirmed) {
+      try {
+        await api.post('/orders/create', {
+          productId: 'donation',
+          productName: 'Ủng hộ Lumie Store',
+          price: donateAmount,
+          amount: 1,
+          options: { type: 'donation' }
+        });
+        showNotification('Cảm ơn bạn đã ủng hộ Lumie Store! ❤️ Đóng góp của bạn rất có ý nghĩa.', 'success');
+        refreshUser();
+        fetchStats(); // Refresh activity feed
+      } catch (err: any) {
+        showNotification(err.response?.data?.message || 'Có lỗi xảy ra khi thực hiện.', 'error');
+      }
     }
   };
 
@@ -55,14 +65,13 @@ const Home: React.FC = () => {
         api.get('/stats/recent-activity')
       ]);
       
+      setStats(rankRes.data);
+      setTopRechargers(rankRes.data[leaderboardType] || []);
+      setRecentActivity(activityRes.data);
+      
       if (statsRes.data.totalFeedbacks) {
         setFeedbackCount(statsRes.data.totalFeedbacks.toLocaleString() + '+');
       }
-      
-      // Select rankings based on type
-      const rankings = rankRes.data[leaderboardType] || [];
-      setTopRechargers(rankings);
-      setRecentActivity(activityRes.data);
     } catch (err) {
       console.error('Lỗi tải thống kê:', err);
     } finally {
@@ -72,7 +81,14 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     fetchStats();
-  }, [leaderboardType]);
+  }, []);
+
+  // Instant switch without re-fetching
+  useEffect(() => {
+    if (stats) {
+      setTopRechargers(stats[leaderboardType] || []);
+    }
+  }, [leaderboardType, stats]);
 
   return (
     <div className="home-page">
@@ -214,6 +230,11 @@ const Home: React.FC = () => {
                     )}
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                       {new Date(act.created_at).toLocaleTimeString('vi-VN')}
+                      {act.type === 'order' && act.amount && (
+                        <span style={{ marginLeft: '8px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', fontSize: '10px' }}>
+                          Số tiền: {act.amount.toLocaleString()}đ
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -292,13 +313,31 @@ const Home: React.FC = () => {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ 
-              background: 'rgba(16,185,129,0.05)', padding: '40px', borderRadius: '32px', border: '1px solid rgba(16,185,129,0.1)'
+              background: 'rgba(245,158,11,0.02)', padding: '32px', borderRadius: '32px', border: '1px solid rgba(245,158,11,0.08)'
             }}>
-              <Sparkles size={60} color="#10b981" style={{ marginBottom: '20px' }} />
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>Ghi tên bảng vàng</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.6 }}>
-                Mỗi lượt ủng hộ là một lời động viên to lớn giúp chúng tôi tiếp tục duy trì và phát triển những dịch vụ tốt nhất.
-              </p>
+              <Trophy size={40} color="#f59e0b" style={{ marginBottom: '16px' }} />
+              <h3 style={{ fontSize: '1.4rem', marginBottom: '16px', color: '#f59e0b' }}>BẢNG VINH DANH</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {stats?.total?.slice(0, 5).map((u: any, idx: number) => (
+                  <div key={idx} style={{ 
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', 
+                    background: 'rgba(255,255,255,0.02)', borderRadius: '12px',
+                    border: idx === 0 ? '1px solid rgba(245,158,11,0.2)' : 'none'
+                  }}>
+                    <div style={{ 
+                      width: '24px', height: '24px', borderRadius: '6px', 
+                      background: idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                      fontWeight: 'bold', fontSize: '10px', color: '#000'
+                    }}>
+                      {idx + 1}
+                    </div>
+                    <div style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: '13px' }}>{u.username}</div>
+                    <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700 }}>{u.amount.toLocaleString()}đ</div>
+                  </div>
+                ))}
+                {!stats?.total?.length && <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Chưa có dữ liệu</p>}
+              </div>
             </div>
           </div>
         </div>

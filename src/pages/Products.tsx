@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Sparkles, Gamepad2, Play, Music, Film, CircleDollarSign, ShoppingCart } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const Products: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -12,6 +13,7 @@ const Products: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { showNotification } = useNotification();
+  const { confirm } = useConfirm();
   
   // Get category from URL query if exists
   const queryParams = new URLSearchParams(location.search);
@@ -272,7 +274,12 @@ const Products: React.FC = () => {
       return;
     }
 
-    if (!confirm(`Xác nhận mua ${product.title} với giá ${product.displayPrice}?`)) return;
+    const confirmed = await confirm({
+      title: 'Xác nhận mua hàng',
+      message: `Xác nhận mua ${product.title} với giá ${product.displayPrice}?`
+    });
+
+    if (!confirmed) return;
 
     try {
       await api.post('/orders/create', {

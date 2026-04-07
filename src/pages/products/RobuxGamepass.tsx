@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Zap, ShieldCheck, Headphones, Image as ImageIcon, Loader2, Play } from 'lucide-react';
 
 const RobuxGamepass: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { confirm } = useConfirm();
 
   const RATE = 160; // 1 Robux = 160 VNĐ
   const [robuxAmount, setRobuxAmount] = useState<number | string>('');
@@ -74,7 +76,12 @@ const RobuxGamepass: React.FC = () => {
       return;
     }
 
-    if (!window.confirm(`Xác nhận thanh toán ${totalPrice.toLocaleString()}đ cho ${robuxAmount} Robux?`)) return;
+    const confirmed = await confirm({
+      title: 'Xác nhận thanh toán',
+      message: `Xác nhận thanh toán ${totalPrice.toLocaleString()}đ cho ${robuxAmount} Robux?`
+    });
+
+    if (!confirmed) return;
 
     setLoading(true);
     let finalImageUrl = '';

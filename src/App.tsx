@@ -383,14 +383,17 @@ function AppContent() {
 }
 
 import { NotificationProvider } from './context/NotificationContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 
 function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
-        <CartProvider>
-          <AppContent />
-        </CartProvider>
+        <ConfirmProvider>
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
+        </ConfirmProvider>
       </NotificationProvider>
     </AuthProvider>
   );

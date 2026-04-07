@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { showNotification } = useNotification();
+  const { confirm } = useConfirm();
   const [users, setUsers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -57,7 +61,7 @@ const AdminDashboard: React.FC = () => {
     const amountStr = prompt('Nhập số tiền muốn thay đổi (vd: 50000 hoặc -50000):');
     if (amountStr === null) return;
     const amount = parseInt(amountStr);
-    if (isNaN(amount)) return alert('Số tiền không hợp lệ.');
+    if (isNaN(amount)) return showNotification('Số tiền không hợp lệ.', 'error');
 
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
@@ -67,10 +71,10 @@ const AdminDashboard: React.FC = () => {
         amount,
         action: 'add'
       }, adminHeaders);
-      alert('Cập nhật số dư thành công!');
+      showNotification('Cập nhật số dư thành công!', 'success');
       fetchData();
     } catch (err) {
-      alert('Lỗi cập nhật số dư.');
+      showNotification('Lỗi cập nhật số dư.', 'error');
     }
   };
 
@@ -84,7 +88,7 @@ const AdminDashboard: React.FC = () => {
       }, adminHeaders);
       fetchData();
     } catch (err) {
-      alert('Lỗi cập nhật trạng thái đơn hàng.');
+      showNotification('Lỗi cập nhật trạng thái đơn hàng.', 'error');
     }
   };
 
@@ -100,27 +104,35 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleBanUser = async (userId: string, currentBannedStatus: boolean) => {
-    if (!confirm(currentBannedStatus ? 'Mở khóa người dùng này?' : 'Khóa người dùng này?')) return;
+    const confirmed = await confirm({
+      title: currentBannedStatus ? 'Mở khóa' : 'Khóa tài khoản',
+      message: currentBannedStatus ? 'Mở khóa người dùng này?' : 'Khóa người dùng này?'
+    });
+    if (!confirmed) return;
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
       await api.post(`${a_b}/ban-u-s`, { userId, banned: !currentBannedStatus }, adminHeaders);
       fetchData();
     } catch (err) {
-      alert('Lỗi khi khóa/mở khóa người dùng.');
+      showNotification('Lỗi khi khóa/mở khóa người dùng.', 'error');
     }
   };
 
   const handleUpdateRole = async (userId: string, currentRole: string) => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    if (!confirm(`Chuyển người dùng này sang vai trò: ${newRole.toUpperCase()}?`)) return;
+    const confirmed = await confirm({
+      title: 'Đổi vai trò',
+      message: `Chuyển người dùng này sang vai trò: ${newRole.toUpperCase()}?`
+    });
+    if (!confirmed) return;
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
       await api.post(`${a_b}/u-role-s`, { userId, role: newRole }, adminHeaders);
       fetchData();
     } catch (err) {
-      alert('Lỗi cập nhật vai trò.');
+      showNotification('Lỗi cập nhật vai trò.', 'error');
     }
   };
 
@@ -131,9 +143,9 @@ const AdminDashboard: React.FC = () => {
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
       await api.post(`${a_b}/settings/update`, { key, value: newValue }, adminHeaders);
-      alert('Cập nhật cài đặt thành công!');
+      showNotification('Cập nhật cài đặt thành công!', 'success');
       fetchData();
-    } catch (err) { alert('Lỗi cập nhật cài đặt.'); }
+    } catch (err) { showNotification('Lỗi cập nhật cài đặt.', 'error'); }
   };
 
   const activeUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));

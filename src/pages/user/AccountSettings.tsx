@@ -3,10 +3,12 @@ import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Settings, User, Package, Camera, Lock, Save, Loader2, XCircle } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const AccountSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { showNotification } = useNotification();
+  const { confirm } = useConfirm();
   
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
@@ -88,7 +90,14 @@ const AccountSettings: React.FC = () => {
     const password = prompt('VUI LÒNG NHẬP MẬT KHẨU ĐỂ XÁC NHẬN XÓA TÀI KHOẢN VĨNH VIỄN:');
     if (!password) return;
 
-    if (!confirm('HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn muốn xóa tài khoản?')) return;
+    const confirmed = await confirm({
+      title: 'CẢNH BÁO NGUY HIỂM',
+      message: 'HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn muốn xóa tài khoản?',
+      confirmLabel: 'Xóa vĩnh viễn',
+      cancelLabel: 'Giữ lại'
+    });
+
+    if (!confirmed) return;
 
     setLoading(true);
     try {

@@ -1265,13 +1265,14 @@ router.get('/stats/recent-activity', async (req, res) => {
     const feedbacks = await db.feedbacks.getAll().catch(() => []);
 
     const activity = [
-      ...(orders || []).slice(0, 5).map(o => ({ 
+      ...(orders || []).slice(0, 15).map(o => ({ 
         type: 'order', 
         username: o.username, 
         productName: o.product_name || o.productName, 
+        amount: o.total,
         created_at: o.created_at 
       })),
-      ...(feedbacks || []).slice(0, 5).map(f => ({ 
+      ...(feedbacks || []).slice(0, 15).map(f => ({ 
         type: 'feedback', 
         username: f.username, 
         productName: f.product_name || f.productName, 

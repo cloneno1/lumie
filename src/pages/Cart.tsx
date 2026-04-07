@@ -4,28 +4,37 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { Trash2, Plus, Minus, ShoppingBag, CreditCard, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useNotification } from '../context/NotificationContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 const Cart: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, clearCart, totalPrice, totalItems } = useCart();
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
+  const { confirm } = useConfirm();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleCheckout = async () => {
     if (!user) {
-      alert('Vui lòng đăng nhập để thanh toán!');
+      showNotification('Vui lòng đăng nhập để thanh toán!', 'info');
       navigate('/login');
       return;
     }
 
     if (user.balance < totalPrice) {
-      alert('Số dư tài khoản không đủ. Vui lòng nạp thêm tiền!');
+      showNotification('Số dư tài khoản không đủ. Vui lòng nạp thêm tiền!', 'error');
       navigate('/nap-tien');
       return;
     }
 
-    if (!confirm(`Xác nhận thanh toán ${totalItems} mặt hàng với tổng giá ${totalPrice.toLocaleString()}đ?`)) return;
+    const confirmed = await confirm({
+      title: 'Xác nhận thanh toán',
+      message: `Xác nhận thanh toán ${totalItems} mặt hàng với tổng giá ${totalPrice.toLocaleString()}đ?`
+    });
+
+    if (!confirmed) return;
 
     setLoading(true);
     try {
@@ -47,7 +56,7 @@ const Cart: React.FC = () => {
         navigate('/profile/orders');
       }, 2000);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi thanh toán.');
+      showNotification(err.response?.data?.message || 'Có lỗi xảy ra khi thanh toán.', 'error');
     } finally {
       setLoading(false);
     }
