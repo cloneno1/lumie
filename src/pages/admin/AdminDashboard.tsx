@@ -20,16 +20,28 @@ const AdminDashboard: React.FC = () => {
       // Security: Constructing secret paths to avoid simple string scrapers
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      const [usersRes, ordersRes, transRes, settingsRes] = await Promise.all([
-        api.get(`${a_b}/u-list-s`, adminHeaders),
-        api.get(`${a_b}/o-list-s`, adminHeaders),
-        api.get(`${a_b}/t-list-s`, adminHeaders),
-        api.get(`${a_b}/settings`, adminHeaders)
+      
+      const fetchSafe = async (url: string) => {
+        try {
+          const res = await api.get(url, adminHeaders);
+          return res.data;
+        } catch (err) {
+          console.error(`Fetch error for ${url}:`, err);
+          return [];
+        }
+      };
+
+      const [usersData, ordersData, transData, settingsData] = await Promise.all([
+        fetchSafe(`${a_b}/u-list-s`),
+        fetchSafe(`${a_b}/o-list-s`),
+        fetchSafe(`${a_b}/t-list-s`),
+        fetchSafe(`${a_b}/settings`)
       ]);
-      setUsers(usersRes.data);
-      setOrders(ordersRes.data);
-      setTransactions(transRes.data);
-      setSettings(settingsRes.data);
+
+      setUsers(usersData || []);
+      setOrders(ordersData || []);
+      setTransactions(transData || []);
+      setSettings(settingsData || []);
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu admin:', error);
     } finally {

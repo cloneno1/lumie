@@ -1227,7 +1227,19 @@ router.get('/settings', authenticateAdmin, async (req, res) => {
 });
 
 router.get('/settings/public', async (req, res) => {
-  try { res.json(await db.settings.getAll()); } catch (err) { res.status(500).json({ message: 'Error' }); }
+  try {
+    const gl = await db.settings.getByKey('roblox_group_link').catch(() => null);
+    const tl = await db.settings.getByKey('robux_tutorial_link').catch(() => null);
+    res.json({
+      roblox_group_link: gl?.value || 'https://www.roblox.com/groups/33719487',
+      robux_tutorial_link: tl?.value || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+    });
+  } catch (err) {
+    res.json({
+      roblox_group_link: 'https://www.roblox.com/groups/33719487',
+      robux_tutorial_link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+    });
+  }
 });
 
 router.post('/settings/update', authenticateAdmin, async (req, res) => {
