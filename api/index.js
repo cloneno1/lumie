@@ -1235,7 +1235,12 @@ const refreshRankingsInBackground = async () => {
         if (filterFn && !filterFn(time)) return;
         const uid = r.user_id || r.userId;
         if (!uid) return;
-        map[uid] = (map[uid] || 0) + (parseInt(r.amount) || parseInt(r.total) || 0);
+        
+        // Prioritize 'total' for orders (donation money) and 'amount' for transactions (bank money)
+        const money = r.total !== undefined ? parseInt(r.total) : parseInt(r.amount);
+        if (!isNaN(money)) {
+          map[uid] = (map[uid] || 0) + money;
+        }
       });
       return map;
     };

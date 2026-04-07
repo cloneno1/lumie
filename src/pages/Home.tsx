@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset } from 'lucide-react';
+import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import api from '../api/axios';
@@ -86,6 +86,14 @@ const Home: React.FC = () => {
     }
   };
 
+  const [isRefreshingStats, setIsRefreshingStats] = useState(false);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshingStats(true);
+    await fetchStats();
+    setTimeout(() => setIsRefreshingStats(false), 500);
+  };
+
   useEffect(() => {
     fetchStats();
     // Refresh stats every 5 mins silently
@@ -151,23 +159,37 @@ const Home: React.FC = () => {
               <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Đua TOP Nạp Thẻ</h2>
             </div>
             
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <button 
+                  onClick={() => setLeaderboardType('monthly')}
+                  style={{ 
+                    padding: '4px 12px', fontSize: '12px', borderRadius: '6px', border: 'none',
+                    background: leaderboardType === 'monthly' ? 'var(--accent-primary)' : 'transparent',
+                    color: leaderboardType === 'monthly' ? '#000' : '#fff', cursor: 'pointer'
+                  }}
+                >Tháng này</button>
+                <button 
+                  onClick={() => setLeaderboardType('total')}
+                  style={{ 
+                    padding: '4px 12px', fontSize: '12px', borderRadius: '6px', border: 'none',
+                    background: leaderboardType === 'total' ? 'var(--accent-primary)' : 'transparent',
+                    color: leaderboardType === 'total' ? '#000' : '#fff', cursor: 'pointer'
+                  }}
+                >Tổng nạp</button>
+              </div>
               <button 
-                onClick={() => setLeaderboardType('monthly')}
+                onClick={handleManualRefresh}
+                className="btn-icon" 
                 style={{ 
-                  padding: '4px 12px', fontSize: '12px', borderRadius: '6px', border: 'none',
-                  background: leaderboardType === 'monthly' ? 'var(--accent-primary)' : 'transparent',
-                  color: leaderboardType === 'monthly' ? '#000' : '#fff', cursor: 'pointer'
+                  padding: '6px',
+                  transform: isRefreshingStats ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.5s ease'
                 }}
-              >Tháng này</button>
-              <button 
-                onClick={() => setLeaderboardType('total')}
-                style={{ 
-                  padding: '4px 12px', fontSize: '12px', borderRadius: '6px', border: 'none',
-                  background: leaderboardType === 'total' ? 'var(--accent-primary)' : 'transparent',
-                  color: leaderboardType === 'total' ? '#000' : '#fff', cursor: 'pointer'
-                }}
-              >Tổng nạp</button>
+                title="Làm mới bảng xếp hạng"
+              >
+                <RefreshCw size={16} />
+              </button>
             </div>
           </div>
 
