@@ -1168,7 +1168,7 @@ router.get('/stats/vip-rankings', async (req, res) => {
         .select('id, username, total_topup, avatar')
         .gt('total_topup', 0)
         .order('total_topup', { ascending: false })
-        .limit(15);
+        .limit(50);
       topTotalUsers = data || [];
     } catch (e) { console.error('[VIP_QUERY_TOTAL] Error:', e); }
 
@@ -1211,7 +1211,7 @@ router.get('/stats/vip-rankings', async (req, res) => {
 
     const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
     const result = {
-      total: topTotalUsers.slice(0, 10),
+      total: topTotalUsers.slice(0, 10).map(u => ({ id: u.id, username: u.username, amount: u.total_topup, avatar: u.avatar })),
       weekly: getRankingsForPeriod(weekAgoStr),
       monthly: getRankingsForPeriod(oneMonthAgo)
     };
