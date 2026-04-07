@@ -147,6 +147,10 @@ ul {
   width: 100%;
 }
 
+.mobile-menu-toggle {
+  display: none;
+}
+
 .btn {
   padding: 10px 24px;
   border-radius: 99px;
@@ -341,11 +345,95 @@ ul {
 .delay-2 { animation-delay: 0.2s; }
 .delay-3 { animation-delay: 0.3s; }
 
-/* Responsive */
+/* Responsive Enhancements */
+@media (max-width: 1024px) {
+  .hero h1 { font-size: 3.5rem; }
+  .container { padding: 0 32px; }
+  
+  /* VIP Page Tablet */
+  .vip-grid {
+    grid-template-columns: 1fr !important;
+    gap: 40px !important;
+  }
+}
+
 @media (max-width: 768px) {
-  .hero h1 { font-size: 3rem; }
-  .nav-links { display: none; }
-  .products-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 2.5rem; }
+  .hero p { font-size: 1.1rem; }
+  .navbar { height: 70px; }
+  .container { padding: 0 20px; }
+  
+  /* Hide desktop links, show mobile nav toggle */
+  .nav-links { 
+    display: none; 
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 100vh;
+    background: rgba(10, 10, 15, 0.98);
+    backdrop-filter: blur(25px);
+    z-index: 999;
+    flex-direction: column;
+    padding: 100px 40px;
+    gap: 32px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nav-links.open {
+    display: flex;
+    transform: translateX(0);
+    box-shadow: -20px 0 60px rgba(0,0,0,0.8);
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    z-index: 1000;
+  }
+  
+  /* Home Page Products */
+  .products-grid { 
+    grid-template-columns: 1fr !important; 
+    gap: 20px !important;
+  }
+  
+  /* Topup Page Mobile */
+  .topup-methods {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bank-details-grid {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  /* VIP Page Mobile */
+  .gacha-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .auth-card {
+    padding: 32px 20px !important;
+    border-radius: 20px !important;
+  }
+
+  .auth-title { font-size: 1.6rem !important; }
+}
+
+@media (max-width: 480px) {
+  .hero h1 { font-size: 2rem; }
+  .btn { width: 100%; }
 }
 
 @keyframes spin {
