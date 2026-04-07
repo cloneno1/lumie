@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff, Settings as SettingsIcon } from 'lucide-react';
+import { Users, ShoppingBag, CreditCard, Search, Edit3, Check, X, Eye, EyeOff, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -253,21 +253,67 @@ const AdminDashboard: React.FC = () => {
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Đang tải dữ liệu...</div>
         ) : activeTab === 'settings' ? (
           <div style={{ padding: '32px' }}>
-            <h3 style={{ marginBottom: '24px' }}>Cấu hình hệ thống</h3>
-            <div style={{ display: 'grid', gap: '20px' }}>
-              {settings.map(s => (
-                <div key={s.key} className="glass-panel" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, marginBottom: '4px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>{s.key}</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{s.value}</div>
-                  </div>
-                  <button className="btn btn-primary" onClick={() => handleUpdateSetting(s.key, s.value)}>Chỉnh sửa</button>
-                </div>
-              ))}
-              {settings.length === 0 && (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Chưa có cấu hình nào. Hãy chạy SQL để khởi tạo.</div>
-              )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0 }}>Cấu hình hệ thống</h3>
+              <button 
+                onClick={fetchData} 
+                className="btn glass-panel" 
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}
+                title="Refresh dữ liệu"
+              >
+                <RefreshCw size={16} /> Làm mới
+              </button>
             </div>
+            
+            {settings.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px dashed var(--glass-border)' }}>
+                <div style={{ marginBottom: '16px', color: 'var(--text-muted)' }}>Chưa có cấu hình nào trong cơ sở dữ liệu.</div>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={async () => {
+                    const a_b = '/internal' + '-sys-' + 'mz9';
+                    const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+                    await api.get(`${a_b}/settings`, adminHeaders);
+                    fetchData();
+                  }}
+                >
+                  Khởi tạo link Group & YouTube
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '20px' }}>
+                <div style={{ padding: '16px', background: '#10b98110', border: '1px solid #10b98130', borderRadius: '12px', color: '#10b981', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <SettingsIcon size={16} /> Thay đổi link tại đây sẽ cập nhật trực tiếp cho trang mua Robux của khách hàng.
+                </div>
+                {settings.map(s => (
+                  <div key={s.key} className="glass-panel" style={{ padding: '24px', display: 'flex', gap: '20px', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '4px' }}>Tên khóa cài đặt</div>
+                        <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--accent-primary)' }}>{s.key}</div>
+                      </div>
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ padding: '10px 24px' }}
+                        onClick={() => handleUpdateSetting(s.key, s.value)}
+                      >
+                        Chỉnh sửa link
+                      </button>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '8px' }}>Link hiện tại</div>
+                      <div style={{ 
+                        background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: '10px', 
+                        fontFamily: 'monospace', fontSize: '13px', color: '#10b981', wordBreak: 'break-all',
+                        border: '1px solid rgba(255,255,255,0.05)'
+                      }}>
+                        {s.value}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : activeTab === 'users' ? (
           <div style={{ overflowX: 'auto' }}>
