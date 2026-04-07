@@ -1152,55 +1152,66 @@ router.get('/stats/vip-rankings', async (req, res) => {
     const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
     const now = Date.now();
 
+    // Return cached if still valid
     if (rankingCache.data && (now - rankingCache.lastUpdated) < CACHE_DURATION) {
       return res.json(rankingCache.data);
     }
 
-    // Optimization: Order by database, not in-memory
-    const { data: topTotalUsers, error: usersErr } = await supabase
-      .from('users')
-      .select('id, username, total_topup, avatar')
-      .gt('total_topup', 0)
-      .order('total_topup', { ascending: false })
-      .limit(10);
+    const defaultResult = { total: [], weekly: [], monthly: [] };
 
-    if (usersErr) throw usersErr;
+    // 1. Fetch Top Users (Total)
+    // Wrap each query in its own try/catch to ensure partial success
+    let topTotalUsers = [];
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('id, username, total_topup, avatar')
+        .gt('total_topup', 0)
+        .order('total_topup', { ascending: false })
+        .limit(15);
+      topTotalUsers = data || [];
+    } catch (e) { console.error('[VIP_QUERY_TOTAL] Error:', e); }
 
-    // Weekly/Monthly rankings (Still needs transactions but limited to recent ones only)
-    const oneMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: recentTx, error: txErr } = await supabase
-      .from('transactions')
-      .select('*')
-      .in('status', ['1', 1])
-      .gte('created_at', oneMonthAgo);
-
-    if (txErr) throw txErr;
+    // 2. Fetch Recent Transactions
+    let recentTx = [];
+    const oneMonthAgo = new Date(now - 31 * 24 * 60 * 60 * 1000).toISOString();
+    try {
+      const { data } = await supabase
+        .from('transactions')
+        .select('user_id, amount, created_at')
+        .in('status', ['1', 1])
+        .gte('created_at', oneMonthAgo);
+      recentTx = data || [];
+    } catch (e) { console.error('[VIP_QUERY_TX] Error:', e); }
 
     const getRankingsForPeriod = (periodDateStr) => {
       const periodDate = new Date(periodDateStr);
       const periodMap = {};
+      
       recentTx.forEach(tx => {
         const txDate = new Date(tx.created_at);
         if (txDate >= periodDate) {
-          periodMap[tx.user_id] = (periodMap[tx.user_id] || 0) + tx.amount;
+          periodMap[tx.user_id] = (periodMap[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
         }
       });
       
-      const allUsersFound = []; // To map usernames
       return Object.entries(periodMap)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 10)
         .map(([uid, amt]) => {
-          // Note: we'd need to fetch usernames if not in topTotalUsers
-          // For simplicity and speed, we fallback to UID or map from what we have
-          const cachedU = topTotalUsers.find(u => u.id === uid);
-          return { id: uid, username: cachedU?.username || 'Thành viên', amount: amt, avatar: cachedU?.avatar };
+          const u = topTotalUsers.find(ut => ut.id === uid);
+          return { 
+            id: uid, 
+            username: u?.username || 'Thành viên', 
+            amount: amt, 
+            avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`
+          };
         });
     };
 
     const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
     const result = {
-      total: topTotalUsers || [],
+      total: topTotalUsers.slice(0, 10),
       weekly: getRankingsForPeriod(weekAgoStr),
       monthly: getRankingsForPeriod(oneMonthAgo)
     };
@@ -1208,8 +1219,8 @@ router.get('/stats/vip-rankings', async (req, res) => {
     rankingCache = { data: result, lastUpdated: now };
     res.json(result);
   } catch (err) { 
-    console.error('[VIP_RANKINGS] Error:', err.message);
-    res.status(500).json({ message: 'Error loading VIP data' }); 
+    console.error('[VIP_RANKINGS] Fatal Error:', err.message);
+    res.json({ total: [], weekly: [], monthly: [] }); 
   }
 });
 
