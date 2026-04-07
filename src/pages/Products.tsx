@@ -77,16 +77,30 @@ const Products: React.FC = () => {
 
     // --- ROBUX ---
     {
-      id: 3,
-      title: 'Robux 120H Pending',
+      id: 'robux-gp',
+      title: 'Robux - Gamepass (120H)',
       category: 'Robux',
-      desc: 'Nạp Robux thông qua thẻ Gamepass an toàn, bảo mật 120H nhận.',
-      price: 120000,
-      displayPrice: '120.000đ',
-      duration: '/1k',
+      desc: 'Nạp Robux thông qua Gamepass. Tỷ giá 1:160. An toàn & Bảo mật.',
+      price: 16000,
+      displayPrice: '16.000đ',
+      duration: '/100 R$',
       icon: <Gamepad2 className="w-8 h-8" />,
       theme: 'robux',
-      highlight: true
+      highlight: true,
+      url: '/products/robux-gamepass'
+    },
+    {
+      id: 'robux-gr',
+      title: 'Robux - Group (24H)',
+      category: 'Robux',
+      desc: 'Nạp Robux thông qua Group. Tỷ giá 1:200. Nhanh chóng & Uy tín.',
+      price: 20000,
+      displayPrice: '20.000đ',
+      duration: '/100 R$',
+      icon: <CircleDollarSign className="w-8 h-8" />,
+      theme: 'robux',
+      highlight: true,
+      url: '/products/robux-group'
     },
 
     // --- YOUTUBE ---
@@ -241,6 +255,11 @@ const Products: React.FC = () => {
   ];
 
   const handleBuy = async (product: any) => {
+    if (product.url) {
+      navigate(product.url);
+      return;
+    }
+    
     if (!user) {
       showNotification('Vui lòng đăng nhập để mua hàng!', 'info');
       navigate('/login');
@@ -320,7 +339,11 @@ const Products: React.FC = () => {
                     className="btn-buy" 
                     style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 12px' }}
                     onClick={() => {
-                      addToCart(product);
+                      if (product.url) {
+                        navigate(product.url);
+                      } else {
+                        addToCart(product);
+                      }
                     }}
                   >
                     <ShoppingCart size={18} />

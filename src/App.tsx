@@ -20,6 +20,8 @@ import { CartProvider, useCart } from './context/CartContext';
 import './index.css';
 
 import Discord from './pages/products/Discord';
+import RobuxGamepass from './pages/products/RobuxGamepass';
+import RobuxGroup from './pages/products/RobuxGroup';
 
 function AppContent() {
   const location = useLocation();
@@ -348,6 +350,8 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/discord" element={<Discord />} />
+          <Route path="/products/robux-gamepass" element={<RobuxGamepass />} />
+          <Route path="/products/robux-group" element={<RobuxGroup />} />
           <Route path="/nap-tien" element={<TopUp />} />
           <Route path="/vip" element={<VIP />} />
           
