@@ -25,8 +25,7 @@ const RobuxGamepass: React.FC = () => {
     const fetchSettings = async () => {
       try {
         const res = await api.get('/settings/public');
-        const link = res.data.find((s: any) => s.key === 'robux_tutorial_link')?.value;
-        if (link) setTutorialLink(link);
+        if (res.data.robux_tutorial_link) setTutorialLink(res.data.robux_tutorial_link);
       } catch (err) { console.error('Error fetching settings'); }
     };
     fetchSettings();

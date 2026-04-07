@@ -24,8 +24,7 @@ const RobuxGroup: React.FC = () => {
     const fetchSettings = async () => {
       try {
         const res = await api.get('/settings/public');
-        const link = res.data.find((s: any) => s.key === 'roblox_group_link')?.value;
-        if (link) setGroupLink(link);
+        if (res.data.roblox_group_link) setGroupLink(res.data.roblox_group_link);
       } catch (err) { console.error('Error fetching settings'); }
     };
     fetchSettings();
