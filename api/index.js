@@ -9,17 +9,25 @@ import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
 import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
-import { db } from '../db.js';
+import { db, supabase } from '../db.js';
 import { calculateVipLevel, VIP_LEVELS } from './vip-utils.js';
 import { GACHA_REWARDS, rollGacha } from './gacha-utils.js';
 
 // Multer config for avatar uploads (memory storage)
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+// Multer config for order attachments (High Limit: 500MB as requested)
+const orderUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 500 * 1024 * 1024 }
 });
 
 const app = express();
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
 // Trust proxy for rate-limiting (ESSENTIAL for Vercel/proxies)
 app.set('trust proxy', 1);
@@ -1193,6 +1201,22 @@ router.get('/feedbacks', async (req, res) => {
     const feedbacks = await db.feedbacks.getAll().catch(() => []);
     res.json(feedbacks || []);
   } catch (err) { res.json([]); }
+});
+
+// ==========================================
+// API: UPLOAD (DEDICATED)
+// ==========================================
+app.post('/api/upload-proof', authenticateToken, orderUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Không có file nào được tải lên.' });
+    const { originalname, buffer, mimetype } = req.file;
+    const fileExt = originalname.split('.').pop();
+    const fileName = `${Date.now()}-${uuidv4()}.${fileExt}`;
+    const { data, error } = await supabase.storage.from('orders').upload(fileName, buffer, { contentType: mimetype, upsert: true });
+    if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage.from('orders').getPublicUrl(fileName);
+    res.json({ url: publicUrl });
+  } catch (err) { res.status(500).json({ message: 'Lỗi khi tải file lên hệ thống.' }); }
 });
 
 // ==========================================

@@ -365,7 +365,13 @@ const AdminDashboard: React.FC = () => {
                           {Object.entries(order.options).map(([k, v]) => (
                             <div key={k}>
                               <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{k}: </span>
-                              <span style={{ fontWeight: 600, wordBreak: 'break-all' }}>{String(v)}</span>
+                              {typeof v === 'string' && v.startsWith('http') ? (
+                                <a href={v} target="_blank" rel="noreferrer" style={{ color: '#10b981', fontWeight: 600, textDecoration: 'underline' }}>
+                                  [Xem đính kèm]
+                                </a>
+                              ) : (
+                                <span style={{ fontWeight: 600, wordBreak: 'break-all' }}>{String(v)}</span>
+                              )}
                             </div>
                           ))}
                         </div>

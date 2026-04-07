@@ -16,6 +16,9 @@ const RobuxGamepass: React.FC = () => {
   const [gamepassLink, setGamepassLink] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [tutorialLink, setTutorialLink] = useState('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 
   useEffect(() => {
@@ -28,6 +31,18 @@ const RobuxGamepass: React.FC = () => {
     };
     fetchSettings();
   }, []);
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 500 * 1024 * 1024) {
+        showNotification('File quá lớn! Giới hạn 500MB.', 'error');
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
 
   const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * RATE : 0;
   const quickPackages = [100, 500, 1000, 2000, 5000, 10000];
@@ -63,7 +78,20 @@ const RobuxGamepass: React.FC = () => {
     if (!window.confirm(`Xác nhận thanh toán ${totalPrice.toLocaleString()}đ cho ${robuxAmount} Robux?`)) return;
 
     setLoading(true);
+    let finalImageUrl = '';
+
     try {
+      if (selectedFile) {
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const uploadRes = await api.post('/upload-proof', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        finalImageUrl = uploadRes.data.url;
+        setUploading(false);
+      }
+
       await api.post('/orders/create', {
         productId: 'robux-gamepass',
         productName: `Mua ${robuxAmount} Robux (Gamepass)`,
@@ -74,6 +102,7 @@ const RobuxGamepass: React.FC = () => {
           username,
           gamepassLink,
           note,
+          previewImage: finalImageUrl,
           type: 'gamepass'
         }
       });
@@ -198,16 +227,31 @@ const RobuxGamepass: React.FC = () => {
               />
             </div>
 
-            {/* Photo Upload Placeholder */}
+            {/* Photo Upload Functionality */}
             <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 600, fontSize: '14px' }}>Tải ảnh đính kèm (Không bắt buộc)</label>
-              <div style={{ 
-                border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '12px', padding: '30px',
-                textAlign: 'center', cursor: 'pointer', color: 'var(--text-muted)'
+              <label className="form-label" style={{ fontWeight: 600, fontSize: '14px' }}>Tải ảnh đính kèm (Lên đến 500MB)</label>
+              <input type="file" id="file-upload" hidden onChange={onFileChange} accept="image/*,video/*" />
+              <label htmlFor="file-upload" className="glass-card" style={{ 
+                display: 'block', border: '2px dashed rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '30px',
+                textAlign: 'center', cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.2s', position: 'relative', overflow: 'hidden'
               }}>
-                <ImageIcon size={24} style={{ marginBottom: '10px', opacity: 0.5 }} />
-                <div style={{ fontSize: '12px' }}>Bấm để chọn ảnh hoặc kéo thả vào đây</div>
-              </div>
+                {previewUrl ? (
+                  <div style={{ position: 'relative' }}>
+                    <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                    <div style={{ marginTop: '10px', color: '#10b981', fontWeight: 600 }}>File: {selectedFile?.name}</div>
+                  </div>
+                ) : (
+                  <>
+                    <ImageIcon size={24} style={{ marginBottom: '10px', opacity: 0.5 }} />
+                    <div style={{ fontSize: '12px' }}>Bấm để chọn ảnh/video hoặc kéo thả vào đây</div>
+                  </>
+                )}
+                {uploading && (
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                    <Loader2 className="spin" size={32} />
+                  </div>
+                )}
+              </label>
             </div>
 
             {/* Order Summary */}
