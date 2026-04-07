@@ -429,7 +429,7 @@ const AdminDashboard: React.FC = () => {
                 {transactions.map(tx => (
                   <tr key={tx.request_id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                     <td style={{ padding: '20px', fontSize: '12px' }}>{tx.request_id}</td>
-                    <td style={{ padding: '20px', fontWeight: '600' }}>{tx.userId.slice(0,8)}</td>
+                    <td style={{ padding: '20px', fontWeight: '600' }}>{(tx.user_id || tx.userId || '').slice(0,8)}</td>
                     <td style={{ padding: '20px' }}>{tx.telco}</td>
                     <td style={{ padding: '20px', fontWeight: '700' }}>{tx.amount.toLocaleString()}đ</td>
                     <td style={{ padding: '20px' }}>
