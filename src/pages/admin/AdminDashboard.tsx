@@ -145,6 +145,54 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Stats Overview Bar */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+        gap: '20px', 
+        marginBottom: '32px' 
+      }}>
+        {[
+          { 
+            label: 'Tổng số người dùng', 
+            value: users.length.toLocaleString(), 
+            icon: <Users size={20} />, 
+            color: '#3b82f6' 
+          },
+          { 
+            label: 'Tổng nạp (Thẻ + Bank)', 
+            value: transactions.filter(t => t.status === '1').reduce((s, t) => s + (t.amount || 0), 0).toLocaleString() + 'đ', 
+            icon: <CreditCard size={20} />, 
+            color: '#10b981' 
+          },
+          { 
+            label: 'Doanh thu đơn hàng', 
+            value: orders.filter(o => o.status === 'completed').reduce((s, o) => s + (o.total || 0), 0).toLocaleString() + 'đ', 
+            icon: <ShoppingBag size={20} />, 
+            color: '#f59e0b' 
+          },
+          { 
+            label: 'Đơn hàng đang chờ', 
+            value: orders.filter(o => o.status === 'pending').length.toLocaleString(), 
+            icon: <Search size={20} />, 
+            color: '#ef4444' 
+          }
+        ].map((stat, i) => (
+          <div key={i} className="glass-card" style={{ 
+            padding: '24px', display: 'flex', alignItems: 'center', gap: '20px',
+            border: `1px solid ${stat.color}20`, background: `${stat.color}05`
+          }}>
+            <div style={{ 
+              background: `${stat.color}20`, padding: '12px', borderRadius: '12px', color: stat.color 
+            }}>{stat.icon}</div>
+            <div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '4px' }}>{stat.label}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stat.value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
         {[
           { id: 'users', label: 'Người dùng', icon: <Users size={18} /> },
@@ -273,8 +321,21 @@ const AdminDashboard: React.FC = () => {
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ID: {order.userId.slice(0,6)}</div>
                     </td>
                     <td style={{ padding: '20px' }}>
-                      <div style={{ fontWeight: '600' }}>{order.productName}</div>
-                      <div style={{ fontSize: '12px' }}>SL: {order.amount} - {order.price.toLocaleString()}đ</div>
+                      <div style={{ fontWeight: '600', color: 'var(--accent-primary)' }}>{order.productName}</div>
+                      <div style={{ fontSize: '12px', marginBottom: '8px' }}>SL: {order.amount} - {order.price.toLocaleString()}đ</div>
+                      {order.options && (
+                        <div style={{ 
+                          fontSize: '11px', background: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '8px',
+                          border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '4px'
+                        }}>
+                          {Object.entries(order.options).map(([k, v]) => (
+                            <div key={k}>
+                              <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{k}: </span>
+                              <span style={{ fontWeight: 600, wordBreak: 'break-all' }}>{String(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '20px', fontWeight: '700', color: 'var(--primary-color)' }}>{order.total.toLocaleString()}đ</td>
                     <td style={{ padding: '20px' }}>
