@@ -154,6 +154,9 @@ router.post('/auth/register', async (req, res) => {
       password: hashedPassword,
       email: email || '',
       balance: 0,
+      total_topup: 0,
+      vip_points: 0,
+      vip_level: 0,
       ...(topup_id ? { topup_id } : {}), // Chỉ thêm nếu thành công
       role: username.toLowerCase() === 'lumie' ? 'admin' : 'user',
       banned: false
@@ -289,6 +292,9 @@ router.post('/auth/discord/callback', async (req, res) => {
           password: await bcrypt.hash(uuidv4(), 12),
           has_password: false,
           balance: 0,
+          total_topup: 0,
+          vip_points: 0,
+          vip_level: 0,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
         });
@@ -414,6 +420,9 @@ router.post('/auth/google/callback', async (req, res) => {
           password: await bcrypt.hash(uuidv4(), 12),
           has_password: false,
           balance: 0,
+          total_topup: 0,
+          vip_points: 0,
+          vip_level: 0,
           topup_id: tid,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
