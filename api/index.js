@@ -637,12 +637,18 @@ router.post('/callback/gachthe1s', async (req, res) => {
           const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
           const newVipLevel = calculateVipLevel(newVipPoints);
           
-          await db.users.update(user.id, { 
-            balance: newBalance,
-            vip_points: newVipPoints,
-            vip_level: newVipLevel,
-            total_topup: newTotalTopup
-          });
+          try {
+            await db.users.update(user.id, { 
+              balance: newBalance,
+              vip_points: newVipPoints,
+              vip_level: newVipLevel,
+              total_topup: newTotalTopup
+            });
+          } catch (dbErr) {
+            console.warn('[BANK_SYNC_WARN] Lỗi cập nhật cột VIP khi gọi callback:', dbErr.message);
+            // Fallback: Chỉ cộng tiền vào tài khoản
+            await db.users.update(user.id, { balance: newBalance });
+          }
 
           await db.notifications.create({
             userId: user.id, title: 'Nạp thẻ thành công',
@@ -731,19 +737,25 @@ router.post('/internal/bank-sync', async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
-    // 5. Cộng tiền & Lưu lịch sử
+    // 5. Cộng tiền (An toàn hơn: Thử cập nhật VIP, nếu lỗi cột thì chỉ cộng tiền)
     const rechargeAmt = finalAmount;
     const newBalance = (user.balance || 0) + rechargeAmt;
     const newVipPoints = (user.vip_points || 0) + rechargeAmt;
     const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
     const newVipLevel = calculateVipLevel(newVipPoints);
     
-    await db.users.update(user.id, { 
-      balance: newBalance,
-      vip_points: newVipPoints,
-      vip_level: newVipLevel,
-      total_topup: newTotalTopup
-    });
+    try {
+      await db.users.update(user.id, { 
+        balance: newBalance,
+        vip_points: newVipPoints,
+        vip_level: newVipLevel,
+        total_topup: newTotalTopup
+      });
+    } catch (dbErr) {
+      console.warn('[BANK_SYNC_WARN] Lỗi cập nhật cột VIP (Có thể chưa chạy SQL):', dbErr.message);
+      // Fallback: Chỉ cộng tiền vào tài khoản để khách không bị mất tiền
+      await db.users.update(user.id, { balance: newBalance });
+    }
 
     const rechargeId = transactionId !== '{not_id}' ? transactionId : `vcb_${Date.now()}`;
     await db.transactions.create({
