@@ -1162,23 +1162,20 @@ router.post('/user/claim-vip-milestone', authenticateToken, async (req, res) => 
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Simple memory cache for rankings (10-minute)
-let rankingCache = { data: null, lastUpdated: 0 };
+// FAST BACKGROUND CACHE FOR RANKINGS
+let rankingCache = { 
+  data: { total: [], weekly: [], monthly: [] }, 
+  lastUpdated: 0,
+  isRefreshing: false
+};
 
-router.get('/stats/vip-rankings', async (req, res) => {
+const refreshRankingsInBackground = async () => {
+  if (rankingCache.isRefreshing) return;
+  rankingCache.isRefreshing = true;
+  
   try {
-    const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes
     const now = Date.now();
-
-    // Return cached if still valid
-    if (rankingCache.data && (now - rankingCache.lastUpdated) < CACHE_DURATION) {
-      return res.json(rankingCache.data);
-    }
-
-    const defaultResult = { total: [], weekly: [], monthly: [] };
-
     // 1. Fetch Top Users (Total)
-    // Wrap each query in its own try/catch to ensure partial success
     let topTotalUsers = [];
     try {
       const { data } = await supabase
@@ -1188,7 +1185,7 @@ router.get('/stats/vip-rankings', async (req, res) => {
         .order('total_topup', { ascending: false })
         .limit(50);
       topTotalUsers = data || [];
-    } catch (e) { console.error('[VIP_QUERY_TOTAL] Error:', e); }
+    } catch (e) { console.error('[BG_QUERY_TOTAL] Error:', e); }
 
     // 2. Fetch Recent Transactions
     let recentTx = [];
@@ -1200,70 +1197,66 @@ router.get('/stats/vip-rankings', async (req, res) => {
         .in('status', ['1', 1])
         .gte('created_at', oneMonthAgo);
       recentTx = data || [];
-    } catch (e) { console.error('[VIP_QUERY_TX] Error:', e); }
+    } catch (e) { console.error('[BG_QUERY_TX] Error:', e); }
 
-    const getRankingsForPeriod = (periodDateStr) => {
-      const periodDate = new Date(periodDateStr);
-      const periodMap = {};
-      const uniqueUids = new Set();
-      
-      recentTx.forEach(tx => {
-        const txDate = new Date(tx.created_at);
-        if (txDate >= periodDate) {
-          periodMap[tx.user_id] = (periodMap[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
-          uniqueUids.add(tx.user_id);
-        }
-      });
-      
-      // Add UIDs from topTotalUsers to a local map for quick lookup
-      const nameMap = {};
-      topTotalUsers.forEach(u => { nameMap[u.id] = u; });
-
-      return Object.entries(periodMap)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10)
-        .map(([uid, amt]) => {
-          const u = nameMap[uid];
-          return { 
-            id: uid, 
-            username: u?.username || 'Gấu Lumie', // Better fallback
-            amount: amt, 
-            avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`
-          };
-        });
-    };
-
-    // Optimization: Before generating results, identify any missing usernames in the Top 10 lists
+    // 3. Find missing names
     const monthlyUids = Object.entries(recentTx.reduce((acc, tx) => {
       acc[tx.user_id] = (acc[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
       return acc;
     }, {})).sort(([,a],[,b]) => b - a).slice(0, 10).map(([uid]) => uid);
 
     const missingUids = monthlyUids.filter(uid => !topTotalUsers.find(ut => ut.id === uid));
-    
     if (missingUids.length > 0) {
       try {
-        const { data: missingUsers } = await supabase
-          .from('users')
-          .select('id, username, avatar')
-          .in('id', missingUids);
+        const { data: missingUsers } = await supabase.from('users').select('id, username, avatar').in('id', missingUids);
         if (missingUsers) topTotalUsers = [...topTotalUsers, ...missingUsers];
-      } catch (e) { console.error('[VIP_NAME_FIX] Error:', e); }
+      } catch (e) { }
     }
 
+    const nameMap = {};
+    topTotalUsers.forEach(u => { nameMap[u.id] = u; });
+
+    const getRankingsForPeriod = (periodDateStr) => {
+      const pDate = new Date(periodDateStr);
+      const pMap = {};
+      recentTx.forEach(tx => {
+        if (new Date(tx.created_at) >= pDate) {
+          pMap[tx.user_id] = (pMap[tx.user_id] || 0) + (parseInt(tx.amount) || 0);
+        }
+      });
+      return Object.entries(pMap).sort(([, a], [, b]) => b - a).slice(0, 10).map(([uid, amt]) => {
+        const u = nameMap[uid];
+        return { 
+          id: uid, username: u?.username || 'Gấu Lumie', 
+          amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` 
+        };
+      });
+    };
+
     const weekAgoStr = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const result = {
+    rankingCache.data = {
       total: topTotalUsers.slice(0, 10).map(u => ({ id: u.id, username: u.username, amount: u.total_topup, avatar: u.avatar })),
       weekly: getRankingsForPeriod(weekAgoStr),
       monthly: getRankingsForPeriod(oneMonthAgo)
     };
-
-    rankingCache = { data: result, lastUpdated: now };
-    res.json(result);
-  } catch (err) { 
-    console.error('[VIP_RANKINGS] Fatal Error:', err.message);
-    res.json({ total: [], weekly: [], monthly: [] }); 
+    rankingCache.lastUpdated = now;
+  } catch (err) {
+    console.error('[BG_REFRESH] Fatal Error:', err.message);
+  } finally {
+    rankingCache.isRefreshing = false;
   }
+};
+
+// Initial run
+refreshRankingsInBackground();
+
+router.get('/stats/vip-rankings', async (req, res) => {
+  // If cache is older than 5 minutes, trigger a background refresh but return old data instantly
+  const now = Date.now();
+  if (now - rankingCache.lastUpdated > 5 * 60 * 1000) {
+    refreshRankingsInBackground();
+  }
+  res.json(rankingCache.data);
 });
 
 router.get('/stats/recent-activity', async (req, res) => {

@@ -46,19 +46,28 @@ function VIP() {
   const [gachaResult, setGachaResult] = useState<any>(null);
 
   const fetchData = async () => {
-    try {
-      const [statusRes, rankRes] = await Promise.all([
-        api.get('/user/vip-status'),
-        api.get('/stats/vip-rankings')
-      ]);
-      setStatus(statusRes.data);
-      setRankings(rankRes.data);
-    } catch (err) {
-      console.error('Error fetching VIP data:', err);
-      showNotification('Không thể tải dữ liệu VIP. Vui lòng thử lại sau.', 'error');
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    // Fetch status and rankings separately to prevent one from blocking the other
+    const fetchStatus = async () => {
+      try {
+        const res = await api.get('/user/vip-status');
+        setStatus(res.data);
+      } catch (err) {
+        console.error('Lỗi tải trạng thái VIP:', err);
+      }
+    };
+
+    const fetchRankings = async () => {
+      try {
+        const res = await api.get('/stats/vip-rankings');
+        setRankings(res.data);
+      } catch (err) {
+        console.error('Lỗi tải bảng xếp hạng:', err);
+      }
+    };
+
+    await Promise.allSettled([fetchStatus(), fetchRankings()]);
+    setLoading(false);
   };
 
   useEffect(() => {
