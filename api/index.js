@@ -871,18 +871,6 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
         type: 'donation'
       }).catch(() => {});
       
-      // Create mock transaction for ranking tracking
-      await db.transactions.create({
-        user_id: userId,
-        amount: spent,
-        telco: 'DONATION',
-        serial: 'N/A',
-        code: `don_${order.id}`,
-        request_id: `don_${order.id}`,
-        status: 1,
-        message: 'Ủng hộ Lumie Store'
-      }).catch(() => {});
-
       rankingCache.lastUpdated = 0; // Trigger leaderboard refresh
     }
 
