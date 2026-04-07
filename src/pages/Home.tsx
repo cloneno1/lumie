@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset, RefreshCw } from 'lucide-react';
+import { Sparkles, ShieldCheck, Zap, Users, Trophy, Star, Heart, Activity, Crown, Headset, RefreshCw, CircleDollarSign } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import api from '../api/axios';
@@ -320,29 +320,45 @@ const Home: React.FC = () => {
               Nếu bạn yêu thích dịch vụ, hãy ủng hộ web bằng chính số dư trong tài khoản của bạn.
               Mọi sự đóng góp đều giúp chúng tôi duy trì hệ thống và nâng cấp hạ tầng mạnh mẽ hơn.
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
-              {[20000, 50000, 100000, 200000, 500000].map(amt => (
-                <button 
-                  key={amt}
-                  onClick={() => setDonateAmount(amt)}
-                  className={`btn ${donateAmount === amt ? 'btn-primary' : 'glass-panel'}`}
-                  style={{ 
-                    padding: '12px 20px', borderRadius: '12px', fontSize: '14px', fontWeight: 700,
-                    border: donateAmount === amt ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                    background: donateAmount === amt ? '#10b981' : 'rgba(255,255,255,0.03)',
-                    color: donateAmount === amt ? 'white' : 'var(--text-muted)'
-                  }}
-                >
-                  {amt.toLocaleString()}đ
-                </button>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+              <div className="input-icon-wrapper">
+                <div className="icon"><CircleDollarSign size={20} /></div>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  placeholder="Nhập số tiền muốn ủng hộ..."
+                  value={donateAmount}
+                  onChange={(e) => setDonateAmount(parseInt(e.target.value) || 0)}
+                  style={{ fontSize: '1.1rem', fontWeight: 700 }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {[10000, 20000, 50000, 100000, 200000, 500000].map(amt => (
+                  <button 
+                    key={amt}
+                    onClick={() => setDonateAmount(amt)}
+                    className={`btn ${donateAmount === amt ? 'btn-primary' : 'glass-panel'}`}
+                    style={{ 
+                      padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      background: donateAmount === amt ? '#10b981' : 'rgba(255,255,255,0.03)',
+                      color: donateAmount === amt ? 'white' : 'var(--text-muted)',
+                      flex: '1 0 30%'
+                    }}
+                  >
+                    {amt >= 1000 ? (amt/1000) + 'k' : amt}
+                  </button>
+                ))}
+              </div>
             </div>
             <button 
               className="btn btn-primary" 
               onClick={handleDonate}
+              disabled={donateAmount < 1000}
               style={{ 
                 width: '100%', height: '56px', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 800,
-                background: '#10b981', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.2)'
+                background: '#10b981', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.2)',
+                opacity: donateAmount < 1000 ? 0.5 : 1
               }}
             >
               Xác nhận ủng hộ {donateAmount.toLocaleString()}đ
@@ -357,27 +373,27 @@ const Home: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {loadingStats ? (
                   [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '40px', borderRadius: '12px' }}></div>)
-                ) : stats?.topDonors?.length > 0 ? (
+                ) : (stats?.topDonors && stats.topDonors.length > 0) ? (
                   stats.topDonors.slice(0, 5).map((u: any, idx: number) => (
                     <div key={idx} style={{ 
-                      display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', 
-                      background: 'rgba(255,255,255,0.02)', borderRadius: '12px',
-                      border: idx === 0 ? '1px solid rgba(245,158,11,0.2)' : 'none'
+                      display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', 
+                      background: 'rgba(255,255,255,0.03)', borderRadius: '14px',
+                      border: idx === 0 ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(255,255,255,0.05)'
                     }}>
                       <div style={{ 
-                        width: '24px', height: '24px', borderRadius: '6px', 
+                        width: '28px', height: '28px', borderRadius: '8px', 
                         background: idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                        fontWeight: 'bold', fontSize: '10px', color: '#000'
+                        fontWeight: '800', fontSize: '12px', color: '#000'
                       }}>
                         {idx + 1}
                       </div>
-                      <div style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: '13px' }}>{u.username}</div>
-                      <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700 }}>{u.amount.toLocaleString()}đ</div>
+                      <div style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: '0.95rem' }}>{u.username}</div>
+                      <div style={{ fontSize: '0.95rem', color: '#f59e0b', fontWeight: 800 }}>{u.amount.toLocaleString()}đ</div>
                     </div>
                   ))
                 ) : (
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Chưa có dữ liệu</p>
+                  <p style={{ fontSize: '14px', color: 'var(--text-muted)', padding: '20px 0' }}>Chưa có dữ liệu ủng hộ</p>
                 )}
               </div>
             </div>
