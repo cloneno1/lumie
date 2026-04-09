@@ -211,8 +211,8 @@ const GamePurchase: React.FC = () => {
     const confirmed = await confirm({
       title: 'Xác nhận mua hàng',
       message: `Bạn có chắc muốn nạp ${selectedPackage.amount} ${selectedPackage.unit} cho tài khoản ${formData.playerid}?`,
-      confirmText: 'Mua ngay',
-      cancelText: 'Hủy'
+      confirmLabel: 'Mua ngay',
+      cancelLabel: 'Hủy'
     });
 
     if (!confirmed) return;
