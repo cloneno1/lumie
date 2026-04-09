@@ -88,7 +88,7 @@ const BuyGameCard: React.FC = () => {
           <div className="glass-card" style={{ padding: '40px', position: 'relative', overflow: 'hidden' }}>
             {/* Telco Selection */}
             <div style={{ marginBottom: '32px' }}>
-              <label style={{ display: 'block', marginBottom: '16px', fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <label style={{ marginBottom: '16px', fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Gamepad2 size={24} style={{ color: 'var(--accent-primary)' }} /> Chọn loại thẻ game
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
@@ -170,7 +170,7 @@ const BuyGameCard: React.FC = () => {
                  className="btn btn-primary btn-glow"
                  style={{ padding: '16px 40px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}
                >
-                 {loading ? <Loading size={24} /> : (
+                 {loading ? <Loading message="" /> : (
                    <>Thanh Toán <ChevronRight size={20} /></>
                  )}
                </button>
