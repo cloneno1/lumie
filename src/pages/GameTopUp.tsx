@@ -84,7 +84,6 @@ const GameTopUp: React.FC = () => {
                 width: '100%', 
                 padding: '18px 20px 18px 55px', 
                 borderRadius: '50px', 
-                border: 'none', 
                 background: 'rgba(255,255,255,0.1)', 
                 backdropFilter: 'blur(10px)',
                 color: 'white',
