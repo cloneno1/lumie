@@ -364,17 +364,29 @@ const GamePurchase: React.FC = () => {
                   }}
                   className="package-card"
                 >
-                  <p style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '5px' }}>{pkg.amount}</p>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>{pkg.unit}</p>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', textDecoration: 'line-through', marginBottom: '2px' }}>
-                      {pkg.price.toLocaleString()}đ
-                    </span>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-primary)' }}>
-                      {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
-                    </span>
-                  </div>
+                  {(gameId === 'lq' || gameId === 'fo4') ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '60px' }}>
+                      <p style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--accent-primary)', margin: 0 }}>
+                        {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
+                      </p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                        Giá trị: {pkg.price.toLocaleString()}đ
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '5px' }}>{pkg.amount}</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>{pkg.unit}</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', textDecoration: 'line-through', marginBottom: '2px' }}>
+                          {pkg.price.toLocaleString()}đ
+                        </span>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-primary)' }}>
+                          {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
+                        </span>
+                      </div>
+                    </>
+                  )}
 
                   {selectedPackage?.id === pkg.id && (
                     <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
