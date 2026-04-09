@@ -179,7 +179,7 @@ const GamePurchase: React.FC = () => {
                 defaults[f.name] = f.options[0];
             }
         });
-        setFormData(prev => ({ ...defaults, ...prev }));
+        setFormData((prev: any) => ({ ...defaults, ...prev }));
     }
   }, [gameId, navigate]); // gameId is stable, navigate is stable
 
