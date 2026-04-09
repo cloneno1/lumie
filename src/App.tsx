@@ -22,6 +22,7 @@ import './index.css';
 import Discord from './pages/products/Discord';
 import DiscordDecoration from './pages/products/DiscordDecoration';
 import GameStore from './pages/GameStore';
+import GamePurchase from './pages/GamePurchase';
 import RobuxGamepass from './pages/products/RobuxGamepass';
 import RobuxGroup from './pages/products/RobuxGroup';
 import CustomerSupport from './components/CustomerSupport';
@@ -353,6 +354,7 @@ function AppContent() {
           <Route path="/products/robux-group" element={<RobuxGroup />} />
           <Route path="/nap-tien" element={<TopUp />} />
           <Route path="/nap-game" element={<GameStore />} />
+          <Route path="/nap-game/:gameId" element={<GamePurchase />} />
           <Route path="/vip" element={<VIP />} />
           
           <Route path="/login" element={!loading ? (user ? <Navigate to="/" replace /> : <Login />) : null} />

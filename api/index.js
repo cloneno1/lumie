@@ -914,6 +914,54 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+router.post('/orders/game-topup', authenticateToken, async (req, res) => {
+  try {
+    const { gameId, gameName, packageId, amount, unit, price, formData } = req.body;
+    const userId = req.user.id;
+    const user = await db.users.getById(userId);
+
+    if (!user || user.balance < price) {
+      return res.status(400).json({ message: 'Số dư không đủ.' });
+    }
+
+    // Ghi nhận đơn hàng
+    const order = await db.orders.create({
+      userId,
+      username: user.username,
+      productId: `game-${gameId}`,
+      productName: `${gameName} - ${amount} ${unit}`,
+      price: price,
+      amount: 1,
+      total: price,
+      status: 'pending',
+      options: {
+        type: 'game_topup',
+        gameId,
+        packageId,
+        ...formData
+      }
+    });
+
+    // Trừ tiền
+    await db.users.update(userId, {
+      balance: user.balance - price
+    });
+
+    // Thông báo cho người dùng
+    await db.notifications.create({
+      userId,
+      title: 'Đã nhận đơn nạp game',
+      content: `Đơn nạp ${amount} ${unit} cho game ${gameName} đã được ghi nhận. Chúng tôi sẽ xử lý sớm nhất.`,
+      type: 'order'
+    }).catch(() => {});
+
+    res.json({ success: true, message: 'Đơn hàng đã được ghi nhận!', order });
+  } catch (err) {
+    console.error('[GAME_TOPUP_ERROR]', err.message);
+    res.status(500).json({ message: 'Lỗi máy chủ khi xử lý đơn hàng.' });
+  }
+});
+
 // ==========================================
 // API: ADMIN (ULTRA-STEALTH MODE)
 // ==========================================

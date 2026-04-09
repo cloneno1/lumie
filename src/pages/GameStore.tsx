@@ -139,7 +139,7 @@ const GameStore: React.FC = () => {
               border: '1px solid rgba(255,255,255,0.05)',
               position: 'relative'
             }}
-            onClick={() => navigate(`/products?search=${encodeURIComponent(game.name)}`)}
+            onClick={() => navigate(`/nap-game/${game.id}`)}
           >
             <div style={{ width: '100%', height: '220px', overflow: 'hidden', background: 'rgba(255,255,255,0.02)' }}>
               <img 
