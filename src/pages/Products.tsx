@@ -76,6 +76,19 @@ const Products: React.FC = () => {
       theme: 'discord',
       highlight: false
     },
+    {
+      id: 22,
+      title: 'Decoration Discord',
+      category: 'Discord',
+      desc: 'Mua Avatar Decoration và Profile Effects cực chất. Hỗ trợ Login & Gift.',
+      price: 50000,
+      displayPrice: '50.000đ',
+      duration: '/gói',
+      icon: <Sparkles className="w-8 h-8" />,
+      theme: 'discord',
+      highlight: true,
+      url: '/products/discord-decoration'
+    },
 
     // --- ROBUX ---
     {

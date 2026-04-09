@@ -20,6 +20,7 @@ import { CartProvider, useCart } from './context/CartContext';
 import './index.css';
 
 import Discord from './pages/products/Discord';
+import DiscordDecoration from './pages/products/DiscordDecoration';
 import RobuxGamepass from './pages/products/RobuxGamepass';
 import RobuxGroup from './pages/products/RobuxGroup';
 import CustomerSupport from './components/CustomerSupport';
@@ -93,19 +94,6 @@ function AppContent() {
     setShowUserMenu(false);
     setShowMobileMenu(false);
   }, [location.pathname]);
-
-  // Auth Protection Wrappers
-  const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-    if (loading) return <Loading fullScreen message="Đang tải dữ liệu người dùng..." />;
-    if (!user) return <Navigate to="/login" replace />;
-    return <>{children}</>;
-  };
-
-  const PublicRoute = ({ children }: { children: ReactNode }) => {
-    if (loading) return null;
-    if (user) return <Navigate to="/" replace />;
-    return <>{children}</>;
-  };
 
   return (
     <>
@@ -359,24 +347,25 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/discord" element={<Discord />} />
+          <Route path="/products/discord-decoration" element={<DiscordDecoration />} />
           <Route path="/products/robux-gamepass" element={<RobuxGamepass />} />
           <Route path="/products/robux-group" element={<RobuxGroup />} />
           <Route path="/nap-tien" element={<TopUp />} />
           <Route path="/vip" element={<VIP />} />
           
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/login" element={!loading ? (user ? <Navigate to="/" replace /> : <Login />) : null} />
+          <Route path="/register" element={!loading ? (user ? <Navigate to="/" replace /> : <Register />) : null} />
           
           <Route path="/auth/callback/discord" element={<AuthCallback provider="discord" />} />
           <Route path="/auth/callback/google" element={<AuthCallback provider="google" />} />
           
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/profile/orders" element={<ProtectedRoute><OrdersHistory /></ProtectedRoute>} />
-          <Route path="/profile/topups" element={<ProtectedRoute><TopUpHistory /></ProtectedRoute>} />
-          <Route path="/profile/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+          <Route path="/profile" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <Profile />)} />
+          <Route path="/profile/orders" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <OrdersHistory />)} />
+          <Route path="/profile/topups" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <TopUpHistory />)} />
+          <Route path="/profile/settings" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AccountSettings />)} />
           
           <Route path="/cart" element={<Cart />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AdminDashboard />)} />
         </Routes>
       </main>
 
