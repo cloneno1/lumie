@@ -922,8 +922,8 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
 
     const finalPrice = Math.floor(price * 0.95);
 
-    if (price < 50000) {
-      return res.status(400).json({ message: 'Mệnh giá tối thiểu là 50.000đ.' });
+    if (price < 20000) {
+      return res.status(400).json({ message: 'Mệnh giá tối thiểu là 20.000đ.' });
     }
 
     if (!user || user.balance < finalPrice) {
