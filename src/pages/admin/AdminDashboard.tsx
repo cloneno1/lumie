@@ -223,7 +223,10 @@ const AdminDashboard: React.FC = () => {
   const purchasesOnly = orders.filter(o => !isDonation(o));
   const filteredOrders = purchasesOnly.filter(o => {
     const searchLow = searchTerm.toLowerCase();
-    return (o.username || '').toLowerCase().includes(searchLow) || String(o.id || '').includes(searchLow) || (o.product_name || o.productName || '').toLowerCase().includes(searchLow);
+    return (o.username || '').toLowerCase().includes(searchLow) || 
+           String(o.id || '').includes(searchLow) || 
+           (o.product_name || o.productName || '').toLowerCase().includes(searchLow) ||
+           (o.options?.playerid || '').toLowerCase().includes(searchLow);
   });
   const filteredTransactions = transactions.filter(t => {
     const searchLow = searchTerm.toLowerCase();
@@ -409,6 +412,7 @@ const AdminDashboard: React.FC = () => {
                 <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--glass-border)' }}>
                   <th style={{ padding: '20px' }}>Tên tài khoản</th>
                   <th style={{ padding: '20px' }}>Sản phẩm</th>
+                  <th style={{ padding: '20px' }}>Thông tin (UID/Acc)</th>
                   <th style={{ padding: '20px' }}>Tổng tiền</th>
                   <th style={{ padding: '20px' }}>Trạng thái</th>
                   <th style={{ padding: '20px' }}>Thao tác</th>
@@ -419,6 +423,14 @@ const AdminDashboard: React.FC = () => {
                   <tr key={order.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                     <td style={{ padding: '20px' }}>{order.username}</td>
                     <td style={{ padding: '20px' }}>{order.product_name || order.productName}</td>
+                    <td style={{ padding: '20px' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+                        {order.options?.playerid || order.options?.player_id || '-'}
+                      </div>
+                      {order.options?.server && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Server: {order.options.server}</div>
+                      )}
+                    </td>
                     <td style={{ padding: '20px' }}>{order.total.toLocaleString()}đ</td>
                     <td style={{ padding: '20px' }}><span style={{ color: getStatusColor(order.status), fontWeight: 700 }}>{order.status}</span></td>
                     <td style={{ padding: '20px' }}>
@@ -562,10 +574,21 @@ const AdminDashboard: React.FC = () => {
                   {selectedOrderDetails.options ? (
                     Object.entries(selectedOrderDetails.options).map(([key, value]: [string, any]) => {
                       if (['type', 'discount', 'originalPrice', 'packageId', 'gameId'].includes(key)) return null;
+                      
+                      let label = key;
+                      if (key === 'playerid') label = 'UID / Tài khoản Garena';
+                      else if (key === 'password') label = 'Mật khẩu';
+                      else if (key === 'backupCodes') label = 'Mã dự phòng';
+                      else if (key === 'server') label = 'Máy chủ (Server)';
+                      
                       return (
                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                          <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{key === 'playerid' ? 'ID/Tài khoản' : key === 'password' ? 'Mật khẩu' : key === 'backupCodes' ? 'Mã dự phòng' : key}:</span>
-                          <strong style={{ color: key === 'password' ? '#ef4444' : 'white', wordBreak: 'break-all', textAlign: 'right' }}>{String(value)}</strong>
+                          <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{label}:</span>
+                          <strong style={{ 
+                            color: key === 'password' ? '#ef4444' : (key === 'playerid' ? 'var(--accent-primary)' : 'white'), 
+                            wordBreak: 'break-all', 
+                            textAlign: 'right' 
+                          }}>{String(value)}</strong>
                         </div>
                       );
                     })
