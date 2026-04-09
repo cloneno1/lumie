@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Gamepad2, Sparkles, Zap, ChevronRight, Info } from 'lucide-react';
 
-const GameTopup: React.FC = () => {
+const GameTopUp: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tất cả');
@@ -250,4 +250,4 @@ const GameTopup: React.FC = () => {
   );
 };
 
-export default GameTopup;
+export default GameTopUp;
