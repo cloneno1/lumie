@@ -21,7 +21,7 @@ import './index.css';
 
 import Discord from './pages/products/Discord';
 import DiscordDecoration from './pages/products/DiscordDecoration';
-import BuyGameCard from './pages/products/BuyGameCard';
+import GameTopup from './pages/GameTopup';
 import RobuxGamepass from './pages/products/RobuxGamepass';
 import RobuxGroup from './pages/products/RobuxGroup';
 import CustomerSupport from './components/CustomerSupport';
@@ -126,11 +126,11 @@ function AppContent() {
                 Nạp Tiền
               </Link>
             </li>
-            <li>
-              <Link to="/vip" className={`nav-link ${location.pathname === '/vip' ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
-                VIP
-              </Link>
-            </li>
+             <li>
+               <Link to="/nap-game" className={`nav-link ${location.pathname === '/nap-game' ? 'active' : ''}`} onClick={() => setShowMobileMenu(false)}>
+                 Nạp Game
+               </Link>
+             </li>
           </ul>
 
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
@@ -347,12 +347,12 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/products/buy-game-card" element={<BuyGameCard />} />
           <Route path="/products/discord" element={<Discord />} />
           <Route path="/products/discord-decoration" element={<DiscordDecoration />} />
           <Route path="/products/robux-gamepass" element={<RobuxGamepass />} />
           <Route path="/products/robux-group" element={<RobuxGroup />} />
           <Route path="/nap-tien" element={<TopUp />} />
+          <Route path="/nap-game" element={<GameTopup />} />
           <Route path="/vip" element={<VIP />} />
           
           <Route path="/login" element={!loading ? (user ? <Navigate to="/" replace /> : <Login />) : null} />

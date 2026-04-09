@@ -623,99 +623,6 @@ router.post('/user/delete-account', authenticateToken, async (req, res) => {
 });
 
 // ==========================================
-// API: MUA THẺ GAME (gachthe1s)
-// ==========================================
-router.post('/buy-game-card', authenticateToken, async (req, res) => {
-  try {
-    const { telco, amount, qty } = req.body;
-    const userId = req.user.id;
-    const user = await db.users.getById(userId);
-
-    const numAmount = parseInt(amount);
-    const quantity = parseInt(qty) || 1;
-    const totalCost = numAmount * quantity;
-
-    if (!user || user.balance < totalCost) {
-      return res.status(400).json({ message: 'Số dư không đủ để mua thẻ.' });
-    }
-
-    if (!telco || !numAmount || !quantity) {
-      return res.status(400).json({ message: 'Thiếu thông tin mua thẻ!' });
-    }
-
-    const request_id = `BUY_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
-    // Sử dụng thông tin kết nối API BuyCard mới do user cung cấp
-    const BUYCARD_PARTNER_ID = process.env.BUYCARD_PARTNER_ID || '64890331932';
-    const BUYCARD_PARTNER_KEY = process.env.BUYCARD_PARTNER_KEY || 'ed0d18a3712677e16f58bdd5ccd967f0';
-    const WALLET_NUMBER = process.env.WALLET_NUMBER || '0013519933'; 
-
-    // MD5 cho Mua thẻ: partner_key + partner_id + command + request_id
-    const command = 'buycard';
-    const signString = BUYCARD_PARTNER_KEY + BUYCARD_PARTNER_ID + command + request_id;
-    const sign = crypto.createHash('md5').update(signString).digest('hex');
-
-    let isSuccess = false;
-    let cards = [];
-    let apiMessage = '';
-
-    try {
-      // GỌI API CHUẨN GACHTHE1S (Mua thẻ)
-      const response = await axios.post('https://gachthe1s.com/api/cardws', {
-        partner_id: BUYCARD_PARTNER_ID,
-        command: command,
-        request_id: request_id,
-        service_code: telco, // Garena, Zing, Vcoin, Gate...
-        value: numAmount,
-        qty: quantity,
-        wallet_number: WALLET_NUMBER,
-        sign: sign
-      }).catch(e => {
-        // Fallback catch lỗi mạng hoặc timeout
-        return { data: { status: 99, message: e.response?.data?.message || 'Lỗi hệ thống hoặc API nhà cung cấp tạm ngưng.' } };
-      });
-
-      console.log('[BUY_CARD_API_RESPONSE]', response.data);
-
-      if (response.data.status === 1) {
-        isSuccess = true;
-        cards = response.data.data?.cards || [];
-      } else if (response.data.status === 2) {
-         apiMessage = 'Đang xử lý, thẻ sẽ được trả sau. Vui lòng liên hệ Admin báo mã ' + request_id;
-      } else {
-        apiMessage = response.data.message || 'Lỗi khi mua thẻ từ nhà cung cấp';
-      }
-    } catch (apiErr) {
-      apiMessage = 'Lỗi kết nối đến nhà cung cấp thẻ';
-    }
-
-    if (isSuccess) {
-      // Trừ tiền user
-      const newBalance = user.balance - totalCost;
-      await db.users.update(userId, { balance: newBalance });
-
-      // Lưu giao dịch
-      const orderConfig = { cardType: telco, amount: numAmount, request_id, quantity, cards };
-      await db.orders.create({
-        userId, username: user.username, productId: 'buy-gamecard',
-        productName: `Mua thẻ ${telco} ${numAmount}đ`, price: numAmount,
-        amount: quantity, options: orderConfig, total: totalCost, 
-        status: response.data?.status === 1 ? 'completed' : 'pending' // pending if response was 2
-      });
-      
-      // Return
-      if (response.data?.status === 1) {
-        return res.json({ message: 'Mua thẻ thành công!', cards });
-      } else {
-        return res.json({ message: apiMessage || 'Đơn thẻ đang được xử lý.', status: 'pending', cards: [] });
-      }
-    } else {
-       return res.status(400).json({ message: apiMessage || 'Không thể mua thẻ lúc này.' });
-    }
-
-  } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-// ==========================================
 // API: NẠP TIỀN (Gachthe1s)
 // ==========================================
 const PARTNER_ID = process.env.PARTNER_ID || '65747925131';
@@ -841,76 +748,6 @@ const handleGachthe1sCallback = async (req, res) => {
 
 router.post('/callback/gachthe1s', handleGachthe1sCallback);
 router.get('/callback/gachthe1s', handleGachthe1sCallback);
-
-// ==========================================
-// API CALLBACK: MUA THẺ CÀO (Gachthe1s BuyCard)
-// ==========================================
-const handleBuyCardCallback = async (req, res) => {
-  try {
-    const data = { ...req.query, ...req.body };
-    const request_id = data.request_id || data.requestId;
-    const status = parseInt(data.status); // 1 = success, 2 = processing, other = failed
-    const amount = data.amount || data.value;
-
-    console.log(`[BUY_CARD_CALLBACK] ID: ${request_id}, Status: ${status}, Amount: ${amount}`);
-    if (!request_id) return res.status(400).json({ message: 'Missing request_id' });
-
-    // Tìm order dựa vào request_id lưu trong options (Note: ở hệ thống lớn nên có Index JSONB hoặc column request_id riêng, tại đây query lặp local)
-    const orders = await db.orders.getAll();
-    const targetOrder = orders.find(o => o.options?.request_id === request_id);
-    
-    if (!targetOrder) {
-      console.log('[BUY_CARD_CALLBACK_WARN] Order not found for request_id:', request_id);
-      return res.status(200).json({ status: 'OK', note: 'Order not found' }); // trả về OK để đối tác không gọi lại liên tục
-    }
-
-    if (targetOrder.status !== 'pending') {
-      return res.status(200).json({ status: 'OK', note: 'Already processed' });
-    }
-
-    if (status === 1) {
-      const cardsObj = data.cards || data.data?.cards;
-      // parse chuỗi JSON thẻ card nếu nhà cung cấp gửi về chuỗi
-      let newCards = typeof cardsObj === 'string' ? JSON.parse(cardsObj) : (cardsObj || []);
-      
-      const newOptions = { ...targetOrder.options, cards: newCards };
-      await db.orders.updateStatus(targetOrder.id, 'completed');
-      await db.orders.update(targetOrder.id, { options: newOptions });
-
-      await db.notifications.create({ 
-        userId: targetOrder.user_id || targetOrder.userId, 
-        title: 'Mua Thẻ Game Thành Công', 
-        content: `Đơn mua ${targetOrder.product_name} đã hoàn tất trả thẻ, hãy kiểm tra Lịch sử Mua Hàng!`,
-        type: 'order'
-      });
-      console.log(`[BUY_CARD_SUCCESS] Processed cards for ${targetOrder.id}`);
-
-    } else if (status !== 2) {
-      // Các status lỗi/từ chối => Hoàn tiền
-      const user = await db.users.getById(targetOrder.user_id || targetOrder.userId);
-      if (user) {
-         await db.users.update(user.id, { balance: (user.balance || 0) + (targetOrder.total || 0) });
-         await db.orders.updateStatus(targetOrder.id, 'cancelled');
-         
-         await db.notifications.create({ 
-           userId: user.id, 
-           title: 'Lỗi Mua Thẻ - Đã Hoàn Tiền', 
-           content: `Giao dịch ${targetOrder.product_name} không thành công do phía nhà cung cấp thẻ bị lỗi hoặc hết kho. Số dư ${targetOrder.total}đ đã được hoàn lại!`,
-           type: 'system'
-         });
-         console.log(`[BUY_CARD_REFUND] Refunded ${targetOrder.total} for order ${targetOrder.id}`);
-      }
-    }
-    
-    res.json({ status: 'OK' });
-  } catch (err) {
-    console.error('[BUY_CARD_CALLBACK_ERROR]', err.message);
-    res.status(500).json({ status: 'ERROR', message: err.message });
-  }
-};
-
-router.post('/callback/buycard', handleBuyCardCallback);
-router.get('/callback/buycard', handleBuyCardCallback);
 
 // ==========================================
 // API: AUTO BANKING SYNC (Email Watcher)
@@ -1421,20 +1258,16 @@ const refreshRankingsInBackground = async () => {
     const aggregateRanking = (records, filterFn = null) => {
       const map = {};
       records.forEach(r => {
-        const time = new Date(r.created_at || r.createdAt).getTime();
+        const time = new Date(r.created_at).getTime();
         if (filterFn && !filterFn(time)) return;
-        
-        // Try all possible UID keys
-        const uid = r.user_id || r.userId || r.user_Id;
+        const uid = r.user_id || r.userId;
         if (!uid) return;
         
+        // Prioritize 'total' for orders (donation money) and 'amount' for transactions (bank money)
+        // CRITICAL: Handle NULL values from Supabase safely
         let moneyAmt = 0;
-        // Check for 'total' (donations) or 'amount' (topups)
-        if (r.total !== undefined && r.total !== null) {
-          moneyAmt = parseInt(r.total.toString());
-        } else if (r.amount !== undefined && r.amount !== null) {
-          moneyAmt = parseInt(r.amount.toString());
-        }
+        if (r.total !== undefined && r.total !== null) moneyAmt = parseInt(r.total);
+        else if (r.amount !== undefined && r.amount !== null) moneyAmt = parseInt(r.amount);
         
         if (!isNaN(moneyAmt) && moneyAmt > 0) {
           map[uid] = (map[uid] || 0) + moneyAmt;

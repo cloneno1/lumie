@@ -108,11 +108,6 @@ export const db = {
       const { data, error } = await supabase.from('orders').update({ status }).eq('id', orderId).select().single();
       if (error) throw error;
       return data;
-    },
-    update: async (orderId, updates) => {
-      const { data, error } = await supabase.from('orders').update(updates).eq('id', orderId).select().single();
-      if (error) throw error;
-      return data;
     }
   },
   transactions: {
