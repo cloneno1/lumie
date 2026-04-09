@@ -27,6 +27,16 @@ import RobuxGamepass from './pages/products/RobuxGamepass';
 import RobuxGroup from './pages/products/RobuxGroup';
 import CustomerSupport from './components/CustomerSupport';
 import Loading from './components/Loading';
+import { NotificationProvider } from './context/NotificationContext';
+import { ConfirmProvider } from './context/ConfirmContext';
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 function AppContent() {
   const location = useLocation();
@@ -99,6 +109,7 @@ function AppContent() {
 
   return (
     <>
+      <ScrollToTop />
       {/* Navigation */}
       <nav className="navbar">
         <div className="container nav-content">
@@ -344,7 +355,8 @@ function AppContent() {
         </div>
       </nav>
 
-      <main style={{ minHeight: 'calc(100vh - 80px)', paddingTop: '80px' }}>
+      <main key={location.pathname} style={{ minHeight: 'calc(100vh - 80px)', paddingTop: '80px' }}>
+        {loading ? <Loading fullScreen /> : (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
@@ -371,6 +383,7 @@ function AppContent() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/admin" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AdminDashboard />)} />
         </Routes>
+        )}
       </main>
 
       {/* Simple Footer */}
@@ -384,9 +397,6 @@ function AppContent() {
     </>
   );
 }
-
-import { NotificationProvider } from './context/NotificationContext';
-import { ConfirmProvider } from './context/ConfirmContext';
 
 function App() {
   return (
