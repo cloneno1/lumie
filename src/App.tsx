@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import Products from './pages/Products';
 import AuthCallback from './pages/AuthCallback';
 import Cart from './pages/Cart';
+import VIP from './pages/VIP';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
 import './index.css';

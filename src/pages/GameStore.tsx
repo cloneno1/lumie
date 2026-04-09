@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Gamepad2, Sparkles, Zap, ChevronRight, Info } from 'lucide-react';
+import { Search, Gamepad2, Sparkles, Zap, ChevronRight } from 'lucide-react';
 
 const GameTopUp: React.FC = () => {
   const navigate = useNavigate();
