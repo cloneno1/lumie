@@ -6,6 +6,150 @@ import { useNotification } from '../context/NotificationContext';
 import { useConfirm } from '../context/ConfirmContext';
 import api from '../api/axios';
 
+// Dữ liệu cấu hình các game - Moved outside to prevent re-render loops
+const gamesData: Record<string, any> = {
+  'lq': {
+    name: 'Liên Quân Mobile',
+    provider: 'Garena',
+    image: 'https://cdn.vn.garenanow.com/web/kg/branding/logo.png',
+    banner: 'https://cdn.vn.garenanow.com/web/kg/news/uploads/20230113_Banner_1.jpg',
+    fields: [
+      { label: 'Tài khoản / UID', name: 'playerid', placeholder: 'Nhập tài khoản Garena hoặc UID...', type: 'text' },
+      { label: 'Hệ điều hành', name: 'os', type: 'select', options: ['Android', 'iOS'] }
+    ],
+    packages: [
+      { id: 1, amount: 16, unit: 'Quân Huy', price: 10000 },
+      { id: 2, amount: 32, unit: 'Quân Huy', price: 20000 },
+      { id: 3, amount: 84, unit: 'Quân Huy', price: 50000 },
+      { id: 4, amount: 168, unit: 'Quân Huy', price: 100000 },
+      { id: 5, amount: 340, unit: 'Quân Huy', price: 200000 },
+      { id: 6, amount: 856, unit: 'Quân Huy', price: 500000 },
+    ]
+  },
+  'ff': {
+    name: 'Free Fire',
+    provider: 'Garena',
+    image: 'https://dl.dir.freefiremobile.com/freefire/media/items/1628153472610d9400ee2eb.png',
+    banner: 'https://dl.dir.freefiremobile.com/freefire/media/items/1652410712627df85848261.jpg',
+    fields: [
+      { label: 'Player ID (UID)', name: 'playerid', placeholder: 'Nhập UID nhân vật...', type: 'text' }
+    ],
+    packages: [
+      { id: 1, amount: 45, unit: 'Kim Cương', price: 10000 },
+      { id: 2, amount: 90, unit: 'Kim Cương', price: 20000 },
+      { id: 3, amount: 230, unit: 'Kim Cương', price: 50000 },
+      { id: 4, amount: 465, unit: 'Kim Cương', price: 100000 },
+      { id: 5, amount: 950, unit: 'Kim Cương', price: 200000 },
+      { id: 6, amount: 2375, unit: 'Kim Cương', price: 500000 },
+    ]
+  },
+  'fo4': {
+      name: 'Fifa Online 4',
+      provider: 'Garena',
+      image: 'https://fo4.garena.vn/wp-content/uploads/2018/06/fo4-logo.png',
+      banner: 'https://fo4.garena.vn/wp-content/uploads/2021/04/Banner-FO4-Moi.jpg',
+      fields: [
+        { label: 'Tài khoản Garena', name: 'playerid', placeholder: 'Nhập tên đăng nhập Garena...', type: 'text' }
+      ],
+      packages: [
+        { id: 1, amount: 16, unit: 'FC', price: 10000 },
+        { id: 2, amount: 32, unit: 'FC', price: 20000 },
+        { id: 3, amount: 84, unit: 'FC', price: 50000 },
+        { id: 4, amount: 168, unit: 'FC', price: 100000 },
+        { id: 5, amount: 340, unit: 'FC', price: 200000 },
+        { id: 6, amount: 856, unit: 'FC', price: 500000 },
+      ]
+  },
+  'hsr': {
+    name: 'Honkai: Star Rail',
+    provider: 'Hoyoverse',
+    image: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/04/26/894957e80234a17924af99bd937d5786_5941584852928509935.png',
+    banner: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/04/26/663c9b7e0234a17924af99bd937d5786_5941584852928509935.jpg',
+    fields: [
+      { label: 'Player UID', name: 'playerid', placeholder: 'Nhập UID của bạn...', type: 'text' },
+      { label: 'Server', name: 'server', type: 'select', options: ['Asia', 'Europe', 'America', 'TW/HK/MO'] }
+    ],
+    packages: [
+      { id: 1, amount: 60, unit: 'Mộng Ước Viễn Cổ', price: 25000 },
+      { id: 2, amount: 330, unit: 'Mộng Ước Viễn Cổ', price: 125000 },
+      { id: 3, amount: 1090, unit: 'Mộng Ước Viễn Cổ', price: 375000 },
+      { id: 4, amount: 2240, unit: 'Mộng Ước Viễn Cổ', price: 750000 },
+      { id: 5, amount: 3880, unit: 'Mộng Ước Viễn Cổ', price: 1250000 },
+      { id: 6, amount: 8080, unit: 'Mộng Ước Viễn Cổ', price: 2500000 },
+    ]
+  },
+  'gi': {
+    name: 'Genshin Impact',
+    provider: 'Hoyoverse',
+    image: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/11/08/96f5b33037803ba9738096f9bd937d57_5941584852928509935.png',
+    banner: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/11/08/6c10b7f037803ba9738096f9bd937d57_5941584852928509935.jpg',
+    fields: [
+      { label: 'Player UID', name: 'playerid', placeholder: 'Nhập UID của bạn...', type: 'text' },
+      { label: 'Server', name: 'server', type: 'select', options: ['Asia', 'Europe', 'America', 'TW/HK/MO'] }
+    ],
+    packages: [
+      { id: 1, amount: 60, unit: 'Đá Sáng Thế', price: 25000 },
+      { id: 2, amount: 330, unit: 'Đá Sáng Thế', price: 125000 },
+      { id: 3, amount: 1090, unit: 'Đá Sáng Thế', price: 375000 },
+      { id: 4, amount: 2240, unit: 'Đá Sáng Thế', price: 750000 },
+      { id: 5, amount: 3880, unit: 'Đá Sáng Thế', price: 1250000 },
+      { id: 6, amount: 8080, unit: 'Đá Sáng Thế', price: 2500000 },
+    ]
+  },
+  'vltk1m': {
+      name: 'Võ Lâm Truyền Kỳ 1 Mobile',
+      provider: 'Zing / VNG',
+      image: 'https://image.vltk1m.zing.vn/images/loading.png',
+      banner: 'https://vltk1m.zing.vn/images/banner.jpg',
+      fields: [
+        { label: 'Tài khoản Zing ID / Role ID', name: 'playerid', placeholder: 'Nhập tài khoản hoặc ID nhân vật...', type: 'text' },
+        { label: 'Cụm Server', name: 'server', type: 'text', placeholder: 'VD: S1 - Cụm 1' }
+      ],
+      packages: [
+        { id: 1, amount: 100, unit: 'KNB', price: 20000 },
+        { id: 2, amount: 250, unit: 'KNB', price: 50000 },
+        { id: 3, amount: 500, unit: 'KNB', price: 100000 },
+        { id: 4, amount: 1000, unit: 'KNB', price: 200000 },
+        { id: 5, amount: 2500, unit: 'KNB', price: 500000 },
+        { id: 6, amount: 5000, unit: 'KNB', price: 1000000 },
+      ]
+  },
+  'pubgm': {
+    name: 'PUBG Mobile VN',
+    provider: 'Zing / VNG',
+    image: 'https://pubgm.zing.vn/images/logo.png',
+    banner: 'https://pubgm.zing.vn/images/banner.jpg',
+    fields: [
+      { label: 'Player ID (UID)', name: 'playerid', placeholder: 'Nhập UID của bạn...', type: 'text' }
+    ],
+    packages: [
+      { id: 1, amount: 66, unit: 'UC', price: 20000 },
+      { id: 2, amount: 165, unit: 'UC', price: 50000 },
+      { id: 3, amount: 330, unit: 'UC', price: 100000 },
+      { id: 4, amount: 660, unit: 'UC', price: 200000 },
+      { id: 5, amount: 1650, unit: 'UC', price: 500000 },
+      { id: 6, amount: 3300, unit: 'UC', price: 1000000 },
+    ]
+  },
+  'val': {
+    name: 'Valorant',
+    provider: 'Riot Games / VNG',
+    image: 'https://images.contentstack.io/v3/assets/blt731c57907297a731/blt8074902cad8bf53d/5ebad8487739504820173e33/VALORANT_Logo_V.png',
+    banner: 'https://images.contentstack.io/v3/assets/blt731c57907297a731/blt62309a633f81e640/5fa9be615456f932e650b2aa/Valorant_KeyArt_5_Lowered.jpg',
+    fields: [
+      { label: 'Riot ID (Tên#Tag)', name: 'playerid', placeholder: 'VD: Lumie#1234...', type: 'text' }
+    ],
+    packages: [
+      { id: 1, amount: 340, unit: 'VP', price: 50000 },
+      { id: 2, amount: 700, unit: 'VP', price: 100000 },
+      { id: 3, amount: 1450, unit: 'VP', price: 200000 },
+      { id: 4, amount: 3750, unit: 'VP', price: 500000 },
+      { id: 5, amount: 7650, unit: 'VP', price: 1000000 },
+      { id: 6, amount: 15500, unit: 'VP', price: 2000000 },
+    ]
+  }
+};
+
 const GamePurchase: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
@@ -19,170 +163,28 @@ const GamePurchase: React.FC = () => {
 
   const DISCOUNT_RATE = 0.05; // 5% Discount
 
-  // Dữ liệu cấu hình các game
-  const gamesData: Record<string, any> = {
-    'lq': {
-      name: 'Liên Quân Mobile',
-      provider: 'Garena',
-      image: 'https://cdn.vn.garenanow.com/web/kg/branding/logo.png',
-      banner: 'https://cdn.vn.garenanow.com/web/kg/news/uploads/20230113_Banner_1.jpg',
-      fields: [
-        { label: 'Tài khoản / UID', name: 'playerid', placeholder: 'Nhập tài khoản Garena hoặc UID...', type: 'text' },
-        { label: 'Hệ điều hành', name: 'os', type: 'select', options: ['Android', 'iOS'] }
-      ],
-      packages: [
-        { id: 1, amount: 16, unit: 'Quân Huy', price: 10000 },
-        { id: 2, amount: 32, unit: 'Quân Huy', price: 20000 },
-        { id: 3, amount: 84, unit: 'Quân Huy', price: 50000 },
-        { id: 4, amount: 168, unit: 'Quân Huy', price: 100000 },
-        { id: 5, amount: 340, unit: 'Quân Huy', price: 200000 },
-        { id: 6, amount: 856, unit: 'Quân Huy', price: 500000 },
-      ]
-    },
-    'ff': {
-      name: 'Free Fire',
-      provider: 'Garena',
-      image: 'https://dl.dir.freefiremobile.com/freefire/media/items/1628153472610d9400ee2eb.png',
-      banner: 'https://dl.dir.freefiremobile.com/freefire/media/items/1652410712627df85848261.jpg',
-      fields: [
-        { label: 'Player ID (UID)', name: 'playerid', placeholder: 'Nhập UID nhân vật...', type: 'text' }
-      ],
-      packages: [
-        { id: 1, amount: 45, unit: 'Kim Cương', price: 10000 },
-        { id: 2, amount: 90, unit: 'Kim Cương', price: 20000 },
-        { id: 3, amount: 230, unit: 'Kim Cương', price: 50000 },
-        { id: 4, amount: 465, unit: 'Kim Cương', price: 100000 },
-        { id: 5, amount: 950, unit: 'Kim Cương', price: 200000 },
-        { id: 6, amount: 2375, unit: 'Kim Cương', price: 500000 },
-      ]
-    },
-    'fo4': {
-        name: 'Fifa Online 4',
-        provider: 'Garena',
-        image: 'https://fo4.garena.vn/wp-content/uploads/2018/06/fo4-logo.png',
-        banner: 'https://fo4.garena.vn/wp-content/uploads/2021/04/Banner-FO4-Moi.jpg',
-        fields: [
-          { label: 'Tài khoản Garena', name: 'playerid', placeholder: 'Nhập tên đăng nhập Garena...', type: 'text' }
-        ],
-        packages: [
-          { id: 1, amount: 16, unit: 'FC', price: 10000 },
-          { id: 2, amount: 32, unit: 'FC', price: 20000 },
-          { id: 3, amount: 84, unit: 'FC', price: 50000 },
-          { id: 4, amount: 168, unit: 'FC', price: 100000 },
-          { id: 5, amount: 340, unit: 'FC', price: 200000 },
-          { id: 6, amount: 856, unit: 'FC', price: 500000 },
-        ]
-    },
-    'hsr': {
-      name: 'Honkai: Star Rail',
-      provider: 'Hoyoverse',
-      image: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/04/26/894957e80234a17924af99bd937d5786_5941584852928509935.png',
-      banner: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/04/26/663c9b7e0234a17924af99bd937d5786_5941584852928509935.jpg',
-      fields: [
-        { label: 'Player UID', name: 'playerid', placeholder: 'Nhập UID của bạn...', type: 'text' },
-        { label: 'Server', name: 'server', type: 'select', options: ['Asia', 'Europe', 'America', 'TW/HK/MO'] }
-      ],
-      packages: [
-        { id: 1, amount: 60, unit: 'Mộng Ước Viễn Cổ', price: 25000 },
-        { id: 2, amount: 330, unit: 'Mộng Ước Viễn Cổ', price: 125000 },
-        { id: 3, amount: 1090, unit: 'Mộng Ước Viễn Cổ', price: 375000 },
-        { id: 4, amount: 2240, unit: 'Mộng Ước Viễn Cổ', price: 750000 },
-        { id: 5, amount: 3880, unit: 'Mộng Ước Viễn Cổ', price: 1250000 },
-        { id: 6, amount: 8080, unit: 'Mộng Ước Viễn Cổ', price: 2500000 },
-      ]
-    },
-    'gi': {
-      name: 'Genshin Impact',
-      provider: 'Hoyoverse',
-      image: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/11/08/96f5b33037803ba9738096f9bd937d57_5941584852928509935.png',
-      banner: 'https://fastcdn.hoyoverse.com/static-resource-v2/2023/11/08/6c10b7f037803ba9738096f9bd937d57_5941584852928509935.jpg',
-      fields: [
-        { label: 'Player UID', name: 'playerid', placeholder: 'Nhập UID của bạn...', type: 'text' },
-        { label: 'Server', name: 'server', type: 'select', options: ['Asia', 'Europe', 'America', 'TW/HK/MO'] }
-      ],
-      packages: [
-        { id: 1, amount: 60, unit: 'Đá Sáng Thế', price: 25000 },
-        { id: 2, amount: 330, unit: 'Đá Sáng Thế', price: 125000 },
-        { id: 3, amount: 1090, unit: 'Đá Sáng Thế', price: 375000 },
-        { id: 4, amount: 2240, unit: 'Đá Sáng Thế', price: 750000 },
-        { id: 5, amount: 3880, unit: 'Đá Sáng Thế', price: 1250000 },
-        { id: 6, amount: 8080, unit: 'Đá Sáng Thế', price: 2500000 },
-      ]
-    },
-    'vltk1m': {
-        name: 'Võ Lâm Truyền Kỳ 1 Mobile',
-        provider: 'Zing / VNG',
-        image: 'https://image.vltk1m.zing.vn/images/loading.png',
-        banner: 'https://vltk1m.zing.vn/images/banner.jpg',
-        fields: [
-          { label: 'Tài khoản Zing ID / Role ID', name: 'playerid', placeholder: 'Nhập tài khoản hoặc ID nhân vật...', type: 'text' },
-          { label: 'Cụm Server', name: 'server', type: 'text', placeholder: 'VD: S1 - Cụm 1' }
-        ],
-        packages: [
-          { id: 1, amount: 100, unit: 'KNB', price: 20000 },
-          { id: 2, amount: 250, unit: 'KNB', price: 50000 },
-          { id: 3, amount: 500, unit: 'KNB', price: 100000 },
-          { id: 4, amount: 1000, unit: 'KNB', price: 200000 },
-          { id: 5, amount: 2500, unit: 'KNB', price: 500000 },
-          { id: 6, amount: 5000, unit: 'KNB', price: 1000000 },
-        ]
-    },
-    'pubgm': {
-      name: 'PUBG Mobile VN',
-      provider: 'Zing / VNG',
-      image: 'https://pubgm.zing.vn/images/logo.png',
-      banner: 'https://pubgm.zing.vn/images/banner.jpg',
-      fields: [
-        { label: 'Player ID (UID)', name: 'playerid', placeholder: 'Nhập UID của bạn...', type: 'text' }
-      ],
-      packages: [
-        { id: 1, amount: 66, unit: 'UC', price: 20000 },
-        { id: 2, amount: 165, unit: 'UC', price: 50000 },
-        { id: 3, amount: 330, unit: 'UC', price: 100000 },
-        { id: 4, amount: 660, unit: 'UC', price: 200000 },
-        { id: 5, amount: 1650, unit: 'UC', price: 500000 },
-        { id: 6, amount: 3300, unit: 'UC', price: 1000000 },
-      ]
-    },
-    'val': {
-      name: 'Valorant',
-      provider: 'Riot Games / VNG',
-      image: 'https://images.contentstack.io/v3/assets/blt731c57907297a731/blt8074902cad8bf53d/5ebad8487739504820173e33/VALORANT_Logo_V.png',
-      banner: 'https://images.contentstack.io/v3/assets/blt731c57907297a731/blt62309a633f81e640/5fa9be615456f932e650b2aa/Valorant_KeyArt_5_Lowered.jpg',
-      fields: [
-        { label: 'Riot ID (Tên#Tag)', name: 'playerid', placeholder: 'VD: Lumie#1234...', type: 'text' }
-      ],
-      packages: [
-        { id: 1, amount: 340, unit: 'VP', price: 50000 },
-        { id: 2, amount: 700, unit: 'VP', price: 100000 },
-        { id: 3, amount: 1450, unit: 'VP', price: 200000 },
-        { id: 4, amount: 3750, unit: 'VP', price: 500000 },
-        { id: 5, amount: 7650, unit: 'VP', price: 1000000 },
-        { id: 6, amount: 15500, unit: 'VP', price: 2000000 },
-      ]
-    }
-  };
-
   const game = gameId ? gamesData[gameId] : null;
 
   useEffect(() => {
     if (!game) {
       navigate('/nap-game');
+      return;
     }
-    // Set default values for select fields
-    if (game && game.fields) {
+    
+    // Set default values for select fields iff not already set
+    if (game.fields) {
         const defaults: any = {};
         game.fields.forEach((f: any) => {
             if (f.type === 'select' && f.options) {
                 defaults[f.name] = f.options[0];
             }
         });
-        setFormData(defaults);
+        setFormData(prev => ({ ...defaults, ...prev }));
     }
-  }, [gameId, navigate, game]);
+  }, [gameId, navigate]); // gameId is stable, navigate is stable
 
   const handleInputChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
   const calculateDiscountedPrice = (price: number) => {
@@ -202,11 +204,13 @@ const GamePurchase: React.FC = () => {
     }
 
     // Kiểm tra fields
-    for (const field of game.fields) {
-      if (!formData[field.name]) {
-        showNotification(`Vui lòng nhập ${field.label}!`, 'error');
-        return;
-      }
+    if (game) {
+        for (const field of game.fields) {
+          if (!formData[field.name]) {
+            showNotification(`Vui lòng nhập ${field.label}!`, 'error');
+            return;
+          }
+        }
     }
 
     const discountedPrice = calculateDiscountedPrice(selectedPackage.price);
@@ -233,7 +237,7 @@ const GamePurchase: React.FC = () => {
         packageId: selectedPackage.id,
         amount: selectedPackage.amount,
         unit: selectedPackage.unit,
-        price: selectedPackage.price, // Send original, backend will apply discount
+        price: selectedPackage.price,
         formData
       });
 
@@ -252,7 +256,7 @@ const GamePurchase: React.FC = () => {
   if (!game) return null;
 
   return (
-    <div className="container" style={{ padding: '40px 20px', maxWidth: '1000px' }}>
+    <div className="container" style={{ padding: '40px 20px', maxWidth: '1000px', position: 'relative' }}>
       
       {/* Back button */}
       <Link 
@@ -268,7 +272,7 @@ const GamePurchase: React.FC = () => {
         <ChevronLeft size={20} /> Quay lại danh sách game
       </Link>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '30px', alignItems: 'start' }} className="purchase-grid">
+      <div className="purchase-grid">
         
         {/* Left Column: Form & Info */}
         <div>
@@ -316,7 +320,7 @@ const GamePurchase: React.FC = () => {
             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Info size={20} color="var(--accent-primary)" /> THÔNG TIN TÀI KHOẢN
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }} className="form-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               {game.fields.map((field: any) => (
                 <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)' }}>{field.label}</label>
@@ -406,7 +410,7 @@ const GamePurchase: React.FC = () => {
         </div>
 
         {/* Right Column: Order Summary */}
-        <div style={{ position: 'sticky', top: '120px' }}>
+        <div style={{ position: 'sticky', top: '120px' }} className="sidebar-sticky">
           <div className="glass-card" style={{ padding: '25px', borderRadius: '24px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
               CHI TIẾT ĐƠN HÀNG
@@ -433,7 +437,7 @@ const GamePurchase: React.FC = () => {
                 </div>
               )}
               
-              <div style={{ margin: '10px 0', borderTop: '1px dotted rgba(255,255,255,0.1)' }}></div>
+              <div style={{ margin: '10px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}></div>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 900 }}>
                 <span>Tổng tiền:</span>
@@ -488,7 +492,6 @@ const GamePurchase: React.FC = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };
