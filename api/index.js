@@ -920,7 +920,9 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const user = await db.users.getById(userId);
 
-    if (!user || user.balance < price) {
+    const finalPrice = Math.floor(price * 0.95);
+
+    if (!user || user.balance < finalPrice) {
       return res.status(400).json({ message: 'Số dư không đủ.' });
     }
 
@@ -930,28 +932,30 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
       username: user.username,
       productId: `game-${gameId}`,
       productName: `${gameName} - ${amount} ${unit}`,
-      price: price,
+      price: price, // Original price for reference
       amount: 1,
-      total: price,
+      total: finalPrice, // Discounted amount
       status: 'pending',
       options: {
         type: 'game_topup',
         gameId,
         packageId,
+        discount: '5%',
+        originalPrice: price,
         ...formData
       }
     });
 
     // Trừ tiền
     await db.users.update(userId, {
-      balance: user.balance - price
+      balance: user.balance - finalPrice
     });
 
     // Thông báo cho người dùng
     await db.notifications.create({
       userId,
       title: 'Đã nhận đơn nạp game',
-      content: `Đơn nạp ${amount} ${unit} cho game ${gameName} đã được ghi nhận. Chúng tôi sẽ xử lý sớm nhất.`,
+      content: `Đơn nạp ${amount} ${unit} cho game ${gameName} đã được ghi nhận. Tổng thanh toán: ${finalPrice.toLocaleString()}đ (Đã giảm 5%).`,
       type: 'order'
     }).catch(() => {});
 

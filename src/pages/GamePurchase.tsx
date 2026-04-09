@@ -17,6 +17,8 @@ const GamePurchase: React.FC = () => {
   const [formData, setFormData] = useState<any>({});
   const [loading, setLoading] = useState(false);
 
+  const DISCOUNT_RATE = 0.05; // 5% Discount
+
   // Dữ liệu cấu hình các game
   const gamesData: Record<string, any> = {
     'lq': {
@@ -183,6 +185,10 @@ const GamePurchase: React.FC = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const calculateDiscountedPrice = (price: number) => {
+    return Math.floor(price * (1 - DISCOUNT_RATE));
+  };
+
   const handlePurchase = async () => {
     if (!user) {
       showNotification('Vui lòng đăng nhập để mua!', 'error');
@@ -203,7 +209,9 @@ const GamePurchase: React.FC = () => {
       }
     }
 
-    if (user.balance < selectedPackage.price) {
+    const discountedPrice = calculateDiscountedPrice(selectedPackage.price);
+
+    if (user.balance < discountedPrice) {
       showNotification('Số dư không đủ! Vui lòng nạp thêm.', 'error');
       return;
     }
@@ -225,7 +233,7 @@ const GamePurchase: React.FC = () => {
         packageId: selectedPackage.id,
         amount: selectedPackage.amount,
         unit: selectedPackage.unit,
-        price: selectedPackage.price,
+        price: selectedPackage.price, // Send original, backend will apply discount
         formData
       });
 
@@ -287,6 +295,17 @@ const GamePurchase: React.FC = () => {
                   </span>
                 </div>
               </div>
+            </div>
+            
+            {/* Promo Badge */}
+            <div style={{ 
+                position: 'absolute', top: '20px', right: '-35px', 
+                background: '#ff4757', color: 'white', 
+                padding: '5px 40px', transform: 'rotate(45deg)', 
+                fontWeight: 900, fontSize: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                zIndex: 2
+            }}>
+                GIẢM 5%
             </div>
           </div>
 
@@ -354,13 +373,30 @@ const GamePurchase: React.FC = () => {
                 >
                   <p style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '5px' }}>{pkg.amount}</p>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>{pkg.unit}</p>
-                  <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-primary)' }}>{pkg.price.toLocaleString()}đ</p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', textDecoration: 'line-through', marginBottom: '2px' }}>
+                        {pkg.price.toLocaleString()}đ
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-primary)' }}>
+                        {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
+                    </span>
+                  </div>
                   
                   {selectedPackage?.id === pkg.id && (
                     <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
                       <Zap size={14} fill="var(--accent-primary)" stroke="none" />
                     </div>
                   )}
+                  
+                  <div style={{ 
+                      position: 'absolute', top: '0', left: '0', 
+                      background: '#ff4757', color: 'white', 
+                      padding: '2px 8px', fontSize: '9px', fontWeight: 900,
+                      borderRadius: '0 0 8px 0'
+                  }}>
+                      -5%
+                  </div>
                 </div>
               ))}
             </div>
@@ -388,11 +424,20 @@ const GamePurchase: React.FC = () => {
                 <span style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>Ví Lumie Store</span>
               </div>
               
+              {selectedPackage && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Giảm giá (5%):</span>
+                    <span style={{ fontWeight: 700, color: '#ff4757' }}>-{ (selectedPackage.price * DISCOUNT_RATE).toLocaleString() }đ</span>
+                </div>
+              )}
+              
               <div style={{ margin: '10px 0', borderTop: '1px dotted rgba(255,255,255,0.1)' }}></div>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 900 }}>
                 <span>Tổng tiền:</span>
-                <span style={{ color: 'var(--accent-primary)' }}>{selectedPackage ? selectedPackage.price.toLocaleString() : 0}đ</span>
+                <span style={{ color: 'var(--accent-primary)' }}>
+                    {selectedPackage ? calculateDiscountedPrice(selectedPackage.price).toLocaleString() : 0}đ
+                </span>
               </div>
 
               <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
