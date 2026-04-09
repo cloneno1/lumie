@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Gamepad2, Sparkles, Zap, ChevronRight } from 'lucide-react';
 
-const GameTopUp: React.FC = () => {
+const GameStore: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tất cả');
@@ -54,7 +54,7 @@ const GameTopUp: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         textAlign: 'center',
-        background: 'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("/Users/phamvinhphu/.gemini/antigravity/brain/723ffd56-231c-40e5-80b9-e20612ccf5d5/game_topup_banner_1775713508923.png")',
+        background: 'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("/images/game-banner.png")',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         border: '1px solid rgba(255,255,255,0.1)',
@@ -249,4 +249,4 @@ const GameTopUp: React.FC = () => {
   );
 };
 
-export default GameTopUp;
+export default GameStore;
