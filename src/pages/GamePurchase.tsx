@@ -354,7 +354,7 @@ const GamePurchase: React.FC = () => {
               <Gamepad2 size={20} color="var(--accent-primary)" /> CHỌN GÓI NẠP
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '15px' }}>
-              {game.packages.map((pkg: any) => (
+              {game.packages.filter((p: any) => p.price >= 50000).map((pkg: any) => (
                 <div 
                   key={pkg.id}
                   onClick={() => setSelectedPackage(pkg)}
