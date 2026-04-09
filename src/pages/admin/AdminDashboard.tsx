@@ -43,6 +43,8 @@ const AdminDashboard: React.FC = () => {
   const isDonation = (order: any) => {
     return order.productId === 'donation' || order.product_id === 'donation' || (order.options && order.options.type === 'donation');
   };
+
+  const fetchData = async () => {
     setLoading(true);
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
