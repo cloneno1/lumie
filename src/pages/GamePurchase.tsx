@@ -255,16 +255,18 @@ const GamePurchase: React.FC = () => {
     <div className="container" style={{ padding: '40px 20px', maxWidth: '1000px' }}>
       
       {/* Back button */}
-      <button 
-        onClick={() => navigate('/nap-game')}
+      <Link 
+        to="/nap-game"
         style={{ 
           display: 'flex', alignItems: 'center', gap: '8px', 
           background: 'none', border: 'none', color: 'var(--text-muted)', 
-          cursor: 'pointer', marginBottom: '30px', fontWeight: 600 
+          cursor: 'pointer', marginBottom: '30px', fontWeight: 600,
+          textDecoration: 'none'
         }}
+        className="hover-opacity"
       >
         <ChevronLeft size={20} /> Quay lại danh sách game
-      </button>
+      </Link>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '30px', alignItems: 'start' }} className="purchase-grid">
         
@@ -487,33 +489,6 @@ const GamePurchase: React.FC = () => {
         </div>
       </div>
 
-      <style>{`
-        .purchase-grid {
-          grid-template-columns: 1fr 350px;
-        }
-        @media (max-width: 900px) {
-          .purchase-grid {
-            grid-template-columns: 1fr;
-          }
-          .form-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-        .package-card:hover {
-          background: rgba(16, 185, 129, 0.05) !important;
-          transform: translateY(-3px);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .btn-purchase:hover:not(:disabled) {
-          transform: scale(1.02);
-          filter: brightness(1.1);
-          box-shadow: 0 0 20px rgba(16,185,129,0.3);
-        }
-        .btn-purchase:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      `}</style>
     </div>
   );
 };

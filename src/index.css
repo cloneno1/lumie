@@ -106,7 +106,7 @@ ul {
   height: 80px;
   display: flex;
   align-items: center;
-  z-index: 100;
+  z-index: 9999;
   background: rgba(10, 10, 15, 0.9);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--glass-border);
@@ -1261,4 +1261,53 @@ ul {
   animation: skeleton-loading 1.5s infinite;
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
+}
+
+/* Game Card Styles */
+.game-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(16,185,129,0.2);
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.game-card:hover .game-image {
+  transform: scale(1.1);
+}
+.game-card:hover .game-overlay {
+  opacity: 1 !important;
+}
+.game-card:hover .overlay-btn {
+  transform: scale(1) !important;
+}
+.category-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Purchase Grid Styles */
+.purchase-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 30px;
+}
+@media (max-width: 900px) {
+  .purchase-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.package-card {
+  transition: all 0.2s;
+}
+.package-card:hover {
+  background: rgba(16, 185, 129, 0.05) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+.btn-purchase:hover:not(:disabled) {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px rgba(16,185,129,0.3);
+}
+.btn-purchase:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

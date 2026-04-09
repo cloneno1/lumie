@@ -222,29 +222,6 @@ const GameStore: React.FC = () => {
         </div>
       </div>
 
-      <style>{`
-        .game-card:hover {
-          transform: translateY(-10px) scale(1.02);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(16,185,129,0.2);
-          border-color: rgba(16, 185, 129, 0.3) !important;
-        }
-        .game-card:hover .game-image {
-          transform: scale(1.1);
-        }
-        .game-card:hover .game-overlay {
-          opacity: 1;
-        }
-        .game-card:hover .overlay-btn {
-          transform: scale(1);
-        }
-        .category-pill:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        @media (max-width: 768px) {
-          h1 { fontSize: 2.5rem !important; }
-        }
-      `}</style>
     </div>
   );
 };
