@@ -38,8 +38,11 @@ const AdminDashboard: React.FC = () => {
   // Role selector modal state
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
 
-  const fetchData = async () => {
+  const isDonation = (order: any) => {
+    return order.productId === 'donation' || order.product_id === 'donation' || (order.options && order.options.type === 'donation');
+  };
     setLoading(true);
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
@@ -217,7 +220,8 @@ const AdminDashboard: React.FC = () => {
   };
 
   const activeUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()));
-  const filteredOrders = orders.filter(o => {
+  const purchasesOnly = orders.filter(o => !isDonation(o));
+  const filteredOrders = purchasesOnly.filter(o => {
     const searchLow = searchTerm.toLowerCase();
     return (o.username || '').toLowerCase().includes(searchLow) || String(o.id || '').includes(searchLow) || (o.product_name || o.productName || '').toLowerCase().includes(searchLow);
   });
@@ -261,8 +265,8 @@ const AdminDashboard: React.FC = () => {
         {[
           { label: 'Người dùng', value: users.length.toLocaleString(), icon: <Users size={20} />, color: '#3b82f6' },
           { label: 'Tổng nạp', value: transactions.filter(t => String(t.status) === '1').reduce((s, t) => s + (t.amount || 0), 0).toLocaleString() + 'đ', icon: <CreditCard size={20} />, color: '#10b981' },
-          { label: 'Doanh thu', value: orders.filter(o => o.status === 'completed').reduce((s, o) => s + (o.total || 0), 0).toLocaleString() + 'đ', icon: <ShoppingBag size={20} />, color: '#f59e0b' },
-          { label: 'Đang chờ', value: orders.filter(o => o.status === 'pending').length.toLocaleString(), icon: <Search size={20} />, color: '#ef4444' }
+          { label: 'Doanh thu', value: purchasesOnly.filter(o => o.status === 'completed').reduce((s, o) => s + (o.total || 0), 0).toLocaleString() + 'đ', icon: <ShoppingBag size={20} />, color: '#f59e0b' },
+          { label: 'Đang chờ', value: purchasesOnly.filter(o => o.status === 'pending').length.toLocaleString(), icon: <Search size={20} />, color: '#ef4444' }
         ].map((stat, i) => (
           <div key={i} className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', border: `1px solid ${stat.color}40`, background: `${stat.color}15` }}>
             <div style={{ background: `${stat.color}30`, padding: '12px', borderRadius: '12px', color: stat.color }}>{stat.icon}</div>
@@ -418,12 +422,15 @@ const AdminDashboard: React.FC = () => {
                     <td style={{ padding: '20px' }}>{order.total.toLocaleString()}đ</td>
                     <td style={{ padding: '20px' }}><span style={{ color: getStatusColor(order.status), fontWeight: 700 }}>{order.status}</span></td>
                     <td style={{ padding: '20px' }}>
-                      {order.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleUpdateOrderStatus(order.id, 'completed')} className="btn glass-panel"><Check size={16} /></button>
-                          <button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} className="btn glass-panel"><X size={16} /></button>
-                        </div>
-                      )}
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => setSelectedOrderDetails(order)} className="btn-icon" title="Xem chi tiết"><Eye size={14} /></button>
+                        {order.status === 'pending' && (
+                          <>
+                            <button onClick={() => handleUpdateOrderStatus(order.id, 'completed')} className="btn glass-panel" style={{ padding: '6px' }}><Check size={14} /></button>
+                            <button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} className="btn glass-panel" style={{ padding: '6px' }}><X size={14} /></button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -521,6 +528,63 @@ const AdminDashboard: React.FC = () => {
             >
               Hủy bỏ
             </button>
+          </div>
+        </div>
+      )}
+      {/* Details Modal */}
+      {selectedOrderDetails && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000
+        }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '600px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0 }}>Chi tiết đơn hàng #{selectedOrderDetails.id}</h3>
+              <button onClick={() => setSelectedOrderDetails(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            
+            <div style={{ display: 'grid', gap: '20px' }}>
+              <div className="glass-panel" style={{ padding: '20px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--accent-primary)' }}>Thông tin chung</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Tài khoản:</span> <strong>{selectedOrderDetails.username}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Sản phẩm:</span> <strong>{selectedOrderDetails.product_name || selectedOrderDetails.productName}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Tổng tiền:</span> <strong>{selectedOrderDetails.total.toLocaleString()}đ</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Trạng thái:</span> <strong style={{ color: getStatusColor(selectedOrderDetails.status) }}>{selectedOrderDetails.status}</strong></div>
+                  <div><span style={{ color: 'var(--text-muted)' }}>Ngày tạo:</span> <strong>{new Date(selectedOrderDetails.created_at).toLocaleString()}</strong></div>
+                </div>
+              </div>
+
+              <div className="glass-panel" style={{ padding: '20px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--accent-primary)' }}>Dữ liệu người dùng nhập</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {selectedOrderDetails.options ? (
+                    Object.entries(selectedOrderDetails.options).map(([key, value]: [string, any]) => {
+                      if (['type', 'discount', 'originalPrice', 'packageId', 'gameId'].includes(key)) return null;
+                      return (
+                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+                          <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{key === 'playerid' ? 'ID/Tài khoản' : key === 'password' ? 'Mật khẩu' : key === 'backupCodes' ? 'Mã dự phòng' : key}:</span>
+                          <strong style={{ color: key === 'password' ? '#ef4444' : 'white', wordBreak: 'break-all', textAlign: 'right' }}>{String(value)}</strong>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p style={{ color: 'var(--text-muted)', margin: 0 }}>Không có dữ liệu bổ sung.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
+               {selectedOrderDetails.status === 'pending' && (
+                 <>
+                   <button onClick={() => { handleUpdateOrderStatus(selectedOrderDetails.id, 'completed'); setSelectedOrderDetails(null); }} className="btn btn-primary" style={{ flex: 1 }}>Hoàn tất</button>
+                   <button onClick={() => { handleUpdateOrderStatus(selectedOrderDetails.id, 'cancelled'); setSelectedOrderDetails(null); }} className="btn" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>Hủy đơn</button>
+                 </>
+               )}
+               <button onClick={() => setSelectedOrderDetails(null)} className="btn glass-panel" style={{ flex: selectedOrderDetails.status === 'pending' ? 'none' : 1 }}>Đóng</button>
+            </div>
           </div>
         </div>
       )}
