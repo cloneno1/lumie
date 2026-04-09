@@ -24,9 +24,23 @@ const Products: React.FC = () => {
     setActiveCategory(queryParams.get('category') || 'All');
   }, [location.search]);
 
-  const categories = ['All', 'Discord', 'Robux', 'YouTube', 'Spotify', 'Netflix'];
+  const categories = ['All', 'Game Card', 'Discord', 'Robux', 'YouTube', 'Spotify', 'Netflix'];
 
   const products = [
+    // --- GAME CARD ---
+    {
+      id: 'game-card',
+      title: 'Thẻ Game Tự Động',
+      category: 'Game Card',
+      desc: 'Mua thẻ Zing, Garena, Vcoin, Gate tự động 24/7 với chiết khấu tốt nhất.',
+      price: 10000,
+      displayPrice: 'Từ 10.000đ',
+      duration: '',
+      icon: <Gamepad2 className="w-8 h-8" />,
+      theme: 'youtube', // reuse youtube's red theme or similar
+      highlight: true,
+      url: '/products/buy-game-card'
+    },
     // --- DISCORD ---
     {
       id: 1,
@@ -328,6 +342,7 @@ const Products: React.FC = () => {
                 navigate(`/products?category=${category}`);
               }}
             >
+              {category === 'Game Card' && <Gamepad2 size={16} />}
               {category === 'Discord' && <Sparkles size={16} />}
               {category === 'Robux' && <CircleDollarSign size={16} />}
               {category === 'YouTube' && <Play size={16} />}

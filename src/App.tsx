@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import api from './api/axios';
 import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, ShoppingCart, Crown } from 'lucide-react';
@@ -21,6 +21,7 @@ import './index.css';
 
 import Discord from './pages/products/Discord';
 import DiscordDecoration from './pages/products/DiscordDecoration';
+import BuyGameCard from './pages/products/BuyGameCard';
 import RobuxGamepass from './pages/products/RobuxGamepass';
 import RobuxGroup from './pages/products/RobuxGroup';
 import CustomerSupport from './components/CustomerSupport';
@@ -346,6 +347,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/products/buy-game-card" element={<BuyGameCard />} />
           <Route path="/products/discord" element={<Discord />} />
           <Route path="/products/discord-decoration" element={<DiscordDecoration />} />
           <Route path="/products/robux-gamepass" element={<RobuxGamepass />} />
