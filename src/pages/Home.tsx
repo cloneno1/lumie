@@ -72,10 +72,10 @@ const Home: React.FC = () => {
       ]);
 
       const statsRes = results[0].status === 'fulfilled' ? results[0].value : { data: { totalFeedbacks: 5000 } };
-      const rankRes = results[1].status === 'fulfilled' ? results[1].value : { data: { total: [], monthly: [], weekly: [] } };
+      const rankRes = results[1].status === 'fulfilled' ? results[1].value : { data: { total: [], monthly: [], weekly: [], topDonors: [] } };
       const activityRes = results[2].status === 'fulfilled' ? results[2].value : { data: [] };
       
-      const rankData = rankRes.data || { total: [], monthly: [], weekly: [] };
+      const rankData = rankRes.data || { total: [], monthly: [], weekly: [], topDonors: [] };
       setStats(rankData);
       setTopRechargers(rankData[leaderboardType] || []);
       setRecentActivity(activityRes.data || []);

@@ -1421,16 +1421,20 @@ const refreshRankingsInBackground = async () => {
     const aggregateRanking = (records, filterFn = null) => {
       const map = {};
       records.forEach(r => {
-        const time = new Date(r.created_at).getTime();
+        const time = new Date(r.created_at || r.createdAt).getTime();
         if (filterFn && !filterFn(time)) return;
-        const uid = r.user_id || r.userId;
+        
+        // Try all possible UID keys
+        const uid = r.user_id || r.userId || r.user_Id;
         if (!uid) return;
         
-        // Prioritize 'total' for orders (donation money) and 'amount' for transactions (bank money)
-        // CRITICAL: Handle NULL values from Supabase safely
         let moneyAmt = 0;
-        if (r.total !== undefined && r.total !== null) moneyAmt = parseInt(r.total);
-        else if (r.amount !== undefined && r.amount !== null) moneyAmt = parseInt(r.amount);
+        // Check for 'total' (donations) or 'amount' (topups)
+        if (r.total !== undefined && r.total !== null) {
+          moneyAmt = parseInt(r.total.toString());
+        } else if (r.amount !== undefined && r.amount !== null) {
+          moneyAmt = parseInt(r.amount.toString());
+        }
         
         if (!isNaN(moneyAmt) && moneyAmt > 0) {
           map[uid] = (map[uid] || 0) + moneyAmt;
