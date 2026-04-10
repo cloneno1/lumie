@@ -930,12 +930,15 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Số dư không đủ.' });
     }
 
+    const isGarena = ['lq', 'ff', 'fo4'].includes(gameId);
+    const displayPackage = isGarena ? `Gói ${price.toLocaleString()}đ` : `${amount} ${unit}`;
+
     // Ghi nhận đơn hàng
     const order = await db.orders.create({
       userId,
       username: user.username,
       productId: `game-${gameId}`,
-      productName: `${gameName} - ${amount} ${unit}`,
+      productName: `${gameName} - ${displayPackage}`,
       price: price, // Original price for reference
       amount: 1,
       total: finalPrice, // Discounted amount
@@ -959,7 +962,7 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
     await db.notifications.create({
       userId,
       title: 'Đã nhận đơn nạp game',
-      content: `Đơn nạp ${amount} ${unit} cho game ${gameName} đã được ghi nhận. Tổng thanh toán: ${finalPrice.toLocaleString()}đ (Đã giảm 5%).`,
+      content: `Đơn nạp ${displayPackage} cho game ${gameName} đã được ghi nhận. Tổng thanh toán: ${finalPrice.toLocaleString()}đ (Đã giảm 5%).`,
       type: 'order'
     }).catch(() => {});
 

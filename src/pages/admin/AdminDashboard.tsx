@@ -35,7 +35,13 @@ const AdminDashboard: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   
-  // Role selector modal state
+  // Modal states
+  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+  const [balanceTargetUser, setBalanceTargetUser] = useState<any>(null);
+  const [balanceAmount, setBalanceAmount] = useState<string>('');
+  const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
+  const [editingSetting, setEditingSetting] = useState<any>(null);
+
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
@@ -68,11 +74,11 @@ const AdminDashboard: React.FC = () => {
         fetchSafe(`${a_b}/chats`)
       ]);
 
-      setUsers(usersData || []);
-      setOrders(ordersData || []);
-      setTransactions(transData || []);
+      setUsers((usersData || []).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      setOrders((ordersData || []).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      setTransactions((transData || []).sort((a: any, b: any) => new Date(b.created_at || b.id).getTime() - new Date(a.created_at || a.id).getTime()));
       setSettings(settingsData || []);
-      setChatSessions(chatsData || []);
+      setChatSessions((chatsData || []).sort((a: any, b: any) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime()));
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu admin:', error);
     } finally {
@@ -104,17 +110,23 @@ const AdminDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeTab, selectedChatUser]);
 
-  const handleUpdateBalance = async (userId: string) => {
-    const amountStr = prompt('Nhập số tiền muốn thay đổi (vd: 50000 hoặc -50000):');
-    if (amountStr === null) return;
-    const amount = parseInt(amountStr);
+  const handleOpenBalanceModal = (user: any) => {
+    setBalanceTargetUser(user);
+    setBalanceAmount('');
+    setIsBalanceModalOpen(true);
+  };
+
+  const handleUpdateBalance = async () => {
+    if (!balanceTargetUser || !balanceAmount) return;
+    const amount = parseInt(balanceAmount);
     if (isNaN(amount)) return showNotification('Số tiền không hợp lệ.', 'error');
 
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/b-up-s`, { userId, amount, action: 'add' }, adminHeaders);
+      await api.post(`${a_b}/b-up-s`, { userId: balanceTargetUser.id, amount, action: 'add' }, adminHeaders);
       showNotification('Cập nhật số dư thành công!', 'success');
+      setIsBalanceModalOpen(false);
       fetchData();
     } catch (err) {
       showNotification('Lỗi cập nhật số dư.', 'error');
@@ -209,14 +221,19 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateSetting = async (key: string, currentValue: string) => {
-    const newValue = prompt(`Nhập giá trị mới cho ${key}:`, currentValue);
-    if (newValue === null || newValue === currentValue) return;
+  const handleOpenSettingsModal = (setting: any) => {
+    setEditingSetting(setting);
+    setIsSettingModalOpen(true);
+  };
+
+  const handleSaveSetting = async () => {
+    if (!editingSetting) return;
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/settings/update`, { key, value: newValue }, adminHeaders);
+      await api.post(`${a_b}/settings/update`, { key: editingSetting.key, value: editingSetting.value }, adminHeaders);
       showNotification('Cập nhật cài đặt thành công!', 'success');
+      setIsSettingModalOpen(false);
       fetchData();
     } catch (err) { showNotification('Lỗi cập nhật cài đặt.', 'error'); }
   };
@@ -255,29 +272,63 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="container" style={{ padding: '40px 20px' }}>
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
         <div>
-          <h1 style={{ marginBottom: '8px' }}>Quản Trị Hệ Thống</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Chào mừng {currentUser.username}, hãy quản lý hệ thống của bạn.</p>
+          <h1 style={{ marginBottom: '8px', fontSize: '2.4rem', fontWeight: 900 }} className="gradient-text">QUẢN TRỊ HỆ THỐNG</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Chào mừng {currentUser.username}, hãy quản lý hệ thống của bạn.</p>
         </div>
-        <div style={{ position: 'relative', width: '250px' }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input type="text" className="form-control" placeholder="Tìm kiếm..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ paddingLeft: '40px', fontSize: '14px' }} />
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <button 
+            onClick={fetchData} 
+            className="btn glass-panel" 
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '8px', 
+              padding: '12px 20px', borderRadius: '12px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid var(--glass-border)'
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={loading ? 'spin' : ''}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M3 21v-5h5"></path></svg>
+            Làm mới
+          </button>
+          <div style={{ position: 'relative', width: '300px' }}>
+            <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input 
+              type="text" 
+              className="form-control" 
+              placeholder="Tìm kiếm mọi thứ..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              style={{ paddingLeft: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }} 
+            />
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', marginBottom: '40px' }}>
         {[
-          { label: 'Người dùng', value: users.length.toLocaleString(), icon: <Users size={20} />, color: '#3b82f6' },
-          { label: 'Tổng nạp', value: transactions.filter(t => String(t.status) === '1').reduce((s, t) => s + (t.amount || 0), 0).toLocaleString() + 'đ', icon: <CreditCard size={20} />, color: '#10b981' },
-          { label: 'Doanh thu', value: purchasesOnly.filter(o => o.status === 'completed').reduce((s, o) => s + (o.total || 0), 0).toLocaleString() + 'đ', icon: <ShoppingBag size={20} />, color: '#f59e0b' },
-          { label: 'Đang chờ', value: purchasesOnly.filter(o => o.status === 'pending').length.toLocaleString(), icon: <Search size={20} />, color: '#ef4444' }
+          { label: 'Người dùng', value: users.length.toLocaleString(), icon: <Users size={24} />, color: '#3b82f6' },
+          { label: 'Tổng nạp', value: transactions.filter(t => String(t.status) === '1').reduce((s, t) => s + (t.amount || 0), 0).toLocaleString() + 'đ', icon: <CreditCard size={24} />, color: '#10b981' },
+          { label: 'Doanh thu', value: purchasesOnly.filter(o => o.status === 'completed').reduce((s, o) => s + (o.total || 0), 0).toLocaleString() + 'đ', icon: <ShoppingBag size={24} />, color: '#f59e0b' },
+          { label: 'Đang chờ', value: purchasesOnly.filter(o => o.status === 'pending').length.toLocaleString(), icon: <Search size={24} />, color: '#ef4444' }
         ].map((stat, i) => (
-          <div key={i} className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', border: `1px solid ${stat.color}40`, background: `${stat.color}15` }}>
-            <div style={{ background: `${stat.color}30`, padding: '12px', borderRadius: '12px', color: stat.color }}>{stat.icon}</div>
+          <div 
+            key={i} 
+            className="glass-card" 
+            style={{ 
+              padding: '28px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '24px', 
+              border: `1.5px solid ${stat.color}40`, 
+              background: `linear-gradient(135deg, ${stat.color}15, rgba(20,20,30,0.4))`,
+              boxShadow: `0 15px 35px -5px ${stat.color}15`
+            }}
+          >
+            <div style={{ background: `${stat.color}25`, padding: '16px', borderRadius: '18px', color: stat.color, boxShadow: `0 8px 16px ${stat.color}20` }}>{stat.icon}</div>
             <div>
-              <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '13px', marginBottom: '4px' }}>{stat.label}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stat.value}</div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px', fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'white' }}>{stat.value}</div>
             </div>
           </div>
         ))}
@@ -306,12 +357,12 @@ const AdminDashboard: React.FC = () => {
             <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><SettingsIcon size={20} /> Cài đặt hệ thống</h3>
             <div style={{ display: 'grid', gap: '16px' }}>
               {settings.map(s => (
-                <div key={s.key} className="glass-panel" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={s.key} className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
                   <div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{s.key}</div>
-                    <div style={{ fontWeight: 600 }}>{s.value}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>{s.key}</div>
+                    <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{s.value}</div>
                   </div>
-                  <button onClick={() => handleUpdateSetting(s.key, s.value)} className="btn-icon"><Edit3 size={16} /></button>
+                  <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: 'var(--accent-primary)', color: 'black', border: 'none' }}><Edit3 size={18} /></button>
                 </div>
               ))}
             </div>
@@ -397,9 +448,9 @@ const AdminDashboard: React.FC = () => {
                     </td>
                     <td style={{ padding: '20px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={() => handleUpdateBalance(user.id)} className="btn-icon" title="Cập nhật số dư"><Edit3 size={14} /></button>
-                        <button onClick={() => handleUpdateRole(user)} className="btn-icon" title="Đổi vai trò"><User size={14} /></button>
-                        <button onClick={() => handleBanUser(user.id, !!user.banned)} className="btn-icon" title={user.banned ? "Mở khóa" : "Khóa người dùng"}>{user.banned ? <Check size={14} /> : <X size={14} />}</button>
+                        <button onClick={() => handleOpenBalanceModal(user)} className="btn-icon" title="Cập nhật số dư" style={{ color: 'var(--accent-primary)', background: 'rgba(16,185,129,0.1)' }}><CreditCard size={14} /></button>
+                        <button onClick={() => handleUpdateRole(user)} className="btn-icon" title="Đổi vai trò" style={{ color: 'var(--accent-blue)', background: 'rgba(59,130,246,0.1)' }}><User size={14} /></button>
+                        <button onClick={() => handleBanUser(user.id, !!user.banned)} className="btn-icon" title={user.banned ? "Mở khóa" : "Khóa người dùng"} style={{ color: user.banned ? 'var(--accent-primary)' : 'var(--accent-red)', background: user.banned ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}>{user.banned ? <Check size={14} /> : <X size={14} />}</button>
                       </div>
                     </td>
                   </tr>
@@ -489,15 +540,79 @@ const AdminDashboard: React.FC = () => {
         )}
       </div>
 
+      {/* Balance Update Modal */}
+      {isBalanceModalOpen && (
+        <div className="modal-overlay">
+          <div className="glass-card animate-slide-in" style={{ width: '100%', maxWidth: '400px', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0 }}>Cập nhật số dư</h3>
+              <button onClick={() => setIsBalanceModalOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            
+            <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '14px' }}>
+              Cập nhật số dư cho người dùng <strong>{balanceTargetUser?.username}</strong>. Nhập số dương để cộng, số âm để trừ.
+            </p>
+            
+            <div className="form-group">
+              <label className="form-label">Số tiền thay đổi</label>
+              <div className="input-icon-wrapper">
+                <div className="icon"><CreditCard size={18} /></div>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  placeholder="Ví dụ: 50000 hoặc -50000"
+                  value={balanceAmount}
+                  onChange={(e) => setBalanceAmount(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+            
+            <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
+              <button onClick={handleUpdateBalance} className="btn btn-primary" style={{ flex: 1 }}>Xác nhận</button>
+              <button onClick={() => setIsBalanceModalOpen(false)} className="btn glass-panel" style={{ flex: 1 }}>Hủy bỏ</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Update Modal */}
+      {isSettingModalOpen && editingSetting && (
+        <div className="modal-overlay">
+          <div className="glass-card animate-slide-in" style={{ width: '100%', maxWidth: '500px', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0 }}>Cập nhật cấu hình</h3>
+              <button onClick={() => setIsSettingModalOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">Khóa cấu hình: <strong>{editingSetting.key}</strong></label>
+              <textarea 
+                className="form-control" 
+                rows={4}
+                value={editingSetting.value}
+                onChange={(e) => setEditingSetting({...editingSetting, value: e.target.value})}
+                style={{ resize: 'vertical', minHeight: '100px' }}
+                autoFocus
+              />
+            </div>
+            
+            <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
+              <button onClick={handleSaveSetting} className="btn btn-primary" style={{ flex: 1 }}>Lưu thay đổi</button>
+              <button onClick={() => setIsSettingModalOpen(false)} className="btn glass-panel" style={{ flex: 1 }}>Hủy bỏ</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Role Selection Modal */}
       {isRoleModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '400px', padding: '32px' }}>
-            <h3 style={{ marginBottom: '8px' }}>Chỉnh sửa vai trò</h3>
+        <div className="modal-overlay">
+          <div className="glass-card animate-slide-in" style={{ width: '100%', maxWidth: '400px', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0 }}>Chỉnh sửa vai trò</h3>
+              <button onClick={() => setIsRoleModalOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px' }}>
               Thay đổi vai trò cho tài khoản <strong>{editingUser?.username}</strong>
             </p>
@@ -547,20 +662,16 @@ const AdminDashboard: React.FC = () => {
       )}
       {/* Details Modal */}
       {selectedOrderDetails && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000
-        }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '600px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-overlay">
+          <div className="glass-card animate-slide-in" style={{ width: '100%', maxWidth: '600px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ margin: 0 }}>Chi tiết đơn hàng #{selectedOrderDetails.id}</h3>
               <button onClick={() => setSelectedOrderDetails(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
             </div>
             
             <div style={{ display: 'grid', gap: '20px' }}>
-              <div className="glass-panel" style={{ padding: '20px' }}>
-                <h4 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--accent-primary)' }}>Thông tin chung</h4>
+              <div className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--accent-primary)', fontWeight: 800 }}>THÔNG TIN CHUNG</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
                   <div><span style={{ color: 'var(--text-muted)' }}>Tài khoản:</span> <strong>{selectedOrderDetails.username}</strong></div>
                   <div><span style={{ color: 'var(--text-muted)' }}>Sản phẩm:</span> <strong>{selectedOrderDetails.product_name || selectedOrderDetails.productName}</strong></div>
@@ -570,8 +681,8 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="glass-panel" style={{ padding: '20px' }}>
-                <h4 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--accent-primary)' }}>Dữ liệu người dùng nhập</h4>
+              <div className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--accent-primary)', fontWeight: 800 }}>DỮ LIỆU NGƯỜI DÙNG</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {selectedOrderDetails.options ? (
                     Object.entries(selectedOrderDetails.options).map(([key, value]: [string, any]) => {

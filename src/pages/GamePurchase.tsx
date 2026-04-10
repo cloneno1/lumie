@@ -142,6 +142,8 @@ const GamePurchase: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
 
+  const isGarena = ['lq', 'ff', 'fo4'].includes(gameId || '');
+
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
   const [loading, setLoading] = useState(false);
@@ -207,7 +209,9 @@ const GamePurchase: React.FC = () => {
 
     const confirmed = await confirm({
       title: 'Xác nhận mua hàng',
-      message: `Bạn có chắc muốn nạp ${selectedPackage.amount} ${selectedPackage.unit} cho tài khoản ${formData.playerid}?`,
+      message: isGarena 
+        ? `Bạn có chắc muốn mua gói ${selectedPackage.price.toLocaleString()}đ cho tài khoản ${formData.playerid}?`
+        : `Bạn có chắc muốn nạp ${selectedPackage.amount} ${selectedPackage.unit} cho tài khoản ${formData.playerid}?`,
       confirmLabel: 'Mua ngay',
       cancelLabel: 'Hủy'
     });
@@ -346,34 +350,45 @@ const GamePurchase: React.FC = () => {
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '15px' }}>
               {game.packages.filter((p: any) => p.price >= 20000).map((pkg: any) => (
-                <div
-                  key={pkg.id}
-                  onClick={() => setSelectedPackage(pkg)}
-                  style={{
-                    padding: '20px',
-                    borderRadius: '16px',
-                    background: selectedPackage?.id === pkg.id ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.03)',
-                    border: selectedPackage?.id === pkg.id ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}
-                  className="package-card"
-                >
-                    <>
-                      <p style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '5px' }}>{pkg.amount}</p>
-                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>{pkg.unit}</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', textDecoration: 'line-through', marginBottom: '2px' }}>
-                          {pkg.price.toLocaleString()}đ
-                        </span>
-                        <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-primary)' }}>
-                          {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
-                        </span>
-                      </div>
-                    </>
+                  <div
+                   key={pkg.id}
+                   onClick={() => setSelectedPackage(pkg)}
+                   style={{
+                     padding: '20px',
+                     borderRadius: '16px',
+                     background: selectedPackage?.id === pkg.id ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.03)',
+                     border: selectedPackage?.id === pkg.id ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                     textAlign: 'center',
+                     cursor: 'pointer',
+                     transition: 'all 0.2s',
+                     position: 'relative',
+                     overflow: 'hidden'
+                   }}
+                   className="package-card"
+                 >
+                   {isGarena ? (
+                     <div style={{ padding: '5px 0' }}>
+                       <p style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--accent-primary)', marginBottom: '5px' }}>
+                         {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
+                       </p>
+                       <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                         Gói: {pkg.price.toLocaleString()}đ
+                       </p>
+                     </div>
+                   ) : (
+                     <>
+                       <p style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '5px' }}>{pkg.amount}</p>
+                       <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>{pkg.unit}</p>
+                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                         <span style={{ fontSize: '10px', color: 'var(--text-muted)', textDecoration: 'line-through', marginBottom: '2px' }}>
+                           {pkg.price.toLocaleString()}đ
+                         </span>
+                         <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-primary)' }}>
+                           {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
+                         </span>
+                       </div>
+                     </>
+                   )}
 
                   {selectedPackage?.id === pkg.id && (
                     <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
@@ -409,7 +424,11 @@ const GamePurchase: React.FC = () => {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Gói nạp:</span>
-                <span style={{ fontWeight: 700 }}>{selectedPackage ? `${selectedPackage.amount} ${selectedPackage.unit}` : 'Chưa chọn'}</span>
+                <span style={{ fontWeight: 700 }}>
+                  {selectedPackage 
+                    ? (isGarena ? `Gói ${selectedPackage.price.toLocaleString()}đ` : `${selectedPackage.amount} ${selectedPackage.unit}`) 
+                    : 'Chưa chọn'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Thanh toán:</span>
