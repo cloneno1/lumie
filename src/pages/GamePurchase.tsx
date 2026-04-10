@@ -14,8 +14,7 @@ const gamesData: Record<string, any> = {
     image: '/images/lq-logo.png',
     banner: 'https://cdn.vn.garenanow.com/web/kg/news/uploads/20230113_Banner_1.jpg',
     fields: [
-      { label: 'Tài khoản Garena', name: 'playerid', placeholder: 'Nhập tài khoản Garena...', type: 'text' },
-      { label: 'Mật khẩu Garena', name: 'password', placeholder: 'Nhập mật khẩu Garena...', type: 'password' }
+      { label: 'Player UID', name: 'playerid', placeholder: 'Nhập OpenID của bạn...', type: 'text' }
     ],
     packages: [
       { id: 1, amount: 16, unit: 'Quân Huy', price: 10000 },
@@ -48,8 +47,7 @@ const gamesData: Record<string, any> = {
     image: '/images/fo4-logo.png',
     banner: 'https://fo4.garena.vn/wp-content/uploads/2021/04/Banner-FO4-Moi.jpg',
     fields: [
-      { label: 'Tài khoản Garena', name: 'playerid', placeholder: 'Nhập tên đăng nhập Garena...', type: 'text' },
-      { label: 'Mật khẩu Garena', name: 'password', placeholder: 'Nhập mật khẩu Garena...', type: 'password' }
+      { label: 'Player UID', name: 'playerid', placeholder: 'Nhập UID của bạn...', type: 'text' }
     ],
     packages: [
       { id: 1, amount: 16, unit: 'FC', price: 10000 },
@@ -364,16 +362,6 @@ const GamePurchase: React.FC = () => {
                   }}
                   className="package-card"
                 >
-                  {(gameId === 'lq' || gameId === 'fo4') ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '60px' }}>
-                      <p style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--accent-primary)', margin: 0 }}>
-                        {calculateDiscountedPrice(pkg.price).toLocaleString()}đ
-                      </p>
-                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                        Giá trị: {pkg.price.toLocaleString()}đ
-                      </p>
-                    </div>
-                  ) : (
                     <>
                       <p style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '5px' }}>{pkg.amount}</p>
                       <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>{pkg.unit}</p>
@@ -386,7 +374,6 @@ const GamePurchase: React.FC = () => {
                         </span>
                       </div>
                     </>
-                  )}
 
                   {selectedPackage?.id === pkg.id && (
                     <div style={{ position: 'absolute', top: '5px', right: '5px' }}>

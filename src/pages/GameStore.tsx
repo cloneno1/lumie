@@ -11,9 +11,9 @@ const GameStore: React.FC = () => {
 
   const gameList = [
     // Hot Games
-    { id: 'lq', name: 'Liên Quân Mobile', category: 'Hot Games', image: '/images/lq-logo.png', type: 'Login' },
+    { id: 'lq', name: 'Liên Quân Mobile', category: 'Hot Games', image: '/images/lq-logo.png', type: 'UID' },
     { id: 'ff', name: 'Free Fire', category: 'Hot Games', image: '/images/ff-logo.png', type: 'UID' },
-    { id: 'fo4', name: 'Fifa Online 4', category: 'Hot Games', image: '/images/fo4-logo.png', type: 'Login' },
+    { id: 'fo4', name: 'Fifa Online 4', category: 'Hot Games', image: '/images/fo4-logo.png', type: 'UID' },
     // Hoyoverse
     { id: 'hsr', name: 'Honkai: Star Rail', category: 'Hoyoverse', image: '/images/hsr-logo.jpg', type: 'UID' },
     { id: 'zzz', name: 'Zenless Zone Zero', category: 'Hoyoverse', image: '/images/zzz-logo.png', type: 'UID' },
