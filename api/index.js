@@ -1764,6 +1764,14 @@ router.post('/internal-sys-mz9/chats/:userId/send', authenticateAdmin, async (re
       sender_role: 'staff',
       message
     });
+
+    // Send push notification to user about staff reply
+    sendPush(req.params.userId, {
+      title: 'Hỗ trợ Lumie Store',
+      body: `Bạn có tin nhắn mới từ nhân viên: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`,
+      url: '/profile' // Maybe show chat modal automatically when they open
+    }).catch(e => console.error('Chat push error:', e));
+
     res.json(msg);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
