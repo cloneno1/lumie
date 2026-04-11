@@ -128,57 +128,10 @@ function AppContent() {
           </button>
           
           <ul className={`nav-links ${showMobileMenu ? 'open' : ''}`}>
-             <div className="mobile-only" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ background: 'var(--primary-gradient)', width: '32px', height: '32px', borderRadius: '10px' }}></div>
-                  <span style={{ fontWeight: 800, fontSize: '1.4rem', letterSpacing: '1px' }}>LUMIE</span>
-                </div>
-                <button onClick={() => setShowMobileMenu(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', padding: '10px', borderRadius: '50%', display: 'flex' }}>
-                  <X size={20} />
-                </button>
-             </div>
-
-             <li>
-               <Link to="/" className="nav-link" onClick={() => setShowMobileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                 <div style={{ width: '4px', height: '18px', borderRadius: '2px', background: location.pathname === '/' ? 'var(--accent-primary)' : 'transparent' }}></div>
-                 {location.pathname === '/' ? <strong>TRANG CHỦ</strong> : 'TRANG CHỦ'}
-               </Link>
-             </li>
-             <li>
-               <Link to="/nap-game" className="nav-link" onClick={() => setShowMobileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                 <div style={{ width: '4px', height: '18px', borderRadius: '2px', background: location.pathname === '/nap-game' ? 'var(--accent-primary)' : 'transparent' }}></div>
-                 {location.pathname === '/nap-game' ? <strong>NẠP GAME</strong> : 'NẠP GAME'}
-               </Link>
-             </li>
-             <li>
-               <Link to="/vip" className="nav-link" onClick={() => setShowMobileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-primary)' }}>
-                 <Crown size={18} />
-                 <strong>VIP REWARDS</strong>
-               </Link>
-             </li>
-             <li>
-               <Link to="/gacha" className="nav-link" onClick={() => setShowMobileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                 <div style={{ width: '4px', height: '18px', borderRadius: '2px', background: location.pathname === '/gacha' ? 'var(--accent-primary)' : 'transparent' }}></div>
-                 {location.pathname === '/gacha' ? <strong>VÒNG QUAY</strong> : 'VÒNG QUAY'}
-               </Link>
-             </li>
-             
-             {user && (
-               <div className="mobile-only" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px' }}>
-                  <Link to="/profile" onClick={() => setShowMobileMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit', marginBottom: '20px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--accent-primary)' }}>
-                      <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" style={{ width: '100%', height: '100%' }} />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '15px' }}>{user.username}</div>
-                      <div style={{ color: 'var(--accent-primary)', fontSize: '13px', fontWeight: 'bold' }}>{user.balance.toLocaleString()}đ</div>
-                    </div>
-                  </Link>
-                  <button onClick={handleLogout} style={{ width: '100%', padding: '14px', borderRadius: '14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}>
-                    ĐĂNG XUẤT
-                  </button>
-               </div>
-             )}
+             <li><Link to="/" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>TRANG CHỦ</Link></li>
+             <li><Link to="/nap-game" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>NẠP GAME</Link></li>
+             <li><Link to="/vip" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'var(--accent-primary)', fontWeight: 700 }}>VIP REWARDS</Link></li>
+             <li><Link to="/gacha" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>VÒNG QUAY</Link></li>
           </ul>
 
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>

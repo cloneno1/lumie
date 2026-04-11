@@ -248,7 +248,7 @@ const Home: React.FC = () => {
             ) : recentActivity.length === 0 ? (
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>Chưa có hoạt động nào</p>
             ) : (
-              recentActivity.map((act, i) => (
+              recentActivity.slice(0, 5).map((act, i) => (
                 <div key={i} style={{ 
                   display: 'flex', gap: '16px', padding: '12px', 
                   borderLeft: `3px solid ${act.type === 'order' ? 'var(--accent-primary)' : '#f59e0b'}`,
