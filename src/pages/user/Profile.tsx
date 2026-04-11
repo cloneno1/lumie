@@ -98,28 +98,26 @@ const Profile: React.FC = () => {
             
             {/* iOS Tip */}
             {/iPhone|iPad|iPod/i.test(navigator.userAgent) && !((window.navigator as any).standalone) && (
-              <div style={{ color: '#f59e0b', fontSize: '12px', marginTop: '10px', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px' }}>
-                <strong>Lưu ý cho iPhone/iPad:</strong> Bạn cần nhấn nút <strong>Chia sẻ (Gửi)</strong> trên Safari và chọn <strong>"Thêm vào màn hình chính"</strong> để nhận được thông báo khi tắt máy.
+              <div style={{ color: '#f59e0b', marginTop: '8px', lineHeight: '1.4' }}>
+                ⚠️ <strong>iOS Tip:</strong> Bạn cần bấm "Thêm vào màn hình chính" (Add to Home Screen) mới có thể nhận thông báo khi tắt máy.
               </div>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              className="btn btn-secondary" 
-              style={{ padding: '10px 16px', fontSize: '12px', flexGrow: 1 }}
-              onClick={async () => {
-                try {
-                  const res = await api.post('/notifications/test-push');
-                  alert(res.data.message);
-                } catch (err: any) {
-                  alert(err.response?.data?.message || 'Lỗi gửi push');
-                }
-              }}
-            >
-              Gửi thử 1 thông báo
-            </button>
-          </div>
+          <button 
+            className="btn btn-primary" 
+            style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '14px' }}
+            onClick={async () => {
+              try {
+                const res = await api.post('/notifications/test-push');
+                alert(res.data.message);
+              } catch (err: any) {
+                alert(err.response?.data?.message || 'Lỗi gửi push. Hãy chắc chắn bạn đã bật thông báo.');
+              }
+            }}
+          >
+            Gửi thử thông báo tới thiết bị
+          </button>
         </div>
       </div>
     </div>
