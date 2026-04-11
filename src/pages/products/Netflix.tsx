@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { Film, Zap, ShieldCheck, ShoppingCart, Clock } from 'lucide-react';
+import { Film, ShieldCheck, ShoppingCart, Clock } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../context/ConfirmContext';
 
