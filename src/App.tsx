@@ -1,37 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import api from './api/axios';
 import { User, LogOut, ShieldCheck, LogIn, UserPlus, Bell, Menu, X, ShoppingCart, Crown } from 'lucide-react';
-import Home from './pages/Home';
-import TopUp from './pages/TopUp';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/user/Profile';
-import OrdersHistory from './pages/user/OrdersHistory';
-import TopUpHistory from './pages/user/TopUpHistory';
-import AccountSettings from './pages/user/AccountSettings';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import Products from './pages/Products';
-import AuthCallback from './pages/AuthCallback';
-import Cart from './pages/Cart';
-import VIP from './pages/VIP';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
 import './index.css';
 
-import Discord from './pages/products/Discord';
-import DiscordDecoration from './pages/products/DiscordDecoration';
-import YouTube from './pages/products/YouTube';
-import Spotify from './pages/products/Spotify';
-import Netflix from './pages/products/Netflix';
-import GameStore from './pages/GameStore';
-import GamePurchase from './pages/GamePurchase';
-import RobuxGamepass from './pages/products/RobuxGamepass';
-import RobuxGroup from './pages/products/RobuxGroup';
 import CustomerSupport from './components/CustomerSupport';
 import Loading from './components/Loading';
 import { NotificationProvider } from './context/NotificationContext';
 import { ConfirmProvider } from './context/ConfirmContext';
+
+// Lazy load pages for better performance
+const Home = lazy(() => import('./pages/Home'));
+const TopUp = lazy(() => import('./pages/TopUp'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Profile = lazy(() => import('./pages/user/Profile'));
+const OrdersHistory = lazy(() => import('./pages/user/OrdersHistory'));
+const TopUpHistory = lazy(() => import('./pages/user/TopUpHistory'));
+const AccountSettings = lazy(() => import('./pages/user/AccountSettings'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const Products = lazy(() => import('./pages/Products'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const Cart = lazy(() => import('./pages/Cart'));
+const VIP = lazy(() => import('./pages/VIP'));
+const Discord = lazy(() => import('./pages/products/Discord'));
+const DiscordDecoration = lazy(() => import('./pages/products/DiscordDecoration'));
+const YouTube = lazy(() => import('./pages/products/YouTube'));
+const Spotify = lazy(() => import('./pages/products/Spotify'));
+const Netflix = lazy(() => import('./pages/products/Netflix'));
+const GameStore = lazy(() => import('./pages/GameStore'));
+const GamePurchase = lazy(() => import('./pages/GamePurchase'));
+const RobuxGamepass = lazy(() => import('./pages/products/RobuxGamepass'));
+const RobuxGroup = lazy(() => import('./pages/products/RobuxGroup'));
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -360,35 +362,37 @@ function AppContent() {
 
       <main key={location.pathname} style={{ minHeight: 'calc(100vh - 80px)', paddingTop: '80px' }}>
         {loading ? <Loading fullScreen /> : (
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/discord" element={<Discord />} />
-          <Route path="/products/discord-decoration" element={<DiscordDecoration />} />
-          <Route path="/products/youtube" element={<YouTube />} />
-          <Route path="/products/spotify" element={<Spotify />} />
-          <Route path="/products/netflix" element={<Netflix />} />
-          <Route path="/products/robux-gamepass" element={<RobuxGamepass />} />
-          <Route path="/products/robux-group" element={<RobuxGroup />} />
-          <Route path="/nap-tien" element={<TopUp />} />
-          <Route path="/nap-game" element={<GameStore />} />
-          <Route path="/nap-game/:gameId" element={<GamePurchase />} />
-          <Route path="/vip" element={<VIP />} />
-          
-          <Route path="/login" element={!loading ? (user ? <Navigate to="/" replace /> : <Login />) : null} />
-          <Route path="/register" element={!loading ? (user ? <Navigate to="/" replace /> : <Register />) : null} />
-          
-          <Route path="/auth/callback/discord" element={<AuthCallback provider="discord" />} />
-          <Route path="/auth/callback/google" element={<AuthCallback provider="google" />} />
-          
-          <Route path="/profile" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <Profile />)} />
-          <Route path="/profile/orders" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <OrdersHistory />)} />
-          <Route path="/profile/topups" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <TopUpHistory />)} />
-          <Route path="/profile/settings" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AccountSettings />)} />
-          
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/admin" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AdminDashboard />)} />
-        </Routes>
+        <Suspense fallback={<Loading message="Đang tải trang..." />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/discord" element={<Discord />} />
+            <Route path="/products/discord-decoration" element={<DiscordDecoration />} />
+            <Route path="/products/youtube" element={<YouTube />} />
+            <Route path="/products/spotify" element={<Spotify />} />
+            <Route path="/products/netflix" element={<Netflix />} />
+            <Route path="/products/robux-gamepass" element={<RobuxGamepass />} />
+            <Route path="/products/robux-group" element={<RobuxGroup />} />
+            <Route path="/nap-tien" element={<TopUp />} />
+            <Route path="/nap-game" element={<GameStore />} />
+            <Route path="/nap-game/:gameId" element={<GamePurchase />} />
+            <Route path="/vip" element={<VIP />} />
+            
+            <Route path="/login" element={!loading ? (user ? <Navigate to="/" replace /> : <Login />) : null} />
+            <Route path="/register" element={!loading ? (user ? <Navigate to="/" replace /> : <Register />) : null} />
+            
+            <Route path="/auth/callback/discord" element={<AuthCallback provider="discord" />} />
+            <Route path="/auth/callback/google" element={<AuthCallback provider="google" />} />
+            
+            <Route path="/profile" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <Profile />)} />
+            <Route path="/profile/orders" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <OrdersHistory />)} />
+            <Route path="/profile/topups" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <TopUpHistory />)} />
+            <Route path="/profile/settings" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AccountSettings />)} />
+            
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/admin" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AdminDashboard />)} />
+          </Routes>
+        </Suspense>
         )}
       </main>
 

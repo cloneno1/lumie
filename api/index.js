@@ -1523,13 +1523,24 @@ router.post(`${ADMIN_BASE}/settings/update`, authenticateAdmin, async (req, res)
   try {
     const { key, value } = req.body;
     await db.settings.update(key, value);
+    cachedPublicSettings = null; // Clear cache on update
     res.json({ message: 'Cập nhật thành công!' });
   } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
+// Simple in-memory cache for settings
+let cachedPublicSettings = null;
+let lastCacheUpdate = 0;
+const CACHE_DURATION = 10000; // 10 seconds
+
 // For frontend displays
 router.get('/settings/public', async (req, res) => {
   try {
+    const now = Date.now();
+    if (cachedPublicSettings && (now - lastCacheUpdate < CACHE_DURATION)) {
+      return res.json(cachedPublicSettings);
+    }
+
     const settings = await db.settings.getAll();
     const publicData = {};
     settings.forEach(s => {
@@ -1537,7 +1548,7 @@ router.get('/settings/public', async (req, res) => {
     });
 
     // Provide defaults for critical keys if for some reason they are missing
-    res.json({
+    const finalSettings = {
       roblox_group_link: publicData.roblox_group_link || 'https://www.roblox.com/groups/33719487',
       robux_tutorial_link: publicData.robux_tutorial_link || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       robux_rate_gamepass: publicData.robux_rate_gamepass || '160',
@@ -1562,7 +1573,11 @@ router.get('/settings/public', async (req, res) => {
       price_discord_nitro_1y: publicData.price_discord_nitro_1y || '1890000',
       price_discord_basic_1m: publicData.price_discord_basic_1m || '89000',
       price_discord_basic_1y: publicData.price_discord_basic_1y || '850000'
-    });
+    };
+
+    cachedPublicSettings = finalSettings;
+    lastCacheUpdate = Date.now();
+    res.json(finalSettings);
   } catch (err) {
     res.json({
       roblox_group_link: 'https://www.roblox.com/groups/33719487',
