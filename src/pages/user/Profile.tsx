@@ -81,6 +81,30 @@ const Profile: React.FC = () => {
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
             Nhận thông báo trên điện thoại khi đơn hàng hoàn tất hoặc nạp tiền thành công.
           </p>
+          
+          <div style={{ 
+            background: 'rgba(255,255,255,0.05)', 
+            padding: '12px', 
+            borderRadius: '12px', 
+            fontSize: '13px', 
+            marginBottom: '16px',
+            border: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span>Trạng thái:</span>
+              <span style={{ color: Notification.permission === 'granted' ? 'var(--accent-primary)' : '#ef4444', fontWeight: 'bold' }}>
+                {Notification.permission === 'granted' ? 'Đã bật' : 'Chưa bật'}
+              </span>
+            </div>
+            
+            {/* iOS Tip */}
+            {/iPhone|iPad|iPod/i.test(navigator.userAgent) && !((window.navigator as any).standalone) && (
+              <div style={{ color: '#f59e0b', fontSize: '12px', marginTop: '10px', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px' }}>
+                <strong>Lưu ý cho iPhone/iPad:</strong> Bạn cần nhấn nút <strong>Chia sẻ (Gửi)</strong> trên Safari và chọn <strong>"Thêm vào màn hình chính"</strong> để nhận được thông báo khi tắt máy.
+              </div>
+            )}
+          </div>
+
           <div style={{ display: 'flex', gap: '10px' }}>
             <button 
               className="btn btn-secondary" 

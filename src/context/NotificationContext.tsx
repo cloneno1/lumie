@@ -12,6 +12,8 @@ interface Notification {
 
 interface NotificationContextType {
   showNotification: (message: string, type: NotificationType) => void;
+  requestPermission: () => Promise<boolean>;
+  isPushSupported: boolean;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -114,7 +116,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [removeNotification, showNativeNotification, requestPermission]);
 
   return (
-    <NotificationContext.Provider value={{ showNotification }}>
+    <NotificationContext.Provider value={{ 
+      showNotification, 
+      requestPermission, 
+      isPushSupported: 'serviceWorker' in navigator && 'PushManager' in window 
+    }}>
       {children}
       
       {/* Toast Container */}

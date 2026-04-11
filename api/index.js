@@ -39,16 +39,27 @@ const setupWebPush = async () => {
 let publicVapidKey = null;
 setupWebPush().then(key => publicVapidKey = key);
 
+// In-memory cache for faster push notification delivery
+const subscriptionCache = new Map();
+
 const sendPush = async (userId, payload) => {
   try {
-    const subSetting = await db.settings.getByKey(`push_sub_${userId}`);
-    if (subSetting && subSetting.value) {
-      const sub = typeof subSetting.value === 'string' ? JSON.parse(subSetting.value) : subSetting.value;
+    let sub = subscriptionCache.get(userId);
+    
+    if (!sub) {
+      const subSetting = await db.settings.getByKey(`push_sub_${userId}`);
+      if (subSetting && subSetting.value) {
+        sub = typeof subSetting.value === 'string' ? JSON.parse(subSetting.value) : subSetting.value;
+        subscriptionCache.set(userId, sub);
+      }
+    }
+
+    if (sub) {
       await webpush.sendNotification(sub, JSON.stringify(payload));
     }
   } catch (err) {
     if (err.statusCode === 410 || err.statusCode === 404) {
-      // Clear subscription if invalid
+      subscriptionCache.delete(userId);
       await db.settings.update(`push_sub_${userId}`, null);
     }
     console.error('Push error:', err.message);
@@ -1602,6 +1613,8 @@ router.get('/notifications/vapid-key', (req, res) => {
 router.post('/notifications/subscribe', authenticateToken, async (req, res) => {
   try {
     const subscription = req.body;
+    // Update cache for immediate use
+    subscriptionCache.set(req.user.id, subscription);
     // Store subscription in settings table to avoid column errors in users table
     await db.settings.update(`push_sub_${req.user.id}`, JSON.stringify(subscription));
     res.status(201).json({ message: 'Subscribed successfully' });
