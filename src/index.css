@@ -406,31 +406,26 @@ ul {
     transform: translateX(0);
   }
 
-  .mobile-menu-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    color: white;
-    cursor: pointer;
-    z-index: 1000;
-  }
-  
   /* Home Page Products */
   .products-grid { 
     grid-template-columns: 1fr !important; 
     gap: 20px !important;
   }
-  
-  /* Topup Page Mobile */
-  .topup-methods {
-    grid-template-columns: 1fr !important;
-  }
+}
 
+/* --- Global Responsive Utilities --- */
+/* Elements that should ONLY show on Mobile/Tablet */
+@media (min-width: 993px) {
+  .mobile-only { display: none !important; }
+}
+
+/* Elements that should be HIDDEN on Mobile/Tablet */
+@media (max-width: 992px) {
+  .hide-mobile { display: none !important; }
+}
+
+/* Mobile Layout Fixes */
+@media (max-width: 768px) {
   .bank-details-grid {
     flex-direction: column !important;
     align-items: flex-start !important;
