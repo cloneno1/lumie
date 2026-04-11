@@ -1483,10 +1483,21 @@ router.get(`${ADMIN_BASE}/settings`, authenticateAdmin, async (req, res) => {
       'discount_fo4': '5',
       'discount_hoyoverse': '0',
       'price_youtube_1m': '55000',
+      'price_youtube_3m': '150000',
+      'price_youtube_6m': '280000',
+      'price_youtube_1y': '520000',
       'price_spotify_1m': '45000',
+      'price_spotify_3m': '130000',
+      'price_spotify_6m': '250000',
+      'price_spotify_1y': '450000',
       'price_netflix_1m': '80000',
+      'price_netflix_3m': '225000',
+      'price_netflix_6m': '430000',
+      'price_netflix_1y': '800000',
       'price_discord_nitro_1m': '199000',
-      'price_discord_basic_1m': '89000'
+      'price_discord_nitro_1y': '1890000',
+      'price_discord_basic_1m': '89000',
+      'price_discord_basic_1y': '850000'
     };
 
     let updated = false;
@@ -1536,10 +1547,21 @@ router.get('/settings/public', async (req, res) => {
       discount_fo4: publicData.discount_fo4 || '5',
       discount_hoyoverse: publicData.discount_hoyoverse || '0',
       price_youtube_1m: publicData.price_youtube_1m || '55000',
+      price_youtube_3m: publicData.price_youtube_3m || '150000',
+      price_youtube_6m: publicData.price_youtube_6m || '280000',
+      price_youtube_1y: publicData.price_youtube_1y || '520000',
       price_spotify_1m: publicData.price_spotify_1m || '45000',
+      price_spotify_3m: publicData.price_spotify_3m || '130000',
+      price_spotify_6m: publicData.price_spotify_6m || '250000',
+      price_spotify_1y: publicData.price_spotify_1y || '450000',
       price_netflix_1m: publicData.price_netflix_1m || '80000',
+      price_netflix_3m: publicData.price_netflix_3m || '225000',
+      price_netflix_6m: publicData.price_netflix_6m || '430000',
+      price_netflix_1y: publicData.price_netflix_1y || '800000',
       price_discord_nitro_1m: publicData.price_discord_nitro_1m || '199000',
-      price_discord_basic_1m: publicData.price_discord_basic_1m || '89000'
+      price_discord_nitro_1y: publicData.price_discord_nitro_1y || '1890000',
+      price_discord_basic_1m: publicData.price_discord_basic_1m || '89000',
+      price_discord_basic_1y: publicData.price_discord_basic_1y || '850000'
     });
   } catch (err) {
     res.json({

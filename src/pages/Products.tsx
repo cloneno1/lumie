@@ -162,152 +162,47 @@ const Products: React.FC = () => {
 
     // --- YOUTUBE ---
     {
-      id: 4,
-      title: 'YouTube Premium - 1 Tháng',
+      id: 'youtube-main',
+      title: 'YouTube Premium',
       category: 'YouTube',
-      desc: 'Xem YouTube không quảng cáo, YouTube Music 1 tháng.',
+      desc: 'Xem YouTube không quảng cáo, YouTube Music. Đầy đủ các gói 1m - 1y.',
       price: getPrice(4, 55000),
-      displayPrice: Math.floor(getPrice(4, 55000)).toLocaleString() + 'đ',
+      displayPrice: 'Từ ' + Math.floor(getPrice(4, 55000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Play className="w-8 h-8" />,
       theme: 'youtube',
-      highlight: false
-    },
-    {
-      id: 41,
-      title: 'YouTube Premium - 3 Tháng',
-      category: 'YouTube',
-      desc: 'Xem YouTube không quảng cáo, YouTube Music 3 tháng.',
-      price: getPrice(41, 150000),
-      displayPrice: Math.floor(getPrice(41, 150000)).toLocaleString() + 'đ',
-      duration: '/3 tháng',
-      icon: <Play className="w-8 h-8" />,
-      theme: 'youtube',
-      highlight: false
-    },
-    {
-      id: 42,
-      title: 'YouTube Premium - 6 Tháng',
-      category: 'YouTube',
-      desc: 'Giải trí không giới hạn với YouTube Music 6 tháng.',
-      price: getPrice(42, 280000),
-      displayPrice: Math.floor(getPrice(42, 280000)).toLocaleString() + 'đ',
-      duration: '/6 tháng',
-      icon: <Play className="w-8 h-8" />,
-      theme: 'youtube',
-      highlight: false
-    },
-    {
-      id: 43,
-      title: 'YouTube Premium - 1 Năm',
-      category: 'YouTube',
-      desc: 'Gói YouTube Premium 1 năm tiết kiệm nhất.',
-      price: getPrice(43, 520000),
-      displayPrice: Math.floor(getPrice(43, 520000)).toLocaleString() + 'đ',
-      duration: '/năm',
-      icon: <Play className="w-8 h-8" />,
-      theme: 'youtube',
-      highlight: true
+      highlight: true,
+      url: '/products/youtube'
     },
 
     // --- SPOTIFY ---
     {
-      id: 5,
-      title: 'Spotify Premium - 1 Tháng',
+      id: 'spotify-main',
+      title: 'Spotify Premium',
       category: 'Spotify',
-      desc: 'Nâng cấp Premium trực tiếp trên tài khoản cá nhân 1 tháng.',
+      desc: 'Nâng cấp Premium trực tiếp trên tài khoản cá nhân. Các gói 1m - 1y.',
       price: getPrice(5, 45000),
-      displayPrice: Math.floor(getPrice(5, 45000)).toLocaleString() + 'đ',
+      displayPrice: 'Từ ' + Math.floor(getPrice(5, 45000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Music className="w-8 h-8" />,
       theme: 'spotify',
-      highlight: false
-    },
-    {
-      id: 51,
-      title: 'Spotify Premium - 3 Tháng',
-      category: 'Spotify',
-      desc: 'Tận hưởng âm nhạc không quảng cáo trong 3 tháng.',
-      price: getPrice(51, 130000),
-      displayPrice: Math.floor(getPrice(51, 130000)).toLocaleString() + 'đ',
-      duration: '/3 tháng',
-      icon: <Music className="w-8 h-8" />,
-      theme: 'spotify',
-      highlight: false
-    },
-    {
-      id: 52,
-      title: 'Spotify Premium - 6 Tháng',
-      category: 'Spotify',
-      desc: 'Tài khoản Premium chính chủ cho 6 tháng trải nghiệm.',
-      price: getPrice(52, 250000),
-      displayPrice: Math.floor(getPrice(52, 250000)).toLocaleString() + 'đ',
-      duration: '/6 tháng',
-      icon: <Music className="w-8 h-8" />,
-      theme: 'spotify',
-      highlight: false
-    },
-    {
-      id: 53,
-      title: 'Spotify Premium - 1 Năm',
-      category: 'Spotify',
-      desc: 'Gói 1 năm Premium Spotify ổn định, uy tín.',
-      price: getPrice(53, 450000),
-      displayPrice: Math.floor(getPrice(53, 450000)).toLocaleString() + 'đ',
-      duration: '/năm',
-      icon: <Music className="w-8 h-8" />,
-      theme: 'spotify',
-      highlight: true
+      highlight: true,
+      url: '/products/spotify'
     },
 
     // --- NETFLIX ---
     {
-      id: 6,
-      title: 'Netflix Premium 4K - 1 Tháng',
+      id: 'netflix-main',
+      title: 'Netflix Premium 4K',
       category: 'Netflix',
-      desc: 'Tài khoản shared 1 profile hoặc tạo profile riêng biệt.',
+      desc: 'Tài khoản shared 1 profile hoặc tạo profile riêng biệt. Các gói 1m - 1y.',
       price: getPrice(6, 80000),
-      displayPrice: Math.floor(getPrice(6, 80000)).toLocaleString() + 'đ',
+      displayPrice: 'Từ ' + Math.floor(getPrice(6, 80000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Film className="w-8 h-8" />,
       theme: 'netflix',
-      highlight: true
-    },
-    {
-      id: 61,
-      title: 'Netflix Premium 4K - 3 Tháng',
-      category: 'Netflix',
-      desc: 'Thoải mái xem phim 4K trong 3 tháng liên tục.',
-      price: getPrice(61, 225000),
-      displayPrice: Math.floor(getPrice(61, 225000)).toLocaleString() + 'đ',
-      duration: '/3 tháng',
-      icon: <Film className="w-8 h-8" />,
-      theme: 'netflix',
-      highlight: false
-    },
-    {
-      id: 62,
-      title: 'Netflix Premium 4K - 6 Tháng',
-      category: 'Netflix',
-      desc: 'Xem phim không giới hạn 4K bản quyền 6 tháng.',
-      price: getPrice(62, 430000),
-      displayPrice: Math.floor(getPrice(62, 430000)).toLocaleString() + 'đ',
-      duration: '/6 tháng',
-      icon: <Film className="w-8 h-8" />,
-      theme: 'netflix',
-      highlight: false
-    },
-    {
-      id: 63,
-      title: 'Netflix Premium 4K - 1 Năm',
-      category: 'Netflix',
-      desc: 'Gói Netflix Premium 1 năm tiện lợi, giá rẻ.',
-      price: getPrice(63, 800000),
-      displayPrice: Math.floor(getPrice(63, 800000)).toLocaleString() + 'đ',
-      duration: '/năm',
-      icon: <Film className="w-8 h-8" />,
-      theme: 'netflix',
-      highlight: true
+      highlight: true,
+      url: '/products/netflix'
     }
   ];
 

@@ -401,21 +401,29 @@ const AdminDashboard: React.FC = () => {
 
               {/* Other Product Prices */}
               <section>
-                <h4 style={{ color: '#3b82f6', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>GIÁ SẢN PHẨM KHÁC (1 THÁNG)</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-                  {settings.filter(s => s.key.includes('price')).map(s => (
-                    <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.02)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <div style={{ fontSize: '11px', color: 'rgba(59,130,246,0.7)', fontWeight: 800, textTransform: 'uppercase' }}>
-                          {s.key === 'price_youtube_1m' ? 'YouTube Premium' : 
-                           s.key === 'price_spotify_1m' ? 'Spotify Premium' : 
-                           s.key === 'price_netflix_1m' ? 'Netflix Premium' : 
-                           s.key === 'price_discord_nitro_1m' ? 'Discord Nitro Boost' : 
-                           s.key === 'price_discord_basic_1m' ? 'Discord Basic Nitro' : s.key}
-                        </div>
-                        <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
+                <h4 style={{ color: '#3b82f6', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>GIÁ SẢN PHẨM KHÁC</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+                  {['youtube', 'spotify', 'netflix', 'discord_nitro', 'discord_basic'].map(group => (
+                    <div key={group} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(59,130,246,0.1)', background: 'rgba(59,130,246,0.02)' }}>
+                      <h5 style={{ marginBottom: '16px', color: 'var(--accent-primary)', textTransform: 'capitalize' }}>
+                        {group.replace('_', ' ')}
+                      </h5>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {settings.filter(s => s.key.startsWith(`price_${group}`)).sort((a,b) => a.key.length - b.key.length).map(s => (
+                          <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '12px' }}>
+                              {s.key.endsWith('1m') ? '1 Tháng' : 
+                               s.key.endsWith('3m') ? '3 Tháng' :
+                               s.key.endsWith('6m') ? '6 Tháng' :
+                               s.key.endsWith('1y') ? '1 Năm' : s.key}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{ fontWeight: 700 }}>{parseInt(s.value).toLocaleString()}đ</span>
+                              <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '28px', height: '28px' }}><Edit3 size={12} /></button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div style={{ fontWeight: 900, fontSize: '1.4rem' }}>{parseInt(s.value).toLocaleString()}đ</div>
                     </div>
                   ))}
                 </div>

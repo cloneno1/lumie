@@ -21,6 +21,9 @@ import './index.css';
 
 import Discord from './pages/products/Discord';
 import DiscordDecoration from './pages/products/DiscordDecoration';
+import YouTube from './pages/products/YouTube';
+import Spotify from './pages/products/Spotify';
+import Netflix from './pages/products/Netflix';
 import GameStore from './pages/GameStore';
 import GamePurchase from './pages/GamePurchase';
 import RobuxGamepass from './pages/products/RobuxGamepass';
@@ -362,6 +365,9 @@ function AppContent() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/discord" element={<Discord />} />
           <Route path="/products/discord-decoration" element={<DiscordDecoration />} />
+          <Route path="/products/youtube" element={<YouTube />} />
+          <Route path="/products/spotify" element={<Spotify />} />
+          <Route path="/products/netflix" element={<Netflix />} />
           <Route path="/products/robux-gamepass" element={<RobuxGamepass />} />
           <Route path="/products/robux-group" element={<RobuxGroup />} />
           <Route path="/nap-tien" element={<TopUp />} />
