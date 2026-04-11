@@ -1,7 +1,9 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Camera, CreditCard, ShoppingBag } from 'lucide-react';
+import { User, Camera, CreditCard, ShoppingBag, Bell, BellOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import api from '../../api/axios';
+import { useNotification } from '../../context/NotificationContext';
 
 const Profile: React.FC = () => {
   const { user } = useAuth();
@@ -70,6 +72,32 @@ const Profile: React.FC = () => {
           <h3 style={{ margin: '0 0 8px' }}>Lịch sử nạp tiền</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Theo dõi lịch sử nạp thẻ và biến động số dư tài khoản.</p>
         </Link>
+        
+        <div className="glass-card" style={{ padding: '24px' }}>
+          <div style={{ background: 'rgba(236, 72, 153, 0.1)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <Bell size={24} color="#ec4899" />
+          </div>
+          <h3 style={{ margin: '0 0 8px' }}>Cấu hình thông báo</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
+            Nhận thông báo trên điện thoại khi đơn hàng hoàn tất hoặc nạp tiền thành công.
+          </p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className="btn btn-secondary" 
+              style={{ padding: '10px 16px', fontSize: '12px', flexGrow: 1 }}
+              onClick={async () => {
+                try {
+                  const res = await api.post('/notifications/test-push');
+                  alert(res.data.message);
+                } catch (err: any) {
+                  alert(err.response?.data?.message || 'Lỗi gửi push');
+                }
+              }}
+            >
+              Gửi thử 1 thông báo
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

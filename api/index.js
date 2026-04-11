@@ -41,14 +41,15 @@ setupWebPush().then(key => publicVapidKey = key);
 
 const sendPush = async (userId, payload) => {
   try {
-    const user = await db.users.getById(userId);
-    if (user && user.push_subscription) {
-      const sub = typeof user.push_subscription === 'string' ? JSON.parse(user.push_subscription) : user.push_subscription;
+    const subSetting = await db.settings.getByKey(`push_sub_${userId}`);
+    if (subSetting && subSetting.value) {
+      const sub = typeof subSetting.value === 'string' ? JSON.parse(subSetting.value) : subSetting.value;
       await webpush.sendNotification(sub, JSON.stringify(payload));
     }
   } catch (err) {
     if (err.statusCode === 410 || err.statusCode === 404) {
-      await db.users.update(userId, { push_subscription: null });
+      // Clear subscription if invalid
+      await db.settings.update(`push_sub_${userId}`, null);
     }
     console.error('Push error:', err.message);
   }
@@ -1601,11 +1602,25 @@ router.get('/notifications/vapid-key', (req, res) => {
 router.post('/notifications/subscribe', authenticateToken, async (req, res) => {
   try {
     const subscription = req.body;
-    // Store subscription in user record as a JSON object
-    await db.users.update(req.user.id, { push_subscription: subscription });
+    // Store subscription in settings table to avoid column errors in users table
+    await db.settings.update(`push_sub_${req.user.id}`, JSON.stringify(subscription));
     res.status(201).json({ message: 'Subscribed successfully' });
   } catch (err) {
+    console.error('Subscription error:', err);
     res.status(500).json({ message: 'Subscription failed' });
+  }
+});
+
+router.post('/notifications/test-push', authenticateToken, async (req, res) => {
+  try {
+    await sendPush(req.user.id, {
+      title: 'Thông báo thử nghiệm',
+      body: 'Nếu bạn thấy thông báo này, hệ thống notification đã hoạt động!',
+      url: '/'
+    });
+    res.json({ message: 'Đã gửi yêu cầu push tới thiết bị của bạn!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Gửi push thất bại' });
   }
 });
 

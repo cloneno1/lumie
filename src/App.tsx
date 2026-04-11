@@ -177,9 +177,9 @@ function AppContent() {
             </Link>
 
             {user ? (
-              <div className="user-nav-container" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div className="user-nav-container" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 {/* Notification Bell */}
-                <div style={{ position: 'relative' }} className="hide-mobile">
+                <div style={{ position: 'relative' }}>
                   <div 
                     onClick={toggleNotifications}
                     style={{ 
@@ -207,12 +207,12 @@ function AppContent() {
                   {/* Notification Dropdown */}
                   {showNotifications && (
                     <div className="glass-card notification-dropdown" style={{ 
-                      position: 'absolute', 
-                      top: '120%', 
-                      right: '0', 
+                      position: 'fixed', 
+                      top: '80px', 
+                      right: '24px', 
                       width: '320px', 
                       maxHeight: '400px', 
-                      zIndex: 1000, 
+                      zIndex: 10000, 
                       padding: '0',
                       overflow: 'hidden',
                       animation: 'slideInTop 0.3s',
@@ -222,7 +222,10 @@ function AppContent() {
                     }}>
                       <div style={{ padding: '16px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontWeight: 700 }}>Thông báo</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{notifications.length} tin mới</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{notifications.length} mới</span>
+                          <button onClick={() => setShowNotifications(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)' }}><X size={16} /></button>
+                        </div>
                       </div>
                       <div style={{ overflowY: 'auto', maxHeight: '330px' }}>
                         {notifications.length === 0 ? (
@@ -233,7 +236,6 @@ function AppContent() {
                               {!n.read && <div style={{ position: 'absolute', left: '6px', top: '22px', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)' }}></div>}
                               <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '2px', paddingLeft: '8px' }}>{n.title}</div>
                               <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4', paddingLeft: '8px' }}>{n.content}</div>
-                              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '8px', paddingLeft: '8px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                             </div>
                           ))
                         )}

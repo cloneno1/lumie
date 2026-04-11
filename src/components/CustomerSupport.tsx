@@ -223,21 +223,21 @@ const CustomerSupport = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
+            gap: '12px',
+            background: '#10b981', // Solid brand color
             color: 'black',
-            padding: '12px 20px',
+            padding: '14px 24px',
             borderRadius: '100px',
             textDecoration: 'none',
-            fontWeight: '700',
-            boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4)',
-            border: 'none'
+            fontWeight: '800',
+            boxShadow: '0 10px 30px rgba(16, 185, 129, 0.5)',
+            border: '2px solid rgba(255,255,255,0.2)'
           }}
         >
           <svg width="24" height="24" viewBox="0 0 127.14 96.36" fill="black">
             <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c0,0,0,0,0-.09C129.96,52.43,122.28,28.23,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.3,46,96.19,53,91.08,65.69,84.69,65.69Z"/>
           </svg>
-          <span style={{ fontSize: '14px' }}>VÀO SERVER ĐỂ ĐƯỢC HỖ TRỢ</span>
+          <span style={{ fontSize: '14px', letterSpacing: '0.5px' }}>HỖ TRỢ DISCORD</span>
         </a>
 
         {/* Action Button for Chat */}
@@ -245,20 +245,21 @@ const CustomerSupport = () => {
           onClick={() => setIsChatOpen(!isChatOpen)}
           className="hover-scale"
           style={{
-            width: '56px',
-            height: '56px',
+            width: '64px',
+            height: '64px',
             borderRadius: '50%',
-            background: 'var(--primary-gradient)',
+            background: '#ffffff', // Solid white backgorund
             border: 'none',
-            color: '#000',
+            color: '#10b981',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)'
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
           }}
         >
-          {isChatOpen ? <X size={28} /> : <MessageCircle size={28} />}
+          {isChatOpen ? <X size={32} /> : <MessageCircle size={32} />}
         </button>
 
       </div>
