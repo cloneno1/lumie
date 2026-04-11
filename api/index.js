@@ -463,12 +463,15 @@ router.post('/auth/google/callback', async (req, res) => {
     const { code } = req.body;
     if (!code) return res.status(400).json({ message: 'Missing code' });
 
-    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: GOOGLE_REDIRECT_URI,
+    const params = new URLSearchParams();
+    params.append('client_id', GOOGLE_CLIENT_ID);
+    params.append('client_secret', GOOGLE_CLIENT_SECRET);
+    params.append('code', code);
+    params.append('grant_type', 'authorization_code');
+    params.append('redirect_uri', GOOGLE_REDIRECT_URI);
+
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', params.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
     const accessToken = tokenResponse.data.access_token;

@@ -58,7 +58,7 @@ const AuthCallback: React.FC<{ provider: 'discord' | 'google' }> = ({ provider }
           <>
             <Loader2 className="animate-spin" size={48} style={{ color: 'var(--accent-primary)', marginBottom: '20px' }} />
             <h2 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Đang xác thực...</h2>
-            <p style={{ color: '#94a3b8' }}>Vui lòng đợi giây lát trong khi chúng tôi kết nối với Discord.</p>
+            <p style={{ color: '#94a3b8' }}>Vui lòng đợi giây lát trong khi chúng tôi kết nối với {provider === 'discord' ? 'Discord' : 'Google'}.</p>
           </>
         )}
       </div>
