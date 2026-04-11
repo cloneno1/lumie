@@ -18,12 +18,16 @@ import webpush from 'web-push';
 const setupWebPush = async () => {
   try {
     let vapidKeys = await db.settings.getByKey('vapid_keys');
-    if (!vapidKeys) {
+    if (!vapidKeys || !vapidKeys.value) {
+      console.log('Generating new VAPID keys...');
       const newKeys = webpush.generateVAPIDKeys();
       await db.settings.update('vapid_keys', JSON.stringify(newKeys));
       vapidKeys = { value: JSON.stringify(newKeys) };
     }
-    const keys = JSON.parse(vapidKeys.value);
+    
+    const keys = typeof vapidKeys.value === 'string' ? JSON.parse(vapidKeys.value) : vapidKeys.value;
+    if (!keys.publicKey || !keys.privateKey) throw new Error('Invalid VAPID keys structure');
+    
     webpush.setVapidDetails(
       'mailto:support@lumie.store',
       keys.publicKey,
@@ -32,12 +36,19 @@ const setupWebPush = async () => {
     console.log('Web Push configured successfully');
     return keys.publicKey;
   } catch (err) {
-    console.error('Web Push setup error:', err);
+    console.error('Web Push setup error:', err.message);
+    return null;
   }
 };
 
 let publicVapidKey = null;
-setupWebPush().then(key => publicVapidKey = key);
+const initVapid = async () => {
+  if (!publicVapidKey) {
+    publicVapidKey = await setupWebPush();
+  }
+  return publicVapidKey;
+};
+initVapid();
 
 // In-memory cache for faster push notification delivery (Map of userId -> Array of subscriptions)
 const subscriptionCache = new Map();
@@ -1619,9 +1630,10 @@ let lastCacheUpdate = 0;
 const CACHE_DURATION = 10000; // 10 seconds
 
 // --- PUSH NOTIFICATION ENDPOINTS ---
-router.get('/notifications/vapid-key', (req, res) => {
-  if (publicVapidKey) {
-    res.json({ publicKey: publicVapidKey });
+router.get('/notifications/vapid-key', async (req, res) => {
+  const key = await initVapid();
+  if (key) {
+    res.json({ publicKey: key });
   } else {
     res.status(500).json({ message: 'Push notification server not ready' });
   }
