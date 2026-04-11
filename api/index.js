@@ -80,36 +80,6 @@ const sendPush = async (userId, payload) => {
   }
 };
 
-router.post('/notifications/subscribe', authenticateToken, async (req, res) => {
-  try {
-    const newSub = req.body;
-    
-    // Get existing subs
-    const subSetting = await db.settings.getByKey(`push_sub_list_${req.user.id}`);
-    let subs = [];
-    if (subSetting && subSetting.value) {
-      subs = typeof subSetting.value === 'string' ? JSON.parse(subSetting.value) : subSetting.value;
-      if (!Array.isArray(subs)) subs = [subs];
-    }
-    
-    // Check if sub already exists (by endpoint)
-    const exists = subs.some(s => s.endpoint === newSub.endpoint);
-    if (!exists) {
-      subs.push(newSub);
-      // Keep only last 5 devices to avoid bloat
-      if (subs.length > 5) subs.shift();
-      
-      subscriptionCache.set(req.user.id, subs);
-      await db.settings.update(`push_sub_list_${req.user.id}`, JSON.stringify(subs));
-    }
-    
-    res.status(201).json({ message: 'Subscribed successfully' });
-  } catch (err) {
-    console.error('Subscription error:', err);
-    res.status(500).json({ message: 'Subscription failed' });
-  }
-});
-
 // Wrap notification creation to include push
 const originalNotify = db.notifications.create;
 db.notifications.create = async (notification) => {
@@ -1656,11 +1626,27 @@ router.get('/notifications/vapid-key', (req, res) => {
 
 router.post('/notifications/subscribe', authenticateToken, async (req, res) => {
   try {
-    const subscription = req.body;
-    // Update cache for immediate use
-    subscriptionCache.set(req.user.id, subscription);
-    // Store subscription in settings table to avoid column errors in users table
-    await db.settings.update(`push_sub_${req.user.id}`, JSON.stringify(subscription));
+    const newSub = req.body;
+    
+    // Get existing subs
+    const subSetting = await db.settings.getByKey(`push_sub_list_${req.user.id}`);
+    let subs = [];
+    if (subSetting && subSetting.value) {
+      subs = typeof subSetting.value === 'string' ? JSON.parse(subSetting.value) : subSetting.value;
+      if (!Array.isArray(subs)) subs = [subs];
+    }
+    
+    // Check if sub already exists (by endpoint)
+    const exists = subs.some(s => s.endpoint === newSub.endpoint);
+    if (!exists) {
+      subs.push(newSub);
+      // Keep only last 5 devices to avoid bloat
+      if (subs.length > 5) subs.shift();
+      
+      subscriptionCache.set(req.user.id, subs);
+      await db.settings.update(`push_sub_list_${req.user.id}`, JSON.stringify(subs));
+    }
+    
     res.status(201).json({ message: 'Subscribed successfully' });
   } catch (err) {
     console.error('Subscription error:', err);

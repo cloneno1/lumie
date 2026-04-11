@@ -129,9 +129,9 @@ function AppContent() {
           
           <ul className={`nav-links ${showMobileMenu ? 'open' : ''}`}>
              <li><Link to="/" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>TRANG CHỦ</Link></li>
+             <li><Link to="/products" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>SẢN PHẨM</Link></li>
+             <li><Link to="/vip" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'var(--accent-primary)', fontWeight: 700 }}>VIP</Link></li>
              <li><Link to="/nap-game" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>NẠP GAME</Link></li>
-             <li><Link to="/vip" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'var(--accent-primary)', fontWeight: 700 }}>VIP REWARDS</Link></li>
-             <li><Link to="/gacha" onClick={() => setShowMobileMenu(false)} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>VÒNG QUAY</Link></li>
           </ul>
 
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
