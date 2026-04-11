@@ -12,6 +12,62 @@ import multer from 'multer';
 import { db, supabase } from '../db.js';
 import { calculateVipLevel, VIP_LEVELS } from './vip-utils.js';
 import { GACHA_REWARDS, rollGacha } from './gacha-utils.js';
+import webpush from 'web-push';
+
+// --- PUSH NOTIFICATIONS SETUP ---
+const setupWebPush = async () => {
+  try {
+    let vapidKeys = await db.settings.getByKey('vapid_keys');
+    if (!vapidKeys) {
+      const newKeys = webpush.generateVAPIDKeys();
+      await db.settings.update('vapid_keys', JSON.stringify(newKeys));
+      vapidKeys = { value: JSON.stringify(newKeys) };
+    }
+    const keys = JSON.parse(vapidKeys.value);
+    webpush.setVapidDetails(
+      'mailto:support@lumie.store',
+      keys.publicKey,
+      keys.privateKey
+    );
+    console.log('Web Push configured successfully');
+    return keys.publicKey;
+  } catch (err) {
+    console.error('Web Push setup error:', err);
+  }
+};
+
+let publicVapidKey = null;
+setupWebPush().then(key => publicVapidKey = key);
+
+const sendPush = async (userId, payload) => {
+  try {
+    const user = await db.users.getById(userId);
+    if (user && user.push_subscription) {
+      const sub = typeof user.push_subscription === 'string' ? JSON.parse(user.push_subscription) : user.push_subscription;
+      await webpush.sendNotification(sub, JSON.stringify(payload));
+    }
+  } catch (err) {
+    if (err.statusCode === 410 || err.statusCode === 404) {
+      await db.users.update(userId, { push_subscription: null });
+    }
+    console.error('Push error:', err.message);
+  }
+};
+
+// Wrap notification creation to include push
+const originalNotify = db.notifications.create;
+db.notifications.create = async (notification) => {
+  const result = await originalNotify(notification);
+  if (result) {
+    const userId = notification.userId || notification.user_id;
+    sendPush(userId, {
+      title: notification.title,
+      body: notification.content,
+      url: '/profile/orders' // Default url
+    }).catch(e => console.error('Push async error:', e));
+  }
+  return result;
+};
 
 // Multer config for avatar uploads (memory storage)
 const upload = multer({ 
@@ -1532,6 +1588,26 @@ router.post(`${ADMIN_BASE}/settings/update`, authenticateAdmin, async (req, res)
 let cachedPublicSettings = null;
 let lastCacheUpdate = 0;
 const CACHE_DURATION = 10000; // 10 seconds
+
+// --- PUSH NOTIFICATION ENDPOINTS ---
+router.get('/notifications/vapid-key', (req, res) => {
+  if (publicVapidKey) {
+    res.json({ publicKey: publicVapidKey });
+  } else {
+    res.status(500).json({ message: 'Push notification server not ready' });
+  }
+});
+
+router.post('/notifications/subscribe', authenticateToken, async (req, res) => {
+  try {
+    const subscription = req.body;
+    // Store subscription in user record as a JSON object
+    await db.users.update(req.user.id, { push_subscription: subscription });
+    res.status(201).json({ message: 'Subscribed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Subscription failed' });
+  }
+});
 
 // For frontend displays
 router.get('/settings/public', async (req, res) => {
