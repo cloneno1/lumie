@@ -1,9 +1,8 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { User, Camera, CreditCard, ShoppingBag, Bell, BellOff } from 'lucide-react';
+import { User, Camera, CreditCard, ShoppingBag, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
-import { useNotification } from '../../context/NotificationContext';
 
 const Profile: React.FC = () => {
   const { user } = useAuth();
