@@ -20,9 +20,51 @@ const Products: React.FC = () => {
   const initialCategory = queryParams.get('category') || 'All';
   const [activeCategory, setActiveCategory] = useState(initialCategory);
 
+  const [publicSettings, setPublicSettings] = useState<any>(null);
+
   React.useEffect(() => {
-    setActiveCategory(queryParams.get('category') || 'All');
-  }, [location.search]);
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/settings/public');
+        setPublicSettings(res.data);
+      } catch (err) {
+        console.error('Lỗi tải cấu hình:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const getPrice = (id: any, defaultPrice: number): number => {
+    if (!publicSettings) return defaultPrice;
+    
+    switch (id) {
+      case 4: return parseInt(publicSettings.price_youtube_1m) || defaultPrice;
+      case 5: return parseInt(publicSettings.price_spotify_1m) || defaultPrice;
+      case 6: return parseInt(publicSettings.price_netflix_1m) || defaultPrice;
+      case 1: return parseInt(publicSettings.price_discord_nitro_1m) || defaultPrice;
+      case 2: return parseInt(publicSettings.price_discord_basic_1m) || defaultPrice;
+      case 'robux-gp': return parseInt(publicSettings.robux_rate_gamepass) || 160;
+      case 'robux-gr': return parseInt(publicSettings.robux_rate_group) || 200;
+      default:
+        // Handle variations (3m, 6m, 1y) - rough scaling for now if not explicitly in settings
+        if (id === 41) return getPrice(4, 55000) * 3 * 0.9; // 10% disc for 3m
+        if (id === 42) return getPrice(4, 55000) * 6 * 0.85; // 15% disc for 6m
+        if (id === 43) return getPrice(4, 55000) * 12 * 0.8; // 20% disc for 1y
+        
+        if (id === 51) return getPrice(5, 45000) * 3 * 0.9;
+        if (id === 52) return getPrice(5, 45000) * 6 * 0.85;
+        if (id === 53) return getPrice(5, 45000) * 12 * 0.8;
+        
+        if (id === 61) return getPrice(6, 80000) * 3 * 0.9;
+        if (id === 62) return getPrice(6, 80000) * 6 * 0.85;
+        if (id === 63) return getPrice(6, 80000) * 12 * 0.8;
+
+        if (id === 11) return getPrice(1, 199000) * 12 * 0.8;
+        if (id === 21) return getPrice(2, 89000) * 12 * 0.8;
+        
+        return defaultPrice;
+    }
+  };
 
   const categories = ['All', 'Discord', 'Robux', 'YouTube', 'Spotify', 'Netflix'];
 
@@ -33,8 +75,8 @@ const Products: React.FC = () => {
       title: 'Discord Nitro Boost - 1 Tháng',
       category: 'Discord',
       desc: '1 Tháng Full Nitro. Nâng cấp server nhanh chóng.',
-      price: 199000,
-      displayPrice: '199.000đ',
+      price: getPrice(1, 199000),
+      displayPrice: Math.floor(getPrice(1, 199000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Sparkles className="w-8 h-8" />,
       theme: 'discord',
@@ -45,8 +87,8 @@ const Products: React.FC = () => {
       title: 'Discord Nitro Boost - 1 Năm',
       category: 'Discord',
       desc: '1 Năm Full Nitro + Server Boosts. Tiết kiệm hơn.',
-      price: 1890000,
-      displayPrice: '1.890.000đ',
+      price: getPrice(11, 1890000),
+      displayPrice: Math.floor(getPrice(11, 1890000)).toLocaleString() + 'đ',
       duration: '/năm',
       icon: <Sparkles className="w-8 h-8" />,
       theme: 'discord',
@@ -57,8 +99,8 @@ const Products: React.FC = () => {
       title: 'Discord Basic Nitro - 1 Tháng',
       category: 'Discord',
       desc: '1 Tháng Basic Nitro. Avatar động và tải lên file lớn.',
-      price: 89000,
-      displayPrice: '89.000đ',
+      price: getPrice(2, 89000),
+      displayPrice: Math.floor(getPrice(2, 89000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Sparkles className="w-8 h-8" />,
       theme: 'discord',
@@ -69,8 +111,8 @@ const Products: React.FC = () => {
       title: 'Discord Basic Nitro - 1 Năm',
       category: 'Discord',
       desc: '1 Năm Basic Nitro. Tiết kiệm đáng kể.',
-      price: 850000,
-      displayPrice: '850.000đ',
+      price: getPrice(21, 850000),
+      displayPrice: Math.floor(getPrice(21, 850000)).toLocaleString() + 'đ',
       duration: '/năm',
       icon: <Sparkles className="w-8 h-8" />,
       theme: 'discord',
@@ -95,9 +137,9 @@ const Products: React.FC = () => {
       id: 'robux-gp',
       title: 'Robux - Gamepass (120H)',
       category: 'Robux',
-      desc: 'Nạp Robux thông qua Gamepass. Tỷ giá 1:160. An toàn & Bảo mật.',
-      price: 16000,
-      displayPrice: '16.000đ',
+      desc: `Nạp Robux thông qua Gamepass. Tỷ giá 1:${publicSettings?.robux_rate_gamepass || 160}. An toàn & Bảo mật.`,
+      price: getPrice('robux-gp', 16000),
+      displayPrice: Math.floor(getPrice('robux-gp', 16000)).toLocaleString() + 'đ',
       duration: '/100 R$',
       icon: <Gamepad2 className="w-8 h-8" />,
       theme: 'robux',
@@ -108,9 +150,9 @@ const Products: React.FC = () => {
       id: 'robux-gr',
       title: 'Robux - Group (24H)',
       category: 'Robux',
-      desc: 'Nạp Robux thông qua Group. Tỷ giá 1:200. Nhanh chóng & Uy tín.',
-      price: 20000,
-      displayPrice: '20.000đ',
+      desc: `Nạp Robux thông qua Group. Tỷ giá 1:${publicSettings?.robux_rate_group || 200}. Nhanh chóng & Uy tín.`,
+      price: getPrice('robux-gr', 20000),
+      displayPrice: Math.floor(getPrice('robux-gr', 20000)).toLocaleString() + 'đ',
       duration: '/100 R$',
       icon: <CircleDollarSign className="w-8 h-8" />,
       theme: 'robux',
@@ -124,8 +166,8 @@ const Products: React.FC = () => {
       title: 'YouTube Premium - 1 Tháng',
       category: 'YouTube',
       desc: 'Xem YouTube không quảng cáo, YouTube Music 1 tháng.',
-      price: 55000,
-      displayPrice: '55.000đ',
+      price: getPrice(4, 55000),
+      displayPrice: Math.floor(getPrice(4, 55000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Play className="w-8 h-8" />,
       theme: 'youtube',
@@ -136,8 +178,8 @@ const Products: React.FC = () => {
       title: 'YouTube Premium - 3 Tháng',
       category: 'YouTube',
       desc: 'Xem YouTube không quảng cáo, YouTube Music 3 tháng.',
-      price: 150000,
-      displayPrice: '150.000đ',
+      price: getPrice(41, 150000),
+      displayPrice: Math.floor(getPrice(41, 150000)).toLocaleString() + 'đ',
       duration: '/3 tháng',
       icon: <Play className="w-8 h-8" />,
       theme: 'youtube',
@@ -148,8 +190,8 @@ const Products: React.FC = () => {
       title: 'YouTube Premium - 6 Tháng',
       category: 'YouTube',
       desc: 'Giải trí không giới hạn với YouTube Music 6 tháng.',
-      price: 280000,
-      displayPrice: '280.000đ',
+      price: getPrice(42, 280000),
+      displayPrice: Math.floor(getPrice(42, 280000)).toLocaleString() + 'đ',
       duration: '/6 tháng',
       icon: <Play className="w-8 h-8" />,
       theme: 'youtube',
@@ -160,8 +202,8 @@ const Products: React.FC = () => {
       title: 'YouTube Premium - 1 Năm',
       category: 'YouTube',
       desc: 'Gói YouTube Premium 1 năm tiết kiệm nhất.',
-      price: 520000,
-      displayPrice: '520.000đ',
+      price: getPrice(43, 520000),
+      displayPrice: Math.floor(getPrice(43, 520000)).toLocaleString() + 'đ',
       duration: '/năm',
       icon: <Play className="w-8 h-8" />,
       theme: 'youtube',
@@ -174,8 +216,8 @@ const Products: React.FC = () => {
       title: 'Spotify Premium - 1 Tháng',
       category: 'Spotify',
       desc: 'Nâng cấp Premium trực tiếp trên tài khoản cá nhân 1 tháng.',
-      price: 45000,
-      displayPrice: '45.000đ',
+      price: getPrice(5, 45000),
+      displayPrice: Math.floor(getPrice(5, 45000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Music className="w-8 h-8" />,
       theme: 'spotify',
@@ -186,8 +228,8 @@ const Products: React.FC = () => {
       title: 'Spotify Premium - 3 Tháng',
       category: 'Spotify',
       desc: 'Tận hưởng âm nhạc không quảng cáo trong 3 tháng.',
-      price: 130000,
-      displayPrice: '130.000đ',
+      price: getPrice(51, 130000),
+      displayPrice: Math.floor(getPrice(51, 130000)).toLocaleString() + 'đ',
       duration: '/3 tháng',
       icon: <Music className="w-8 h-8" />,
       theme: 'spotify',
@@ -198,8 +240,8 @@ const Products: React.FC = () => {
       title: 'Spotify Premium - 6 Tháng',
       category: 'Spotify',
       desc: 'Tài khoản Premium chính chủ cho 6 tháng trải nghiệm.',
-      price: 250000,
-      displayPrice: '250.000đ',
+      price: getPrice(52, 250000),
+      displayPrice: Math.floor(getPrice(52, 250000)).toLocaleString() + 'đ',
       duration: '/6 tháng',
       icon: <Music className="w-8 h-8" />,
       theme: 'spotify',
@@ -210,8 +252,8 @@ const Products: React.FC = () => {
       title: 'Spotify Premium - 1 Năm',
       category: 'Spotify',
       desc: 'Gói 1 năm Premium Spotify ổn định, uy tín.',
-      price: 450000,
-      displayPrice: '450.000đ',
+      price: getPrice(53, 450000),
+      displayPrice: Math.floor(getPrice(53, 450000)).toLocaleString() + 'đ',
       duration: '/năm',
       icon: <Music className="w-8 h-8" />,
       theme: 'spotify',
@@ -224,8 +266,8 @@ const Products: React.FC = () => {
       title: 'Netflix Premium 4K - 1 Tháng',
       category: 'Netflix',
       desc: 'Tài khoản shared 1 profile hoặc tạo profile riêng biệt.',
-      price: 80000,
-      displayPrice: '80.000đ',
+      price: getPrice(6, 80000),
+      displayPrice: Math.floor(getPrice(6, 80000)).toLocaleString() + 'đ',
       duration: '/tháng',
       icon: <Film className="w-8 h-8" />,
       theme: 'netflix',
@@ -236,8 +278,8 @@ const Products: React.FC = () => {
       title: 'Netflix Premium 4K - 3 Tháng',
       category: 'Netflix',
       desc: 'Thoải mái xem phim 4K trong 3 tháng liên tục.',
-      price: 225000,
-      displayPrice: '225.000đ',
+      price: getPrice(61, 225000),
+      displayPrice: Math.floor(getPrice(61, 225000)).toLocaleString() + 'đ',
       duration: '/3 tháng',
       icon: <Film className="w-8 h-8" />,
       theme: 'netflix',
@@ -248,8 +290,8 @@ const Products: React.FC = () => {
       title: 'Netflix Premium 4K - 6 Tháng',
       category: 'Netflix',
       desc: 'Xem phim không giới hạn 4K bản quyền 6 tháng.',
-      price: 430000,
-      displayPrice: '430.000đ',
+      price: getPrice(62, 430000),
+      displayPrice: Math.floor(getPrice(62, 430000)).toLocaleString() + 'đ',
       duration: '/6 tháng',
       icon: <Film className="w-8 h-8" />,
       theme: 'netflix',
@@ -260,8 +302,8 @@ const Products: React.FC = () => {
       title: 'Netflix Premium 4K - 1 Năm',
       category: 'Netflix',
       desc: 'Gói Netflix Premium 1 năm tiện lợi, giá rẻ.',
-      price: 800000,
-      displayPrice: '800.000đ',
+      price: getPrice(63, 800000),
+      displayPrice: Math.floor(getPrice(63, 800000)).toLocaleString() + 'đ',
       duration: '/năm',
       icon: <Film className="w-8 h-8" />,
       theme: 'netflix',

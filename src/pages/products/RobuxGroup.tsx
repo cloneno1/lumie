@@ -12,7 +12,7 @@ const RobuxGroup: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
 
-  const RATE = 200; // 1 Robux = 200 VNĐ
+  const [rate, setRate] = useState(200); // 1 Robux = 200 VNĐ
   const [robuxAmount, setRobuxAmount] = useState<number | string>('');
   const [username, setUsername] = useState('');
   const [note, setNote] = useState('');
@@ -27,6 +27,7 @@ const RobuxGroup: React.FC = () => {
       try {
         const res = await api.get('/settings/public');
         if (res.data.roblox_group_link) setGroupLink(res.data.roblox_group_link);
+        if (res.data.robux_rate_group) setRate(parseInt(res.data.robux_rate_group));
       } catch (err) { console.error('Error fetching settings'); }
     };
     fetchSettings();
@@ -44,7 +45,7 @@ const RobuxGroup: React.FC = () => {
     }
   };
 
-  const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * RATE : 0;
+  const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * rate : 0;
   const quickPackages = [100, 500, 1000, 2000, 5000, 10000];
 
   const handleBuy = async () => {
@@ -146,7 +147,7 @@ const RobuxGroup: React.FC = () => {
               }}>R$</span>
             </div>
             <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
-              * Tỷ giá hiện tại: <strong>1 Robux = {RATE} VNĐ</strong>
+              * Tỷ giá hiện tại: <strong>1 Robux = {rate} VNĐ</strong>
             </p>
           </div>
 
@@ -169,7 +170,7 @@ const RobuxGroup: React.FC = () => {
                     {pkg.toLocaleString()} <span style={{ fontSize: '1rem' }}>R$</span>
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600 }}>
-                    {(pkg * RATE).toLocaleString()} VNĐ
+                    {(pkg * rate).toLocaleString()} VNĐ
                   </div>
                 </div>
               ))}

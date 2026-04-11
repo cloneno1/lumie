@@ -355,16 +355,71 @@ const AdminDashboard: React.FC = () => {
         ) : activeTab === 'settings' ? (
           <div style={{ padding: '32px' }}>
             <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><SettingsIcon size={20} /> Cài đặt hệ thống</h3>
-            <div style={{ display: 'grid', gap: '16px' }}>
-              {settings.map(s => (
-                <div key={s.key} className="glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-                  <div>
-                    <div style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>{s.key}</div>
-                    <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{s.value}</div>
-                  </div>
-                  <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: 'var(--accent-primary)', color: 'black', border: 'none' }}><Edit3 size={18} /></button>
+            
+            <div style={{ display: 'grid', gap: '32px' }}>
+              {/* Robux Configuration */}
+              <section>
+                <h4 style={{ color: 'var(--accent-primary)', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH ROBUX</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                  {settings.filter(s => s.key.includes('robux')).map(s => (
+                    <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 800, textTransform: 'uppercase' }}>
+                          {s.key === 'robux_rate_gamepass' ? 'Tỉ giá Gamepass' : 
+                           s.key === 'robux_rate_group' ? 'Tỉ giá Group' : 
+                           s.key === 'roblox_group_link' ? 'Link Group Roblox' : 
+                           s.key === 'robux_tutorial_link' ? 'Link hướng dẫn' : s.key}
+                        </div>
+                        <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: 'var(--accent-primary)', color: 'black', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: '1rem', wordBreak: 'break-all' }}>{s.value}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </section>
+
+              {/* Game Discounts */}
+              <section>
+                <h4 style={{ color: '#10b981', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CHIẾT KHẤU GAME</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                  {settings.filter(s => s.key.includes('discount')).map(s => (
+                    <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: 'rgba(16,185,129,0.7)', fontWeight: 800, textTransform: 'uppercase' }}>
+                          {s.key === 'discount_lq' ? 'Liên Quân Mobile' : 
+                           s.key === 'discount_ff' ? 'Free Fire' : 
+                           s.key === 'discount_fo4' ? 'FIFA Online 4' : 
+                           s.key === 'discount_hoyoverse' ? 'Hoyoverse (Genshin, HSR...)' : s.key}
+                        </div>
+                        <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#10b981', color: 'black', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
+                      </div>
+                      <div style={{ fontWeight: 900, fontSize: '1.4rem' }}>{s.value}%</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Other Product Prices */}
+              <section>
+                <h4 style={{ color: '#3b82f6', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>GIÁ SẢN PHẨM KHÁC (1 THÁNG)</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                  {settings.filter(s => s.key.includes('price')).map(s => (
+                    <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: 'rgba(59,130,246,0.7)', fontWeight: 800, textTransform: 'uppercase' }}>
+                          {s.key === 'price_youtube_1m' ? 'YouTube Premium' : 
+                           s.key === 'price_spotify_1m' ? 'Spotify Premium' : 
+                           s.key === 'price_netflix_1m' ? 'Netflix Premium' : 
+                           s.key === 'price_discord_nitro_1m' ? 'Discord Nitro Boost' : 
+                           s.key === 'price_discord_basic_1m' ? 'Discord Basic Nitro' : s.key}
+                        </div>
+                        <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
+                      </div>
+                      <div style={{ fontWeight: 900, fontSize: '1.4rem' }}>{parseInt(s.value).toLocaleString()}đ</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
           </div>
         ) : activeTab === 'chats' ? (

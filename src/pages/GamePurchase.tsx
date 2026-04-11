@@ -142,13 +142,37 @@ const GamePurchase: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
 
-  const isGarena = ['lq', 'ff', 'fo4'].includes(gameId || '');
-
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
   const [loading, setLoading] = useState(false);
+  const [publicSettings, setPublicSettings] = useState<any>(null);
+  const isGarena = ['lq', 'ff', 'fo4'].includes(gameId || '');
 
-  const DISCOUNT_RATE = 0.05; // 5% Discount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/settings/public');
+        setPublicSettings(res.data);
+      } catch (err) {
+        console.error('Lỗi tải cấu hình:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const getDiscountRate = () => {
+    if (!publicSettings) return 0.05; // 5% default
+    
+    let discount = 5;
+    if (['lq', 'ff', 'fo4'].includes(gameId || '')) {
+      discount = parseInt(publicSettings[`discount_${gameId}`]) || 5;
+    } else {
+      discount = parseInt(publicSettings.discount_hoyoverse) || 0;
+    }
+    return discount / 100;
+  };
+
+  const DISCOUNT_RATE = getDiscountRate();
 
   const game = gameId ? gamesData[gameId] : null;
 
@@ -293,15 +317,17 @@ const GamePurchase: React.FC = () => {
             </div>
 
             {/* Promo Badge */}
-            <div style={{
-              position: 'absolute', top: '20px', right: '-35px',
-              background: '#ff4757', color: 'white',
-              padding: '5px 40px', transform: 'rotate(45deg)',
-              fontWeight: 900, fontSize: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
-              zIndex: 2
-            }}>
-              GIẢM 5%
-            </div>
+            {DISCOUNT_RATE > 0 && (
+              <div style={{
+                position: 'absolute', top: '20px', right: '-35px',
+                background: '#ff4757', color: 'white',
+                padding: '5px 40px', transform: 'rotate(45deg)',
+                fontWeight: 900, fontSize: '12px', boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                zIndex: 2
+              }}>
+                GIẢM {DISCOUNT_RATE * 100}%
+              </div>
+            )}
           </div>
 
           {/* Form */}
@@ -396,14 +422,16 @@ const GamePurchase: React.FC = () => {
                     </div>
                   )}
 
-                  <div style={{
-                    position: 'absolute', top: '0', left: '0',
-                    background: '#ff4757', color: 'white',
-                    padding: '2px 8px', fontSize: '9px', fontWeight: 900,
-                    borderRadius: '0 0 8px 0'
-                  }}>
-                    -5%
-                  </div>
+                  {DISCOUNT_RATE > 0 && (
+                    <div style={{
+                      position: 'absolute', top: '0', left: '0',
+                      background: '#ff4757', color: 'white',
+                      padding: '2px 8px', fontSize: '9px', fontWeight: 900,
+                      borderRadius: '0 0 8px 0'
+                    }}>
+                      -{DISCOUNT_RATE * 100}%
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -435,9 +463,9 @@ const GamePurchase: React.FC = () => {
                 <span style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>Ví Lumie Store</span>
               </div>
 
-              {selectedPackage && (
+              {selectedPackage && DISCOUNT_RATE > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Giảm giá (5%):</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Giảm giá ({DISCOUNT_RATE * 100}%):</span>
                   <span style={{ fontWeight: 700, color: '#ff4757' }}>-{(selectedPackage.price * DISCOUNT_RATE).toLocaleString()}đ</span>
                 </div>
               )}

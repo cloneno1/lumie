@@ -920,13 +920,27 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const user = await db.users.getById(userId);
 
-    const finalPrice = Math.floor(price * 0.95);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    // Fetch dynamic discount from settings
+    let discountPercent = 5; // Default 5%
+    try {
+      if (['lq', 'ff', 'fo4'].includes(gameId)) {
+        const s = await db.settings.getByKey(`discount_${gameId}`);
+        if (s) discountPercent = parseInt(s.value);
+      } else {
+        const s = await db.settings.getByKey('discount_hoyoverse');
+        if (s) discountPercent = parseInt(s.value);
+      }
+    } catch (e) { console.error('Error fetching discount setting:', e); }
+
+    const finalPrice = Math.floor(price * (1 - discountPercent / 100));
 
     if (price < 20000) {
       return res.status(400).json({ message: 'Mệnh giá tối thiểu là 20.000đ.' });
     }
 
-    if (!user || user.balance < finalPrice) {
+    if (user.balance < finalPrice) {
       return res.status(400).json({ message: 'Số dư không đủ.' });
     }
 
@@ -947,7 +961,7 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
         type: 'game_topup',
         gameId,
         packageId,
-        discount: '5%',
+        discount: `${discountPercent}%`,
         originalPrice: price,
         ...formData
       }
@@ -962,7 +976,7 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
     await db.notifications.create({
       userId,
       title: 'Đã nhận đơn nạp game',
-      content: `Đơn nạp ${displayPackage} cho game ${gameName} đã được ghi nhận. Tổng thanh toán: ${finalPrice.toLocaleString()}đ (Đã giảm 5%).`,
+      content: `Đơn nạp ${displayPackage} cho game ${gameName} đã được ghi nhận. Tổng thanh toán: ${finalPrice.toLocaleString()}đ (Đã giảm ${discountPercent}%).`,
       type: 'order'
     }).catch(() => {});
 
@@ -1457,12 +1471,37 @@ app.post('/api/upload-proof', authenticateToken, orderUpload.single('file'), asy
 router.get(`${ADMIN_BASE}/settings`, authenticateAdmin, async (req, res) => {
   try {
     let settings = await db.settings.getAll();
-    if (settings.length === 0) {
-      // Auto-initialize defaults if empty
-      await db.settings.update('roblox_group_link', 'https://www.roblox.com/groups/33719487');
-      await db.settings.update('robux_tutorial_link', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    
+    // Default setting templates
+    const defaultSettings = {
+      'roblox_group_link': 'https://www.roblox.com/groups/33719487',
+      'robux_tutorial_link': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      'robux_rate_gamepass': '160',
+      'robux_rate_group': '200',
+      'discount_lq': '5',
+      'discount_ff': '5',
+      'discount_fo4': '5',
+      'discount_hoyoverse': '0',
+      'price_youtube_1m': '55000',
+      'price_spotify_1m': '45000',
+      'price_netflix_1m': '80000',
+      'price_discord_nitro_1m': '199000',
+      'price_discord_basic_1m': '89000'
+    };
+
+    let updated = false;
+    for (const [key, value] of Object.entries(defaultSettings)) {
+      const exists = settings.find(s => s.key === key);
+      if (!exists) {
+        await db.settings.update(key, value);
+        updated = true;
+      }
+    }
+
+    if (updated) {
       settings = await db.settings.getAll();
     }
+    
     res.json(settings);
   } catch (err) {
     res.status(500).json({ message: 'Error' });
@@ -1480,11 +1519,27 @@ router.post(`${ADMIN_BASE}/settings/update`, authenticateAdmin, async (req, res)
 // For frontend displays
 router.get('/settings/public', async (req, res) => {
   try {
-    const gl = await db.settings.getByKey('roblox_group_link').catch(() => null);
-    const tl = await db.settings.getByKey('robux_tutorial_link').catch(() => null);
+    const settings = await db.settings.getAll();
+    const publicData = {};
+    settings.forEach(s => {
+      publicData[s.key] = s.value;
+    });
+
+    // Provide defaults for critical keys if for some reason they are missing
     res.json({
-      roblox_group_link: gl?.value || 'https://www.roblox.com/groups/33719487',
-      robux_tutorial_link: tl?.value || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+      roblox_group_link: publicData.roblox_group_link || 'https://www.roblox.com/groups/33719487',
+      robux_tutorial_link: publicData.robux_tutorial_link || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      robux_rate_gamepass: publicData.robux_rate_gamepass || '160',
+      robux_rate_group: publicData.robux_rate_group || '200',
+      discount_lq: publicData.discount_lq || '5',
+      discount_ff: publicData.discount_ff || '5',
+      discount_fo4: publicData.discount_fo4 || '5',
+      discount_hoyoverse: publicData.discount_hoyoverse || '0',
+      price_youtube_1m: publicData.price_youtube_1m || '55000',
+      price_spotify_1m: publicData.price_spotify_1m || '45000',
+      price_netflix_1m: publicData.price_netflix_1m || '80000',
+      price_discord_nitro_1m: publicData.price_discord_nitro_1m || '199000',
+      price_discord_basic_1m: publicData.price_discord_basic_1m || '89000'
     });
   } catch (err) {
     res.json({

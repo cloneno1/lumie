@@ -12,7 +12,7 @@ const RobuxGamepass: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
 
-  const RATE = 160; // 1 Robux = 160 VNĐ
+  const [rate, setRate] = useState(160); // 1 Robux = 160 VNĐ
   const [robuxAmount, setRobuxAmount] = useState<number | string>('');
   const [username, setUsername] = useState('');
   const [gamepassLink, setGamepassLink] = useState('');
@@ -28,6 +28,7 @@ const RobuxGamepass: React.FC = () => {
       try {
         const res = await api.get('/settings/public');
         if (res.data.robux_tutorial_link) setTutorialLink(res.data.robux_tutorial_link);
+        if (res.data.robux_rate_gamepass) setRate(parseInt(res.data.robux_rate_gamepass));
       } catch (err) { console.error('Error fetching settings'); }
     };
     fetchSettings();
@@ -45,7 +46,7 @@ const RobuxGamepass: React.FC = () => {
     }
   };
 
-  const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * RATE : 0;
+  const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * rate : 0;
   const quickPackages = [100, 500, 1000, 2000, 5000, 10000];
 
   const handleBuy = async () => {
@@ -149,7 +150,7 @@ const RobuxGamepass: React.FC = () => {
               }}>R$</span>
             </div>
             <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
-              * Tỷ giá hiện tại: <strong>1 Robux = {RATE} VNĐ</strong>
+              * Tỷ giá hiện tại: <strong>1 Robux = {rate} VNĐ</strong>
             </p>
           </div>
 
@@ -172,7 +173,7 @@ const RobuxGamepass: React.FC = () => {
                     {pkg.toLocaleString()} <span style={{ fontSize: '1rem' }}>R$</span>
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600 }}>
-                    {(pkg * RATE).toLocaleString()} VNĐ
+                    {(pkg * rate).toLocaleString()} VNĐ
                   </div>
                 </div>
               ))}

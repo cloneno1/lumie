@@ -14,6 +14,29 @@ const Discord: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
 
+  const [publicSettings, setPublicSettings] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/settings/public');
+        setPublicSettings(res.data);
+      } catch (err) {
+        console.error('Lỗi tải cấu hình:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const getNitroPrice = (key: string, defaultPrice: number): number => {
+    if (!publicSettings) return defaultPrice;
+    if (key === 'nitro-b-1m') return parseInt(publicSettings.price_discord_nitro_1m) || defaultPrice;
+    if (key === 'nitro-c-1m') return parseInt(publicSettings.price_discord_basic_1m) || defaultPrice;
+    if (key === 'nitro-b-1y') return (parseInt(publicSettings.price_discord_nitro_1m) || 199000) * 12 * 0.8;
+    if (key === 'nitro-c-1y') return (parseInt(publicSettings.price_discord_basic_1m) || 89000) * 12 * 0.8;
+    return defaultPrice;
+  };
+
   const handleBuy = async (product: any) => {
     if (!user) {
       showNotification('Vui lòng đăng nhập để mua hàng!', 'info');
@@ -49,10 +72,10 @@ const Discord: React.FC = () => {
   };
 
   const nitroItems = [
-    { id: 'nitro-b-1m', title: 'Discord Nitro Boost - 1 Month', price: 199000, img: 'https://images2.alphacoders.com/114/1148675.png', badge: '6% Cashback', region: 'GLOBAL' },
-    { id: 'nitro-b-1y', title: 'Discord Nitro Boost - 1 Year', price: 1890000, img: 'https://wallpaperaccess.com/full/5736411.png', badge: '10% Cashback', region: 'GLOBAL' },
-    { id: 'nitro-c-1m', title: 'Discord Nitro Basic - 1 Month', price: 89000, img: 'https://images.wallpapersden.com/image/download/discord-logo-dark_bGhmZ2aUmZqaraWkpJRmbmdlrWZlbWU.jpg', badge: '5% Cashback', region: 'GLOBAL' },
-    { id: 'nitro-c-1y', title: 'Discord Nitro Basic - 1 Year', price: 850000, img: 'https://wallpapercave.com/wp/wp8524458.png', badge: '8% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-b-1m', title: 'Discord Nitro Boost - 1 Month', price: Math.floor(getNitroPrice('nitro-b-1m', 199000)), img: 'https://images2.alphacoders.com/114/1148675.png', badge: '6% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-b-1y', title: 'Discord Nitro Boost - 1 Year', price: Math.floor(getNitroPrice('nitro-b-1y', 1890000)), img: 'https://wallpaperaccess.com/full/5736411.png', badge: '10% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-c-1m', title: 'Discord Nitro Basic - 1 Month', price: Math.floor(getNitroPrice('nitro-c-1m', 89000)), img: 'https://images.wallpapersden.com/image/download/discord-logo-dark_bGhmZ2aUmZqaraWkpJRmbmdlrWZlbWU.jpg', badge: '5% Cashback', region: 'GLOBAL' },
+    { id: 'nitro-c-1y', title: 'Discord Nitro Basic - 1 Year', price: Math.floor(getNitroPrice('nitro-c-1y', 850000)), img: 'https://wallpapercave.com/wp/wp8524458.png', badge: '8% Cashback', region: 'GLOBAL' },
   ];
 
   return (
