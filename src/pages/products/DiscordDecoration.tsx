@@ -4,13 +4,23 @@ import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../context/ConfirmContext';
-import { Zap, ShieldCheck, Headphones, Loader2, Sparkles, User, Gift, Info } from 'lucide-react';
+import { Zap, ShieldCheck, Headphones, Loader2, Sparkles, User, Gift, Info, Image as ImageIcon } from 'lucide-react';
 
 const DiscordDecoration: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
+
+  const [partnerDiscount, setPartnerDiscount] = useState(20);
+
+  React.useEffect(() => {
+    api.get('/settings/public').then(res => {
+      if (res.data.partner_discount_percent) {
+        setPartnerDiscount(parseInt(res.data.partner_discount_percent));
+      }
+    }).catch(() => {});
+  }, []);
 
   const [method, setMethod] = useState<'LOGIN' | 'GIFT'>('LOGIN');
   const [selectedPrice, setSelectedPrice] = useState<number>(50000);
@@ -20,6 +30,10 @@ const DiscordDecoration: React.FC = () => {
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   const pricePackages = [
     { label: '50.000đ', value: 50000 },
     { label: '100.000đ', value: 100000 },
@@ -28,6 +42,61 @@ const DiscordDecoration: React.FC = () => {
     { label: '1.000.000đ', value: 1000000 },
     { label: '2.000.000đ', value: 2000000 },
   ];
+
+  const activePackages = user?.is_partner 
+    ? pricePackages.map(pkg => {
+        const discountedValue = Math.floor(pkg.value * (1 - partnerDiscount / 100));
+        return {
+          label: `${discountedValue.toLocaleString()}đ`,
+          value: discountedValue
+        };
+      })
+    : pricePackages;
+
+  // Cập nhật giá được chọn nếu bảng giá thay đổi (tránh lỗi giá cũ khi mới fetch xong discount)
+  React.useEffect(() => {
+    if (activePackages.length > 0) {
+      const currentPkg = pricePackages.find(p => p.value === 50000);
+      if (currentPkg) {
+         const activePrice = user?.is_partner ? Math.floor(currentPkg.value * (1 - partnerDiscount / 100)) : currentPkg.value;
+         setSelectedPrice(activePrice);
+      }
+    }
+  }, [partnerDiscount, user?.is_partner]);
+
+  const handleLinkDiscord = async () => {
+    try {
+      const { data } = await api.get('/auth/discord/url');
+      window.location.href = data.url;
+    } catch (err) {
+      showNotification('Không thể lấy link liên kết Discord.', 'error');
+    }
+  };
+
+  const handleVerifyPartner = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get('/auth/discord/verify-partner');
+      showNotification(data.message, data.is_partner ? 'success' : 'info');
+      await refreshUser();
+    } catch (err: any) {
+      showNotification(err.response?.data?.message || 'Có lỗi xảy ra khi xác thực.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 500 * 1024 * 1024) {
+        showNotification('File quá lớn! Giới hạn 500MB.', 'error');
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
 
   const handleBuy = async () => {
     if (!user) {
@@ -62,7 +131,20 @@ const DiscordDecoration: React.FC = () => {
     if (!confirmed) return;
 
     setLoading(true);
+    let finalImageUrl = '';
+
     try {
+      if (selectedFile) {
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const uploadRes = await api.post('/upload-proof', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        finalImageUrl = uploadRes.data.url;
+        setUploading(false);
+      }
+
       await api.post('/orders/create', {
         productId: 'discord-decoration',
         productName: `Decoration Discord - ${method === 'LOGIN' ? 'Login' : 'Gift'}`,
@@ -74,7 +156,9 @@ const DiscordDecoration: React.FC = () => {
           password: method === 'LOGIN' ? password : '-',
           backupCodes: method === 'LOGIN' ? backupCodes : '-',
           note,
-          price: selectedPrice
+          price: selectedPrice,
+          image: finalImageUrl,
+          partner: user?.is_partner || false
         }
       });
       showNotification('Thanh toán thành công! Đơn hàng đang được xử lý.', 'success');
@@ -95,6 +179,17 @@ const DiscordDecoration: React.FC = () => {
           Decoration <span className="gradient-text">Discord</span>
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Mua Avatar Decoration và Profile Effects cực chất cho profile Discord của bạn.</p>
+        
+        {user?.is_partner && (
+          <div style={{ 
+            display: 'inline-flex', alignItems: 'center', gap: '8px', 
+            marginTop: '15px', padding: '8px 20px', borderRadius: '30px',
+            background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)',
+            color: 'var(--accent-blue)', fontWeight: 800, fontSize: '0.9rem'
+          }}>
+            <Sparkles size={16} /> BẢNG GIÁ ƯU ĐÃI CHO PARTNER DISCORD
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '30px' }} className="robux-layout">
@@ -102,6 +197,28 @@ const DiscordDecoration: React.FC = () => {
         {/* Left Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
           
+          {/* Partner Status Check */}
+          {!user?.is_partner && (
+            <div className="glass-card" style={{ padding: '24px', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), transparent)' }}>
+               <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                 <div style={{ background: 'rgba(59, 130, 246, 0.14)', padding: '12px', borderRadius: '12px', color: 'var(--accent-blue)' }}>
+                   <Sparkles size={24} />
+                 </div>
+                 <div style={{ flex: 1 }}>
+                   <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '4px' }}>Ưu đãi cho Partner</div>
+                   <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+                     Liên kết Discord và đạt Role <strong>partner</strong> trong server <code>1479294548554416268</code> để mở khóa bảng giá VIP.
+                   </p>
+                 </div>
+                 {!user?.discord_id ? (
+                   <button onClick={handleLinkDiscord} className="btn" style={{ background: '#5865F2', color: 'white', padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600 }}>Liên kết ngay</button>
+                 ) : (
+                   <button onClick={handleVerifyPartner} disabled={loading} className="btn glass-panel" style={{ padding: '10px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: 600 }}>Xác thực Partner</button>
+                 )}
+               </div>
+            </div>
+          )}
+
           {/* Method Selection */}
           <div className="glass-card" style={{ padding: '32px' }}>
             <h2 style={{ fontSize: '1.2rem', marginBottom: '24px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -133,7 +250,10 @@ const DiscordDecoration: React.FC = () => {
                   transition: 'all 0.3s'
                 }}
               >
-                <Gift size={32} style={{ marginBottom: '12px', color: method === 'GIFT' ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+                <div style={{ position: 'relative', width: '32px', height: '32px', margin: '0 auto 12px' }}>
+                   <Gift size={32} style={{ color: method === 'GIFT' ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+                   {user?.is_partner && <Sparkles size={16} style={{ position: 'absolute', top: '-8px', right: '-8px', color: '#eab308' }} />}
+                </div>
                 <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>Gửi Quà Tặng</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Chỉ cần Username</div>
               </div>
@@ -147,7 +267,7 @@ const DiscordDecoration: React.FC = () => {
               Chọn mệnh giá cần mua
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px' }}>
-              {pricePackages.map((pkg) => (
+              {activePackages.map((pkg) => (
                 <div 
                   key={pkg.value}
                   onClick={() => setSelectedPrice(pkg.value)}
@@ -231,6 +351,33 @@ const DiscordDecoration: React.FC = () => {
                 onChange={(e) => setNote(e.target.value)}
                 style={{ resize: 'none' }}
               />
+            </div>
+
+            {/* Photo Upload Section */}
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 600, fontSize: '14px' }}>Tải ảnh đính kèm (Lấy từ Shop Discord)</label>
+              <input type="file" id="file-upload" hidden onChange={onFileChange} accept="image/*" />
+              <label htmlFor="file-upload" className="glass-card" style={{ 
+                display: 'block', border: '2px dashed rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '20px',
+                textAlign: 'center', cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.2s', position: 'relative', overflow: 'hidden'
+              }}>
+                {previewUrl ? (
+                  <div style={{ position: 'relative' }}>
+                    <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: '8px' }} />
+                    <div style={{ marginTop: '10px', color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 600 }}>File: {selectedFile?.name}</div>
+                  </div>
+                ) : (
+                  <>
+                    <ImageIcon size={20} style={{ marginBottom: '8px', opacity: 0.5 }} />
+                    <div style={{ fontSize: '12px' }}>Tải ảnh Decoration muốn mua để tránh nhầm lẫn</div>
+                  </>
+                )}
+                {uploading && (
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                    <Loader2 className="spin" size={24} />
+                  </div>
+                )}
+              </label>
             </div>
 
             {/* Order Summary */}

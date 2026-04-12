@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Settings, User, Package, Camera, Lock, Save, Loader2, XCircle } from 'lucide-react';
+import { Settings, User, Package, Camera, Lock, Save, Loader2, XCircle, Sparkles } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { useConfirm } from '../../context/ConfirmContext';
 
@@ -202,6 +202,60 @@ const AccountSettings: React.FC = () => {
                   <div className="icon"><Package size={18} /></div>
                   <input className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
+              </div>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '1.1rem', color: '#5865f2', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={18} /> Kết nối Discord & Partner
+              </h3>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', background: '#5865f2', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                    <Sparkles size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '14px' }}>
+                      Trạng thái: {user?.discord_id ? <span style={{ color: '#10b981' }}>Đã liên kết Discord</span> : <span style={{ color: 'var(--text-muted)' }}>Chưa liên kết</span>}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      Quyền Partner: {user?.is_partner ? <span style={{ color: 'var(--accent-blue)', fontWeight: 800 }}>ĐÃ KÍCH HOẠT</span> : 'Chưa có'}
+                    </div>
+                  </div>
+                </div>
+                
+                {!user?.discord_id ? (
+                  <button 
+                    type="button"
+                    onClick={async () => {
+                      const { data } = await api.get('/auth/discord/url');
+                      window.location.href = data.url;
+                    }}
+                    style={{ background: '#5865f2', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Liên kết Discord
+                  </button>
+                ) : (
+                  <button 
+                    type="button"
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const { data } = await api.get('/auth/discord/verify-partner');
+                        showNotification(data.message, data.is_partner ? 'success' : 'info');
+                        await refreshUser();
+                      } catch (err: any) {
+                        showNotification('Lỗi xác thực partner', 'error');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Xác thực Role Partner
+                  </button>
+                )}
               </div>
             </div>
 

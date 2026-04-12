@@ -12,6 +12,7 @@ const RobuxGamepass: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
 
+  const [partnerDiscount, setPartnerDiscount] = useState(0);
   const [rate, setRate] = useState(160); // 1 Robux = 160 VNĐ
   const [robuxAmount, setRobuxAmount] = useState<number | string>('');
   const [username, setUsername] = useState('');
@@ -29,6 +30,7 @@ const RobuxGamepass: React.FC = () => {
         const res = await api.get('/settings/public');
         if (res.data.robux_tutorial_link) setTutorialLink(res.data.robux_tutorial_link);
         if (res.data.robux_rate_gamepass) setRate(parseInt(res.data.robux_rate_gamepass));
+        if (res.data.partner_discount_percent) setPartnerDiscount(parseInt(res.data.partner_discount_percent));
       } catch (err) { console.error('Error fetching settings'); }
     };
     fetchSettings();
@@ -46,7 +48,10 @@ const RobuxGamepass: React.FC = () => {
     }
   };
 
-  const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * rate : 0;
+  const baseTotalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * rate : 0;
+  const totalPrice = (user?.is_partner && partnerDiscount > 0) 
+    ? Math.floor(baseTotalPrice * (1 - partnerDiscount / 100))
+    : baseTotalPrice;
   const quickPackages = [100, 500, 1000, 2000, 5000, 10000];
 
   const handleBuy = async () => {

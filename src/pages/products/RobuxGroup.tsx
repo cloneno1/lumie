@@ -12,6 +12,7 @@ const RobuxGroup: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirm } = useConfirm();
 
+  const [partnerDiscount, setPartnerDiscount] = useState(0);
   const [rate, setRate] = useState(200); // 1 Robux = 200 VNĐ
   const [robuxAmount, setRobuxAmount] = useState<number | string>('');
   const [username, setUsername] = useState('');
@@ -28,6 +29,7 @@ const RobuxGroup: React.FC = () => {
         const res = await api.get('/settings/public');
         if (res.data.roblox_group_link) setGroupLink(res.data.roblox_group_link);
         if (res.data.robux_rate_group) setRate(parseInt(res.data.robux_rate_group));
+        if (res.data.partner_discount_percent) setPartnerDiscount(parseInt(res.data.partner_discount_percent));
       } catch (err) { console.error('Error fetching settings'); }
     };
     fetchSettings();
@@ -45,7 +47,10 @@ const RobuxGroup: React.FC = () => {
     }
   };
 
-  const totalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * rate : 0;
+  const baseTotalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * rate : 0;
+  const totalPrice = (user?.is_partner && partnerDiscount > 0) 
+    ? Math.floor(baseTotalPrice * (1 - partnerDiscount / 100))
+    : baseTotalPrice;
   const quickPackages = [100, 500, 1000, 2000, 5000, 10000];
 
   const handleBuy = async () => {

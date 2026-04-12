@@ -169,6 +169,12 @@ const GamePurchase: React.FC = () => {
     } else {
       discount = parseInt(publicSettings.discount_hoyoverse) || 0;
     }
+
+    // Cộng thêm chiết khấu Partner nếu là User Partner
+    if (user?.is_partner && publicSettings.partner_discount_percent) {
+      discount += parseInt(publicSettings.partner_discount_percent);
+    }
+    
     return discount / 100;
   };
 

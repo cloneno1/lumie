@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Package, Star, X, Check, AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
+import { Package, Star, X, Check, AlertTriangle, Calendar, CreditCard, Loader2, Image as ImageIcon } from 'lucide-react';
 import Loading from '../../components/Loading';
 import { useNavigate } from 'react-router-dom';
 
@@ -182,6 +182,23 @@ const OrdersHistory: React.FC = () => {
                       fontSize: '13px', color: '#fca5a5'
                     }}>
                       <strong style={{ color: '#ef4444' }}>Lý do hủy:</strong> {order.note}
+                    </div>
+                  )}
+
+                  {order.options && (order.options.image || order.options.previewImage) && (
+                    <div style={{ marginTop: '10px' }}>
+                      <a 
+                        href={order.options.image || order.options.previewImage} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{ 
+                          fontSize: '12px', color: 'var(--accent-primary)', 
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          textDecoration: 'none', fontWeight: 600
+                        }}
+                      >
+                        <ImageIcon size={14} /> Xem ảnh đính kèm
+                      </a>
                     </div>
                   )}
                 </div>

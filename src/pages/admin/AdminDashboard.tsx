@@ -392,6 +392,23 @@ const AdminDashboard: React.FC = () => {
             <h3 style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><SettingsIcon size={20} /> Cài đặt hệ thống</h3>
             
             <div style={{ display: 'grid', gap: '32px' }}>
+              {/* Partner Configuration */}
+              <section>
+                <h4 style={{ color: '#8b5cf6', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH PARTNER</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                  {settings.filter(s => s.key.includes('partner')).map(s => (
+                    <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: 'rgba(139,92,246,0.7)', fontWeight: 800, textTransform: 'uppercase' }}>
+                          {s.key === 'partner_discount_percent' ? 'Chiết khấu Partner (%)' : s.key}
+                        </div>
+                        <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#8b5cf6', color: 'white', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
+                      </div>
+                      <div style={{ fontWeight: 900, fontSize: '1.8rem' }}>{s.value}%</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
               {/* Robux Configuration */}
               <section>
                 <h4 style={{ color: 'var(--accent-primary)', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH ROBUX</h4>
@@ -801,13 +818,26 @@ const AdminDashboard: React.FC = () => {
                       else if (key === 'account') label = 'Tài khoản Spotify';
                       
                       return (
-                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                          <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{label}:</span>
-                          <strong style={{ 
-                            color: key === 'password' ? '#ef4444' : (key === 'playerid' ? 'var(--accent-primary)' : 'white'), 
-                            wordBreak: 'break-all', 
-                            textAlign: 'right' 
-                          }}>{String(value)}</strong>
+                        <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{label}:</span>
+                            {['image', 'previewImage'].includes(key) && value ? (
+                              <a href={String(value)} target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: 'var(--accent-primary)', textDecoration: 'none' }}>Xem ảnh gốc</a>
+                            ) : (
+                              <strong style={{ 
+                                color: key === 'password' ? '#ef4444' : (key === 'playerid' ? 'var(--accent-primary)' : 'white'), 
+                                wordBreak: 'break-all', 
+                                textAlign: 'right' 
+                              }}>{String(value)}</strong>
+                            )}
+                          </div>
+                          {['image', 'previewImage'].includes(key) && value && (
+                            <img 
+                              src={String(value)} 
+                              alt="Attached proof" 
+                              style={{ width: '100%', borderRadius: '8px', marginTop: '4px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                            />
+                          )}
                         </div>
                       );
                     })

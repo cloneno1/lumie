@@ -30,11 +30,17 @@ const Discord: React.FC = () => {
 
   const getNitroPrice = (key: string, defaultPrice: number): number => {
     if (!publicSettings) return defaultPrice;
-    if (key === 'nitro-b-1m') return parseInt(publicSettings.price_discord_nitro_1m) || defaultPrice;
-    if (key === 'nitro-c-1m') return parseInt(publicSettings.price_discord_basic_1m) || defaultPrice;
-    if (key === 'nitro-b-1y') return (parseInt(publicSettings.price_discord_nitro_1m) || 199000) * 12 * 0.8;
-    if (key === 'nitro-c-1y') return (parseInt(publicSettings.price_discord_basic_1m) || 89000) * 12 * 0.8;
-    return defaultPrice;
+    let basePrice = defaultPrice;
+    if (key === 'nitro-b-1m') basePrice = parseInt(publicSettings.price_discord_nitro_1m) || defaultPrice;
+    else if (key === 'nitro-c-1m') basePrice = parseInt(publicSettings.price_discord_basic_1m) || defaultPrice;
+    else if (key === 'nitro-b-1y') basePrice = parseInt(publicSettings.price_discord_nitro_1y) || (parseInt(publicSettings.price_discord_nitro_1m) || 199000) * 12 * 0.8;
+    else if (key === 'nitro-c-1y') basePrice = parseInt(publicSettings.price_discord_basic_1y) || (parseInt(publicSettings.price_discord_basic_1m) || 89000) * 12 * 0.8;
+
+    if (user?.is_partner && publicSettings.partner_discount_percent) {
+      const discount = parseInt(publicSettings.partner_discount_percent);
+      return Math.floor(basePrice * (1 - discount / 100));
+    }
+    return basePrice;
   };
 
   const handleBuy = async (product: any) => {

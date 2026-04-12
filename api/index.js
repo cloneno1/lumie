@@ -317,6 +317,35 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
+const checkDiscordPartnerRole = async (discordId) => {
+  const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+  if (!discordId || !BOT_TOKEN) return false;
+  
+  const GUILD_ID = '1479294548554416268';
+  try {
+    // 1. Get member roles
+    const memberRes = await axios.get(`https://discord.com/api/guilds/${GUILD_ID}/members/${discordId}`, {
+      headers: { Authorization: `Bot ${BOT_TOKEN}` }
+    }).catch(() => null);
+
+    if (!memberRes) return false;
+    const userRoles = memberRes.data.roles;
+
+    // 2. Get guild roles to find the ID of "partner" role
+    const rolesRes = await axios.get(`https://discord.com/api/guilds/${GUILD_ID}/roles`, {
+      headers: { Authorization: `Bot ${BOT_TOKEN}` }
+    });
+
+    const partnerRole = rolesRes.data.find((r) => r.name.toLowerCase() === 'partner');
+    if (!partnerRole) return false;
+
+    return userRoles.includes(partnerRole.id);
+  } catch (err) {
+    console.error('[DISCORD_PARTNER_CHECK_ERROR]', err.message);
+    return false;
+  }
+};
+
 router.get('/auth/me', authenticateToken, async (req, res) => {
   try {
     let user = await db.users.getById(req.user.id);
@@ -340,6 +369,22 @@ router.get('/auth/me', authenticateToken, async (req, res) => {
       } catch (err) {
         console.error('[BANK_AUTO_REPAIR] Error:', err.message);
       }
+    // Tự động kiểm tra Role Partner DISCORD (Mỗi 30 phút kiểm tra 1 lần để tránh Rate Limit Discord)
+    if (user.discord_id) {
+      const now = Date.now();
+      const lastCheck = user.last_partner_check ? new Date(user.last_partner_check).getTime() : 0;
+      
+      if (now - lastCheck > 30 * 60 * 1000) { // 30 phút
+        try {
+          const isPartner = await checkDiscordPartnerRole(user.discord_id);
+          user = await db.users.update(user.id, { 
+            is_partner: isPartner,
+            last_partner_check: new Date().toISOString()
+          });
+        } catch (e) {
+          console.error('[AUTO_PARTNER_CHECK_FAIL]', e.message);
+        }
+      }
     }
 
     const { password: _, ...userWithoutPassword } = user;
@@ -353,6 +398,20 @@ router.get('/auth/me', authenticateToken, async (req, res) => {
 router.get('/auth/discord/url', (req, res) => {
   const url = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(DISCORD_REDIRECT_URI)}&response_type=code&scope=identify%20email`;
   res.json({ url });
+});
+
+router.get('/auth/discord/verify-partner', authenticateToken, async (req, res) => {
+  try {
+    const user = await db.users.getById(req.user.id);
+    if (!user || !user.discord_id) return res.status(400).json({ message: 'Tài khoản chưa liên kết Discord.' });
+
+    const isPartner = await checkDiscordPartnerRole(user.discord_id);
+    await db.users.update(user.id, { is_partner: isPartner });
+    
+    res.json({ is_partner: isPartner, message: isPartner ? 'Bạn đã được xác nhận là Partner!' : 'Không tìm thấy Role Partner của bạn trong server.' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 router.post('/auth/discord/callback', async (req, res) => {
@@ -381,6 +440,9 @@ router.post('/auth/discord/callback', async (req, res) => {
     const discordUser = userResponse.data;
     const { id: discordId, username, email, avatar } = discordUser;
 
+    // Check partner status immediately
+    const isPartner = await checkDiscordPartnerRole(discordId);
+
     // Find or create user in our DB
     let user = await db.users.getByDiscordId(discordId);
 
@@ -394,7 +456,8 @@ router.post('/auth/discord/callback', async (req, res) => {
           // Link discord_id to existing account with this email
           user = await db.users.update(existingUserByEmail.id, { 
             discord_id: discordId,
-            avatar: existingUserByEmail.avatar || avatarUrl // Update avatar if not set
+            avatar: existingUserByEmail.avatar || avatarUrl, // Update avatar if not set
+            is_partner: isPartner
           });
         }
       }
@@ -418,10 +481,14 @@ router.post('/auth/discord/callback', async (req, res) => {
           total_topup: 0,
           vip_points: 0,
           vip_level: 0,
+          is_partner: isPartner,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
         });
       }
+    } else {
+      // Refresh partner status
+      user = await db.users.update(user.id, { is_partner: isPartner });
     }
 
     // Elevation check for existing users logging in
@@ -1593,7 +1660,8 @@ router.get(`${ADMIN_BASE}/settings`, authenticateAdmin, async (req, res) => {
       'price_discord_nitro_1m': '199000',
       'price_discord_nitro_1y': '1890000',
       'price_discord_basic_1m': '89000',
-      'price_discord_basic_1y': '850000'
+      'price_discord_basic_1y': '850000',
+      'partner_discount_percent': '20'
     };
 
     let updated = false;
@@ -1721,7 +1789,8 @@ router.get('/settings/public', async (req, res) => {
       price_discord_nitro_1m: publicData.price_discord_nitro_1m || '199000',
       price_discord_nitro_1y: publicData.price_discord_nitro_1y || '1890000',
       price_discord_basic_1m: publicData.price_discord_basic_1m || '89000',
-      price_discord_basic_1y: publicData.price_discord_basic_1y || '850000'
+      price_discord_basic_1y: publicData.price_discord_basic_1y || '850000',
+      partner_discount_percent: publicData.partner_discount_percent || '20'
     };
 
     cachedPublicSettings = finalSettings;

@@ -6,6 +6,9 @@ interface User {
   username: string;
   email: string;
   avatar?: string;
+  discord_id?: string;
+  is_partner?: boolean;
+  last_partner_check?: string;
   balance: number;
   vip_level?: number;
   vip_points?: number;
