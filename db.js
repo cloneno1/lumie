@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use Service Role Key for backend
@@ -104,8 +107,10 @@ export const db = {
       if (error) throw error;
       return data;
     },
-    updateStatus: async (orderId, status) => {
-      const { data, error } = await supabase.from('orders').update({ status }).eq('id', orderId).select().single();
+    updateStatus: async (orderId, status, note) => {
+      const updates = { status };
+      if (note) updates.note = note;
+      const { data, error } = await supabase.from('orders').update(updates).eq('id', orderId).select().single();
       if (error) throw error;
       return data;
     }

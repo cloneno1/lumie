@@ -1135,12 +1135,12 @@ router.post(`${ADMIN_BASE}/ban-u-s`, authenticateAdmin, async (req, res) => {
 
 router.post(`${ADMIN_BASE}/o-stat-s`, authenticateAdmin, async (req, res) => {
   try {
-    const { orderId, status } = req.body;
-    const order = await db.orders.updateStatus(orderId, status);
+    const { orderId, status, note } = req.body;
+    const order = await db.orders.updateStatus(orderId, status, note);
     if (order) {
       await db.notifications.create({
         userId: order.user_id, title: 'Cập nhật đơn hàng',
-        content: `Đơn hàng ${order.product_name} chuyển sang: ${status === 'completed' ? 'Thành công' : status}.`, type: 'order'
+        content: `Đơn hàng ${order.product_name} chuyển sang: ${status === 'completed' ? 'Thành công' : status}.${note ? ` Lý do: ${note}` : ''}`, type: 'order'
       });
     }
     res.json({ message: 'Thành công!' });

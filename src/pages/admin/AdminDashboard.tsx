@@ -576,7 +576,7 @@ const AdminDashboard: React.FC = () => {
                     <td style={{ padding: '20px' }}>{order.product_name || order.productName}</td>
                     <td style={{ padding: '20px' }}>
                       <div style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
-                        {order.options?.playerid || order.options?.player_id || '-'}
+                        {order.options?.playerid || order.options?.player_id || order.options?.email || order.options?.account || '-'}
                       </div>
                       {order.options?.server && (
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Server: {order.options.server}</div>
