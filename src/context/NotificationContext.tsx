@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle2, AlertCircle, X, Info } from 'lucide-react';
 import api from '../api/axios';
 
+import { useAuth } from './AuthContext';
+
 type NotificationType = 'success' | 'error' | 'info';
 
 interface Notification {
@@ -20,16 +22,19 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { user } = useAuth();
   
   React.useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') subscribeToPush();
-      });
-    } else if ('Notification' in window && Notification.permission === 'granted') {
-      subscribeToPush();
+    if (user && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        subscribeToPush();
+      } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') subscribeToPush();
+        });
+      }
     }
-  }, []);
+  }, [user]);
 
   const removeNotification = useCallback((id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
