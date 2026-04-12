@@ -558,14 +558,18 @@ router.post('/auth/google/callback', async (req, res) => {
     const { code } = req.body;
     if (!code) return res.status(400).json({ message: 'Missing code' });
 
-    const params = new URLSearchParams();
-    params.append('client_id', GOOGLE_CLIENT_ID);
-    params.append('client_secret', GOOGLE_CLIENT_SECRET);
-    params.append('code', code);
-    params.append('grant_type', 'authorization_code');
-    params.append('redirect_uri', GOOGLE_REDIRECT_URI);
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      console.error('[GOOGLE_AUTH] Missing client credentials in env');
+      return res.status(500).json({ message: 'Lỗi cấu hình Google Auth trên server.' });
+    }
 
-    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', params.toString(), {
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      code: code,
+      grant_type: 'authorization_code',
+      redirect_uri: GOOGLE_REDIRECT_URI
+    }), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
@@ -585,10 +589,16 @@ router.post('/auth/google/callback', async (req, res) => {
         const existingUserByEmail = await db.users.getByEmail(email);
         if (existingUserByEmail) {
           // Link google_id to existing account
-          user = await db.users.update(existingUserByEmail.id, {
+          const updates = { 
             google_id: googleId,
             avatar: existingUserByEmail.avatar || picture
-          });
+          };
+          try {
+            user = await db.users.update(existingUserByEmail.id, updates);
+          } catch (e) {
+            console.error('[GOOGLE_LINK_FAIL] Missing columns?', e.message);
+            user = await db.users.update(existingUserByEmail.id, updates);
+          }
         }
       }
 
@@ -622,7 +632,7 @@ router.post('/auth/google/callback', async (req, res) => {
           }
         } catch (e) {}
 
-        user = await db.users.create({
+        const newUser = {
           username: finalUsername,
           email: email,
           google_id: googleId,
@@ -636,7 +646,14 @@ router.post('/auth/google/callback', async (req, res) => {
           topup_id: tid,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
-        });
+        };
+
+        try {
+          user = await db.users.create(newUser);
+        } catch (e) {
+          console.error('[GOOGLE_CREATE_FAIL] Missing is_partner?', e.message);
+          user = await db.users.create(newUser);
+        }
       }
     }
 
@@ -673,7 +690,11 @@ router.post('/auth/google/callback', async (req, res) => {
     res.json({ token, user: userWithoutPassword });
   } catch (err) {
     console.error('Google Auth Error:', err.response?.data || err.message);
-    res.status(500).json({ message: 'Lỗi đăng nhập Google.' });
+    const errorMsg = err.response?.data?.error || err.message;
+    res.status(500).json({ 
+      message: 'Lỗi đăng nhập Google.',
+      details: errorMsg
+    });
   }
 });
 
