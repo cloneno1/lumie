@@ -366,9 +366,11 @@ router.get('/auth/me', authenticateToken, async (req, res) => {
         if (tid) {
           user = await db.users.update(user.id, { topup_id: tid });
         }
-      } catch (err) {
+        } catch (err) {
         console.error('[BANK_AUTO_REPAIR] Error:', err.message);
       }
+    }
+
     // Tự động kiểm tra Role Partner DISCORD (Mỗi 30 phút kiểm tra 1 lần để tránh Rate Limit Discord)
     if (user.discord_id) {
       const now = Date.now();
