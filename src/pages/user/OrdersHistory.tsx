@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Package, Star, X, Check, AlertTriangle, Calendar, CreditCard, ExternalLink, ChevronRight, Loader2 } from 'lucide-react';
+import { Package, Star, X, Check, AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
 import Loading from '../../components/Loading';
 import { useNavigate } from 'react-router-dom';
 
