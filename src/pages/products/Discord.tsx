@@ -31,14 +31,32 @@ const Discord: React.FC = () => {
   const getNitroPrice = (key: string, defaultPrice: number): number => {
     if (!publicSettings) return defaultPrice;
     let basePrice = defaultPrice;
-    if (key === 'nitro-b-1m') basePrice = parseInt(publicSettings.price_discord_nitro_1m) || defaultPrice;
-    else if (key === 'nitro-c-1m') basePrice = parseInt(publicSettings.price_discord_basic_1m) || defaultPrice;
-    else if (key === 'nitro-b-1y') basePrice = parseInt(publicSettings.price_discord_nitro_1y) || (parseInt(publicSettings.price_discord_nitro_1m) || 199000) * 12 * 0.8;
-    else if (key === 'nitro-c-1y') basePrice = parseInt(publicSettings.price_discord_basic_1y) || (parseInt(publicSettings.price_discord_basic_1m) || 89000) * 12 * 0.8;
+    let settingKey = '';
 
-    if (user?.is_partner && publicSettings.partner_discount_percent) {
-      const discount = parseInt(publicSettings.partner_discount_percent);
-      return Math.floor(basePrice * (1 - discount / 100));
+    if (key === 'nitro-b-1m') settingKey = 'price_discord_nitro_1m';
+    else if (key === 'nitro-c-1m') settingKey = 'price_discord_basic_1m';
+    else if (key === 'nitro-b-1y') settingKey = 'price_discord_nitro_1y';
+    else if (key === 'nitro-c-1y') settingKey = 'price_discord_basic_1y';
+
+    if (settingKey && publicSettings[settingKey]) {
+      basePrice = parseInt(publicSettings[settingKey]);
+    } else if (key.endsWith('1y')) {
+      // Automatic 1y calculation if missing
+      const mKey = settingKey.replace('1y', '1m');
+      const mPrice = parseInt(publicSettings[mKey]) || (key === 'nitro-b-1y' ? 199000 : 89000);
+      basePrice = mPrice * 12 * 0.8;
+    }
+
+    if (user?.is_partner) {
+      const partnerKey = `partner_${settingKey}`;
+      if (publicSettings[partnerKey]) {
+        return parseInt(publicSettings[partnerKey]);
+      }
+      
+      if (publicSettings.partner_discount_percent) {
+        const discount = parseInt(publicSettings.partner_discount_percent);
+        return Math.floor(basePrice * (1 - discount / 100));
+      }
     }
     return basePrice;
   };

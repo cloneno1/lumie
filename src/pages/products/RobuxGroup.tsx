@@ -14,6 +14,7 @@ const RobuxGroup: React.FC = () => {
 
   const [partnerDiscount, setPartnerDiscount] = useState(0);
   const [rate, setRate] = useState(200); // 1 Robux = 200 VNĐ
+  const [partnerRate, setPartnerRate] = useState<number | null>(null);
   const [robuxAmount, setRobuxAmount] = useState<number | string>('');
   const [username, setUsername] = useState('');
   const [note, setNote] = useState('');
@@ -29,6 +30,7 @@ const RobuxGroup: React.FC = () => {
         const res = await api.get('/settings/public');
         if (res.data.roblox_group_link) setGroupLink(res.data.roblox_group_link);
         if (res.data.robux_rate_group) setRate(parseInt(res.data.robux_rate_group));
+        if (res.data.partner_robux_rate_group) setPartnerRate(parseInt(res.data.partner_robux_rate_group));
         if (res.data.partner_discount_percent) setPartnerDiscount(parseInt(res.data.partner_discount_percent));
       } catch (err) { console.error('Error fetching settings'); }
     };
@@ -47,8 +49,11 @@ const RobuxGroup: React.FC = () => {
     }
   };
 
-  const baseTotalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * rate : 0;
-  const totalPrice = (user?.is_partner && partnerDiscount > 0) 
+  const currentRate = (user?.is_partner && partnerRate) ? partnerRate : rate;
+  const baseTotalPrice = Number(robuxAmount) > 0 ? Number(robuxAmount) * currentRate : 0;
+  
+  // Only apply % discount if no specific partner rate was found
+  const totalPrice = (user?.is_partner && !partnerRate && partnerDiscount > 0) 
     ? Math.floor(baseTotalPrice * (1 - partnerDiscount / 100))
     : baseTotalPrice;
   const quickPackages = [100, 500, 1000, 2000, 5000, 10000];
@@ -152,7 +157,8 @@ const RobuxGroup: React.FC = () => {
               }}>R$</span>
             </div>
             <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
-              * Tỷ giá hiện tại: <strong>1 Robux = {rate} VNĐ</strong>
+              * Tỷ giá hiện tại: <strong>1 Robux = {currentRate} VNĐ</strong>
+              {user?.is_partner && partnerRate && <span style={{ color: '#8b5cf6', marginLeft: '8px' }}>(Ưu đãi Partner)</span>}
             </p>
           </div>
 
@@ -175,7 +181,7 @@ const RobuxGroup: React.FC = () => {
                     {pkg.toLocaleString()} <span style={{ fontSize: '1rem' }}>R$</span>
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 600 }}>
-                    {(pkg * rate).toLocaleString()} VNĐ
+                    {(pkg * currentRate).toLocaleString()} VNĐ
                   </div>
                 </div>
               ))}

@@ -394,17 +394,25 @@ const AdminDashboard: React.FC = () => {
             <div style={{ display: 'grid', gap: '32px' }}>
               {/* Partner Configuration */}
               <section>
-                <h4 style={{ color: '#8b5cf6', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH PARTNER</h4>
+                <h4 style={{ color: '#8b5cf6', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH PARTNER (GLOBAL & GAMES)</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-                  {settings.filter(s => s.key.includes('partner')).map(s => (
-                    <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.02)' }}>
+                  <div className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(139,92,246,0.5)', background: 'rgba(139,92,246,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '11px', color: 'white', fontWeight: 800 }}>CHIẾT KHẤU PARTNER CHUNG (%)</div>
+                      <button onClick={() => handleOpenSettingsModal(settings.find(s => s.key === 'partner_discount_percent') || { key: 'partner_discount_percent', value: '10' })} className="btn-icon" style={{ background: '#8b5cf6', color: 'white' }}><Edit3 size={14} /></button>
+                    </div>
+                    <div style={{ fontWeight: 900, fontSize: '1.8rem' }}>{settings.find(s => s.key === 'partner_discount_percent')?.value || 0}%</div>
+                  </div>
+                  
+                  {['lq', 'ff', 'fo4', 'hoyoverse'].map(game => (
+                    <div key={`partner_discount_${game}`} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.02)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <div style={{ fontSize: '11px', color: 'rgba(139,92,246,0.7)', fontWeight: 800, textTransform: 'uppercase' }}>
-                          {s.key === 'partner_discount_percent' ? 'Chiết khấu Partner (%)' : s.key}
+                        <div style={{ fontSize: '11px', color: 'rgba(16,185,129,0.7)', fontWeight: 800 }}>
+                          CK PARTNER: {game.toUpperCase()} (%)
                         </div>
-                        <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#8b5cf6', color: 'white', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
+                        <button onClick={() => handleOpenSettingsModal(settings.find(s => s.key === `partner_discount_${game}`) || { key: `partner_discount_${game}`, value: '0' })} className="btn-icon" style={{ background: '#10b981', color: 'black' }}><Edit3 size={14} /></button>
                       </div>
-                      <div style={{ fontWeight: 900, fontSize: '1.8rem' }}>{s.value}%</div>
+                      <div style={{ fontWeight: 900, fontSize: '1.4rem' }}>{settings.find(s => s.key === `partner_discount_${game}`)?.value || 0}%</div>
                     </div>
                   ))}
                 </div>
@@ -413,20 +421,35 @@ const AdminDashboard: React.FC = () => {
               <section>
                 <h4 style={{ color: 'var(--accent-primary)', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH ROBUX</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-                  {settings.filter(s => s.key.includes('robux')).map(s => (
-                    <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 800, textTransform: 'uppercase' }}>
-                          {s.key === 'robux_rate_gamepass' ? 'Tỉ giá Gamepass' : 
-                           s.key === 'robux_rate_group' ? 'Tỉ giá Group' : 
-                           s.key === 'roblox_group_link' ? 'Link Group Roblox' : 
-                           s.key === 'robux_tutorial_link' ? 'Link hướng dẫn' : s.key}
+                  {settings.filter(s => s.key.includes('robux') && !s.key.includes('partner')).map(s => {
+                    const partnerKey = `partner_${s.key}`;
+                    const partnerSetting = settings.find(ps => ps.key === partnerKey);
+                    
+                    return (
+                      <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 800, textTransform: 'uppercase' }}>
+                            {s.key === 'robux_rate_gamepass' ? 'Tỉ giá Gamepass' : 
+                             s.key === 'robux_rate_group' ? 'Tỉ giá Group' : 
+                             s.key === 'roblox_group_link' ? 'Link Group Roblox' : 
+                             s.key === 'robux_tutorial_link' ? 'Link hướng dẫn' : s.key}
+                          </div>
+                          <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: 'var(--accent-primary)', color: 'black', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
                         </div>
-                        <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: 'var(--accent-primary)', color: 'black', border: 'none', width: '32px', height: '32px' }}><Edit3 size={14} /></button>
+                        <div style={{ fontWeight: 600, fontSize: '1.2rem', marginBottom: s.key.includes('rate') ? '12px' : '0' }}>{s.value}</div>
+                        
+                        {s.key.includes('rate') && (
+                          <div style={{ padding: '10px', background: 'rgba(139,92,246,0.1)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '10px', color: '#8b5cf6', fontWeight: 800 }}>GIÁ PARTNER (RATE)</div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                               <span style={{ fontWeight: 700, color: '#8b5cf6' }}>{partnerSetting?.value || s.value}</span>
+                               <button onClick={() => handleOpenSettingsModal(partnerSetting || { key: partnerKey, value: s.value })} className="btn-icon" style={{ background: '#8b5cf6', color: 'white', width: '24px', height: '24px' }}><Edit3 size={10} /></button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ fontWeight: 600, fontSize: '1rem', wordBreak: 'break-all' }}>{s.value}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
 
@@ -434,7 +457,7 @@ const AdminDashboard: React.FC = () => {
               <section>
                 <h4 style={{ color: '#10b981', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CHIẾT KHẤU GAME</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                  {settings.filter(s => s.key.includes('discount')).map(s => (
+                  {settings.filter(s => s.key.includes('discount') && !s.key.includes('partner')).map(s => (
                     <div key={s.key} className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.02)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                         <div style={{ fontSize: '11px', color: 'rgba(16,185,129,0.7)', fontWeight: 800, textTransform: 'uppercase' }}>
@@ -461,20 +484,35 @@ const AdminDashboard: React.FC = () => {
                         {group.replace('_', ' ')}
                       </h5>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {settings.filter(s => s.key.startsWith(`price_${group}`)).sort((a,b) => a.key.length - b.key.length).map(s => (
-                          <div key={s.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '12px' }}>
-                              {s.key.endsWith('1m') ? '1 Tháng' : 
-                               s.key.endsWith('3m') ? '3 Tháng' :
-                               s.key.endsWith('6m') ? '6 Tháng' :
-                               s.key.endsWith('1y') ? '1 Năm' : s.key}
+                        {settings.filter(s => s.key.startsWith(`price_${group}`)).sort((a,b) => a.key.length - b.key.length).map(s => {
+                           const partnerKey = `partner_${s.key}`;
+                           const partnerSetting = settings.find(ps => ps.key === partnerKey);
+                           
+                           return (
+                            <div key={s.key} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 600 }}>
+                                  {s.key.endsWith('1m') ? '1 Tháng' : 
+                                  s.key.endsWith('3m') ? '3 Tháng' :
+                                  s.key.endsWith('6m') ? '6 Tháng' :
+                                  s.key.endsWith('1y') ? '1 Năm' : s.key}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span style={{ fontWeight: 700 }}>{parseInt(s.value).toLocaleString()}đ</span>
+                                  <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '28px', height: '28px' }}><Edit3 size={12} /></button>
+                                </div>
+                              </div>
+                              
+                              <div style={{ padding: '8px 12px', background: 'rgba(139,92,246,0.08)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ fontSize: '10px', color: 'rgba(139,92,246,0.8)', fontWeight: 800 }}>GIÁ PARTNER</div>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                   <span style={{ fontWeight: 700, color: '#8b5cf6' }}>{parseInt(partnerSetting?.value || s.value).toLocaleString()}đ</span>
+                                   <button onClick={() => handleOpenSettingsModal(partnerSetting || { key: partnerKey, value: s.value })} className="btn-icon" style={{ background: '#8b5cf6', color: 'white', width: '24px', height: '24px' }}><Edit3 size={10} /></button>
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontWeight: 700 }}>{parseInt(s.value).toLocaleString()}đ</span>
-                              <button onClick={() => handleOpenSettingsModal(s)} className="btn-icon" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '28px', height: '28px' }}><Edit3 size={12} /></button>
-                            </div>
-                          </div>
-                        ))}
+                           );
+                        })}
                       </div>
                     </div>
                   ))}

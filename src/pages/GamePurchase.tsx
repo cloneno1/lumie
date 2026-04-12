@@ -163,19 +163,25 @@ const GamePurchase: React.FC = () => {
   const getDiscountRate = () => {
     if (!publicSettings) return 0.05; // 5% default
     
-    let discount = 5;
-    if (['lq', 'ff', 'fo4'].includes(gameId || '')) {
-      discount = parseInt(publicSettings[`discount_${gameId}`]) || 5;
-    } else {
-      discount = parseInt(publicSettings.discount_hoyoverse) || 0;
-    }
+    let baseDiscount = 5;
+    const gId = gameId || 'hoyoverse';
+    const settingKey = ['lq', 'ff', 'fo4'].includes(gId) ? `discount_${gId}` : 'discount_hoyoverse';
+    baseDiscount = parseInt(publicSettings[settingKey]) || (gId === 'hoyoverse' ? 0 : 5);
 
-    // Cộng thêm chiết khấu Partner nếu là User Partner
-    if (user?.is_partner && publicSettings.partner_discount_percent) {
-      discount += parseInt(publicSettings.partner_discount_percent);
+    // Ưu tiên chiết khấu पार्टनर riêng cho game này
+    if (user?.is_partner) {
+      const partnerSettingKey = `partner_discount_${gId}`;
+      if (publicSettings[partnerSettingKey]) {
+        return parseInt(publicSettings[partnerSettingKey]) / 100;
+      }
+      
+      // Fallback: Cộng dồn chiết khấu Partner chung
+      if (publicSettings.partner_discount_percent) {
+        return (baseDiscount + parseInt(publicSettings.partner_discount_percent)) / 100;
+      }
     }
     
-    return discount / 100;
+    return baseDiscount / 100;
   };
 
   const DISCOUNT_RATE = getDiscountRate();

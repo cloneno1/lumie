@@ -32,10 +32,18 @@ const Spotify: React.FC = () => {
 
   const getPrice = (duration: string) => {
     if (!publicSettings) return 0;
-    const basePrice = parseInt(publicSettings[`price_spotify_${duration}`]) || 0;
-    if (user?.is_partner && publicSettings.partner_discount_percent) {
-      const discount = parseInt(publicSettings.partner_discount_percent);
-      return Math.floor(basePrice * (1 - discount / 100));
+    const baseKey = `price_spotify_${duration}`;
+    const basePrice = parseInt(publicSettings[baseKey]) || 0;
+    
+    if (user?.is_partner) {
+      const partnerKey = `partner_${baseKey}`;
+      const partnerPrice = parseInt(publicSettings[partnerKey]);
+      if (partnerPrice) return partnerPrice;
+      
+      if (publicSettings.partner_discount_percent) {
+        const discount = parseInt(publicSettings.partner_discount_percent);
+        return Math.floor(basePrice * (1 - discount / 100));
+      }
     }
     return basePrice;
   };
