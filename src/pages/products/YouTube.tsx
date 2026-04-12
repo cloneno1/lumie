@@ -15,6 +15,7 @@ const YouTube: React.FC = () => {
   const { confirm } = useConfirm();
 
   const [publicSettings, setPublicSettings] = useState<any>(null);
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -39,6 +40,12 @@ const YouTube: React.FC = () => {
       navigate('/login');
       return;
     }
+
+    if (!email.trim() || !email.includes('@')) {
+      showNotification('Vui lòng nhập Gmail YouTube hợp lệ!', 'error');
+      return;
+    }
+
     if (user.balance < product.price) {
       showNotification('Số dư không đủ. Vui lòng nạp thêm!', 'error');
       navigate('/nap-tien');
@@ -57,7 +64,11 @@ const YouTube: React.FC = () => {
         productId: product.id,
         productName: product.title,
         price: product.price,
-        amount: 1
+        amount: 1,
+        options: {
+          email: email.trim(),
+          type: 'youtube'
+        }
       });
       showNotification('Mua hàng thành công!', 'success');
       refreshUser();
@@ -75,51 +86,108 @@ const YouTube: React.FC = () => {
   ];
 
   return (
-    <div className="container" style={{ padding: '60px 20px 80px' }}>
-      <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-         <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px' }}>YouTube <span style={{ color: '#ff0000' }}>Premium</span></h1>
-         <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Giải trí không giới hạn, không quảng cáo trên mọi thiết bị.</p>
+    <div className="container" style={{ padding: '60px 20px 100px' }}>
+      {/* Header Section */}
+      <div style={{ textAlign: 'center', marginBottom: '80px', position: 'relative' }}>
+        <div style={{ 
+          position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)',
+          width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255,0,0,0.15) 0%, transparent 70%)',
+          zIndex: -1, pointerEvents: 'none'
+        }} />
+        <h1 style={{ fontSize: '4rem', fontWeight: 900, marginBottom: '20px', letterSpacing: '-2px' }}>
+          YouTube <span className="gradient-text" style={{ filter: 'drop-shadow(0 0 10px rgba(255,0,0,0.3))' }}>Premium</span>
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6' }}>
+          Tận hưởng giải trí không giới hạn. Xem phim không quảng cáo, nghe nhạc chất lượng cao ngay cả khi màn hình tắt.
+        </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
+      {/* Input Section */}
+      <div style={{ 
+        maxWidth: '700px', margin: '0 auto 60px', padding: '40px', 
+        borderRadius: '24px', border: '1px solid var(--glass-border)', 
+        background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(20px)',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '24px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff4444' }}>
+            <Play size={20} fill="#ff4444" />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Thông tin đăng ký</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>Vui lòng nhập chính xác Gmail bạn đang dùng YouTube</p>
+          </div>
+        </div>
+        
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label className="form-label" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px' }}>Địa chỉ Gmail nhận Premium</label>
+          <div style={{ position: 'relative' }}>
+            <input 
+              type="email" 
+              className="form-control" 
+              placeholder="ten-cua-ban@gmail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ 
+                background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '2px solid var(--glass-border)', 
+                color: 'white', padding: '18px 24px', fontSize: '1.1rem', transition: 'all 0.3s',
+                width: '100%'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#ff4444'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--glass-border)'}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Product Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
         {items.map((item) => {
           const price = getPrice(item.duration);
           return (
-            <div key={item.id} className="glass-panel" style={{ padding: '30px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'all 0.3s', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ background: 'rgba(255,0,0,0.1)', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff0000' }}>
-                <Play size={24} fill="#ff0000" />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '8px' }}>{item.title}</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.5' }}>{item.desc}</p>
-              </div>
-              <div style={{ marginTop: 'auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--accent-primary)' }}>
-                   <Clock size={16} /> <span style={{ fontSize: '13px', fontWeight: 600 }}>Thời hạn: {item.duration === '1y' ? '1 Năm' : `${item.duration.replace('m', '')} Tháng`}</span>
+            <div key={item.id} className="glass-card hover-scale" style={{ padding: '35px', display: 'flex', flexDirection: 'column', gap: '25px', position: 'relative' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ background: 'rgba(255,0,0,0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff4444' }}>
+                  <Play size={28} fill="#ff4444" />
                 </div>
-                <div style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '20px', color: 'white' }}>
+                <div style={{ opacity: 0.2 }}><ShieldCheck size={20} /></div>
+              </div>
+
+              <div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '10px' }}>{item.title}</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', minHeight: '44px' }}>{item.desc}</p>
+              </div>
+
+              <div style={{ marginTop: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', color: '#ff4444', fontSize: '14px', fontWeight: 600 }}>
+                  <Clock size={16} /> <span>Thời hạn: {item.duration === '1y' ? '1 Năm' : `${item.duration.replace('m', '')} Tháng`}</span>
+                </div>
+                
+                <div style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '30px', color: 'white', letterSpacing: '-1px' }}>
                   {price.toLocaleString()}đ
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
                   <button 
-                    className="btn btn-secondary" 
-                    style={{ padding: '12px' }}
+                    className="btn glass-panel" 
+                    style={{ width: '60px', height: '60px', padding: 0, borderRadius: '16px' }}
                     onClick={() => addToCart({...item, price})}
                   >
-                    <ShoppingCart size={20} />
+                    <ShoppingCart size={22} />
                   </button>
                   <button 
                     className="btn btn-primary" 
-                    style={{ flexGrow: 1, fontWeight: 800 }} 
+                    style={{ 
+                      flexGrow: 1, fontWeight: 900, borderRadius: '16px', fontSize: '1rem', 
+                      background: 'linear-gradient(135deg, #ff0000, #cc0000)',
+                      boxShadow: '0 10px 20px -5px rgba(255,0,0,0.4)',
+                      border: 'none'
+                    }} 
                     onClick={() => handleBuy({...item, price})}
                   >
                     MUA NGAY
                   </button>
                 </div>
-              </div>
-              
-              <div style={{ position: 'absolute', top: '15px', right: '15px', fontSize: '10px', color: 'rgba(255,255,255,0.2)', fontWeight: 800 }}>
-                <ShieldCheck size={14} /> 
               </div>
             </div>
           );

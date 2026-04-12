@@ -45,6 +45,11 @@ const AdminDashboard: React.FC = () => {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
+  
+  // Cancellation Modal
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const isDonation = (order: any) => {
     return order.productId === 'donation' || order.product_id === 'donation' || (order.options && order.options.type === 'donation');
@@ -133,15 +138,45 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+  const handleUpdateOrderStatus = async (orderId: string, status: string, note?: string) => {
     try {
       const a_b = '/internal' + '-sys-' + 'mz9';
       const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/o-stat-s`, { orderId, status }, adminHeaders);
+      await api.post(`${a_b}/o-stat-s`, { orderId, status, note }, adminHeaders);
+      
+      if (status === 'cancelled') {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          // Automatic refund
+          await api.post(`${a_b}/b-up-s`, { 
+            userId: order.user_id || order.userId, 
+            amount: order.total, 
+            action: 'add',
+            reason: `Hoàn tiền đơn #${orderId}: ${note || 'Bị hủy bởi admin'}`
+          }, adminHeaders);
+          showNotification('Đã hủy đơn và hoàn tiền cho người dùng.', 'success');
+        }
+      }
+
       fetchData();
     } catch (err) {
       showNotification('Lỗi cập nhật trạng thái đơn hàng.', 'error');
     }
+  };
+
+  const handleOpenCancelModal = (order: any) => {
+    setCancellingOrder(order);
+    setCancelReason('');
+    setIsCancelModalOpen(true);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!cancellingOrder || !cancelReason.trim()) {
+      showNotification('Vui lòng nhập lý do hủy đơn!', 'error');
+      return;
+    }
+    await handleUpdateOrderStatus(cancellingOrder.id, 'cancelled', cancelReason.trim());
+    setIsCancelModalOpen(false);
   };
 
   const handleSelectChat = async (session: any) => {
@@ -555,7 +590,7 @@ const AdminDashboard: React.FC = () => {
                         {order.status === 'pending' && (
                           <>
                             <button onClick={() => handleUpdateOrderStatus(order.id, 'completed')} className="btn glass-panel" style={{ padding: '6px' }}><Check size={14} /></button>
-                            <button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} className="btn glass-panel" style={{ padding: '6px' }}><X size={14} /></button>
+                            <button onClick={() => handleOpenCancelModal(order)} className="btn glass-panel" style={{ padding: '6px' }}><X size={14} /></button>
                           </>
                         )}
                       </div>
@@ -741,6 +776,12 @@ const AdminDashboard: React.FC = () => {
                   <div><span style={{ color: 'var(--text-muted)' }}>Tổng tiền:</span> <strong>{selectedOrderDetails.total.toLocaleString()}đ</strong></div>
                   <div><span style={{ color: 'var(--text-muted)' }}>Trạng thái:</span> <strong style={{ color: getStatusColor(selectedOrderDetails.status) }}>{selectedOrderDetails.status}</strong></div>
                   <div><span style={{ color: 'var(--text-muted)' }}>Ngày tạo:</span> <strong>{new Date(selectedOrderDetails.created_at).toLocaleString()}</strong></div>
+                  {selectedOrderDetails.note && (
+                    <div style={{ gridColumn: 'span 2', marginTop: '8px', padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                      <span style={{ color: 'var(--accent-red)', fontWeight: 800, fontSize: '11px', textTransform: 'uppercase' }}>Ghi chú hủy đơn:</span>
+                      <div style={{ fontSize: '13px', marginTop: '4px' }}>{selectedOrderDetails.note}</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -756,6 +797,8 @@ const AdminDashboard: React.FC = () => {
                       else if (key === 'password') label = 'Mật khẩu';
                       else if (key === 'backupCodes') label = 'Mã dự phòng';
                       else if (key === 'server') label = 'Máy chủ (Server)';
+                      else if (key === 'email') label = 'Gmail YouTube';
+                      else if (key === 'account') label = 'Tài khoản Spotify';
                       
                       return (
                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
@@ -779,10 +822,42 @@ const AdminDashboard: React.FC = () => {
                {selectedOrderDetails.status === 'pending' && (
                  <>
                    <button onClick={() => { handleUpdateOrderStatus(selectedOrderDetails.id, 'completed'); setSelectedOrderDetails(null); }} className="btn btn-primary" style={{ flex: 1 }}>Hoàn tất</button>
-                   <button onClick={() => { handleUpdateOrderStatus(selectedOrderDetails.id, 'cancelled'); setSelectedOrderDetails(null); }} className="btn" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>Hủy đơn</button>
+                   <button onClick={() => { handleOpenCancelModal(selectedOrderDetails); setSelectedOrderDetails(null); }} className="btn" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>Hủy đơn</button>
                  </>
                )}
                <button onClick={() => setSelectedOrderDetails(null)} className="btn glass-panel" style={{ flex: selectedOrderDetails.status === 'pending' ? 'none' : 1 }}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Cancellation Reason Modal */}
+      {isCancelModalOpen && (
+        <div className="modal-overlay">
+          <div className="glass-card animate-slide-in" style={{ width: '100%', maxWidth: '450px', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0 }}>Lý do hủy đơn hàng</h3>
+              <button onClick={() => setIsCancelModalOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+            
+            <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '14px' }}>
+              Vui lòng nhập lý do hủy đơn hàng <strong>#{cancellingOrder?.id}</strong>. Người dùng sẽ nhìn thấy lý do này và được hoàn tiền tự động.
+            </p>
+            
+            <div className="form-group">
+              <label className="form-label">Lý do hủy (Ghi chú cho user)</label>
+              <textarea 
+                className="form-control" 
+                placeholder="Ví dụ: Tài khoản sai, Gói đã hết hạn, Vui lòng liên hệ hỗ trợ..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid var(--glass-border)', color: 'white', padding: '14px', minHeight: '100px', resize: 'vertical' }}
+                autoFocus
+              />
+            </div>
+            
+            <div style={{ marginTop: '32px', display: 'flex', gap: '12px' }}>
+              <button onClick={confirmCancelOrder} className="btn btn-primary" style={{ flex: 1, background: 'var(--accent-red)', color: 'white' }}>Hủy đơn & Hoàn tiền</button>
+              <button onClick={() => setIsCancelModalOpen(false)} className="btn glass-panel" style={{ flex: 1 }}>Quay lại</button>
             </div>
           </div>
         </div>
