@@ -377,15 +377,15 @@ router.get('/auth/me', authenticateToken, async (req, res) => {
       const lastCheck = user.last_partner_check ? new Date(user.last_partner_check).getTime() : 0;
       
       if (now - lastCheck > 30 * 60 * 1000) { // 30 phút
-        try {
-          const isPartner = await checkDiscordPartnerRole(user.discord_id);
-          user = await db.users.update(user.id, { 
-            is_partner: isPartner,
-            last_partner_check: new Date().toISOString()
-          });
-        } catch (e) {
-          console.error('[AUTO_PARTNER_CHECK_FAIL]', e.message);
-        }
+          try {
+            const isPartner = await checkDiscordPartnerRole(user.discord_id);
+            user = await db.users.update(user.id, { 
+              is_partner: isPartner,
+              last_partner_check: new Date().toISOString()
+            });
+          } catch (e) {
+            console.error('[AUTO_PARTNER_CHECK_FAIL] Có thể thiếu cột is_partner trong DB:', e.message);
+          }
       }
     }
 
@@ -456,11 +456,17 @@ router.post('/auth/discord/callback', async (req, res) => {
         const existingUserByEmail = await db.users.getByEmail(email);
         if (existingUserByEmail) {
           // Link discord_id to existing account with this email
-          user = await db.users.update(existingUserByEmail.id, { 
+          const updates = { 
             discord_id: discordId,
-            avatar: existingUserByEmail.avatar || avatarUrl, // Update avatar if not set
-            is_partner: isPartner
-          });
+            avatar: existingUserByEmail.avatar || avatarUrl
+          };
+          
+          try {
+            user = await db.users.update(existingUserByEmail.id, { ...updates, is_partner: isPartner });
+          } catch (e) {
+            console.error('[DB_UPDATE_FAIL] Thiếu cột is_partner:', e.message);
+            user = await db.users.update(existingUserByEmail.id, updates);
+          }
         }
       }
 
@@ -472,7 +478,7 @@ router.post('/auth/discord/callback', async (req, res) => {
           finalUsername = `${username}_${Math.floor(1000 + Math.random() * 9000)}`;
         }
 
-        user = await db.users.create({
+        const newUser = {
           username: finalUsername,
           email: email || '',
           discord_id: discordId,
@@ -483,14 +489,23 @@ router.post('/auth/discord/callback', async (req, res) => {
           total_topup: 0,
           vip_points: 0,
           vip_level: 0,
-          is_partner: isPartner,
           role: finalUsername.toLowerCase() === 'lumie' ? 'admin' : 'user',
           banned: false
-        });
+        };
+        
+        try {
+          user = await db.users.create({ ...newUser, is_partner: isPartner });
+        } catch (e) {
+          console.error('[DB_CREATE_FAIL] Thiếu cột is_partner:', e.message);
+          user = await db.users.create(newUser);
+        }
       }
     } else {
-      // Refresh partner status
-      user = await db.users.update(user.id, { is_partner: isPartner });
+      try {
+        user = await db.users.update(user.id, { is_partner: isPartner });
+      } catch (e) {
+        console.error('[DB_UPDATE_FAIL] Refresh Partner status fail (Missing column):', e.message);
+      }
     }
 
     // Elevation check for existing users logging in
