@@ -319,38 +319,71 @@ router.post('/auth/login', async (req, res) => {
 
 const checkDiscordPartnerRole = async (discordId) => {
   const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-  if (!discordId || !BOT_TOKEN) return false;
+  if (!discordId || !BOT_TOKEN) {
+    console.error('[PARTNER_CHECK] Missing Discord ID or BOT_TOKEN');
+    return false;
+  }
   
   try {
     // Fetch configuration from DB settings
     const guildSetting = await db.settings.getByKey('discord_guild_id');
     const roleSetting = await db.settings.getByKey('discord_partner_role_id');
     
-    const GUILD_ID = guildSetting?.value || '1479294548554416268';
-    const PARTNER_ROLE_ID = roleSetting?.value || '1479294548554416273';
+    // Default fallback values if not set in DB
+    const GUILD_ID = guildSetting?.value?.trim() || '1479294548554416268';
+    const PARTNER_ROLE_ID = roleSetting?.value?.trim() || '1479294548554416273';
     
-    // 1. Get member roles
-    const memberRes = await axios.get(`https://discord.com/api/guilds/${GUILD_ID}/members/${discordId}`, {
+    console.log(`[PARTNER_CHECK] Checking user ${discordId} in Guild: ${GUILD_ID} (Role Goal: ${PARTNER_ROLE_ID})`);
+
+    // 1. Get member details
+    const memberUrl = `https://discord.com/api/guilds/${GUILD_ID}/members/${discordId}`;
+    const memberRes = await axios.get(memberUrl, {
       headers: { Authorization: `Bot ${BOT_TOKEN}` }
-    }).catch(() => null);
-
-    if (!memberRes) return false;
-    const userRoles = memberRes.data.roles;
-
-    // Check for the specific role ID
-    if (userRoles.includes(PARTNER_ROLE_ID)) return true;
-
-    // Fallback: search by name "partner" just in case
-    const rolesRes = await axios.get(`https://discord.com/api/guilds/${GUILD_ID}/roles`, {
-      headers: { Authorization: `Bot ${BOT_TOKEN}` }
+    }).catch(err => {
+      console.error(`[DISCORD_API_MEMBER_FAIL] Code: ${err.response?.status} - ${err.response?.data?.message || err.message}`);
+      return null;
     });
 
-    const partnerRole = rolesRes.data.find((r) => r.name.toLowerCase() === 'partner' || r.id === PARTNER_ROLE_ID);
-    if (partnerRole && userRoles.includes(partnerRole.id)) return true;
+    if (!memberRes) {
+      console.error(`[PARTNER_CHECK] Could not find user ${discordId} in guild ${GUILD_ID}. Is the bot in the server?`);
+      return false;
+    }
 
+    const userRoles = memberRes.data.roles || [];
+    console.log(`[PARTNER_CHECK] User roles:`, userRoles);
+
+    // 2. Direct ID check
+    if (userRoles.includes(PARTNER_ROLE_ID)) {
+      console.log(`[PARTNER_CHECK] SUCCESS: User has Role ID match!`);
+      return true;
+    }
+
+    // 3. Robust Fallback: Fetch all roles in guild and check by name "partner" 
+    // This helps if the provided ID is slightly off or for a different server version
+    const rolesRes = await axios.get(`https://discord.com/api/guilds/${GUILD_ID}/roles`, {
+      headers: { Authorization: `Bot ${BOT_TOKEN}` }
+    }).catch(e => {
+      console.error(`[DISCORD_API_ROLES_FAIL] ${e.message}`);
+      return null;
+    });
+
+    if (rolesRes && Array.isArray(rolesRes.data)) {
+      const partnerRole = rolesRes.data.find(r => 
+        r.id === PARTNER_ROLE_ID || 
+        r.name.toLowerCase() === 'partner' || 
+        r.name.toLowerCase().includes('đối tác')
+      );
+      
+      if (partnerRole && userRoles.includes(partnerRole.id)) {
+        console.log(`[PARTNER_CHECK] SUCCESS: User matched via fallback role search (${partnerRole.name})`);
+        return true;
+      }
+    }
+
+    console.log(`[PARTNER_CHECK] FAIL: User found but no Partner role detected.`);
     return false;
   } catch (err) {
-    console.error('[DISCORD_PARTNER_CHECK_ERROR]', err.message);
+    console.error('[DISCORD_PARTNER_CHECK_CRITICAL_ERROR]', err.message);
     return false;
   }
 };
