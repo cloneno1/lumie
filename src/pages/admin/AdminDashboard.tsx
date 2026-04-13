@@ -417,6 +417,28 @@ const AdminDashboard: React.FC = () => {
                   ))}
                 </div>
               </section>
+              {/* Discord Configuration */}
+              <section>
+                <h4 style={{ color: '#5865F2', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH DISCORD AUTH & PARTNER</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                  <div className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(88,101,242,0.3)', background: 'rgba(88,101,242,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 800 }}>DISCORD GUILD ID (SERVER ID)</div>
+                      <button onClick={() => handleOpenSettingsModal(settings.find(s => s.key === 'discord_guild_id') || { key: 'discord_guild_id', value: '1479294548554416268' })} className="btn-icon" style={{ background: '#5865F2', color: 'white' }}><Edit3 size={14} /></button>
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '1.2rem', fontFamily: 'monospace' }}>{settings.find(s => s.key === 'discord_guild_id')?.value || '1479294548554416268'}</div>
+                  </div>
+
+                  <div className="glass-panel" style={{ padding: '20px', border: '1px solid rgba(88,101,242,0.3)', background: 'rgba(88,101,242,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 800 }}>DISCORD PARTNER ROLE ID</div>
+                      <button onClick={() => handleOpenSettingsModal(settings.find(s => s.key === 'discord_partner_role_id') || { key: 'discord_partner_role_id', value: '1479294548554416273' })} className="btn-icon" style={{ background: '#5865F2', color: 'white' }}><Edit3 size={14} /></button>
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '1.2rem', fontFamily: 'monospace' }}>{settings.find(s => s.key === 'discord_partner_role_id')?.value || '1479294548554416273'}</div>
+                  </div>
+                </div>
+              </section>
+
               {/* Robux Configuration */}
               <section>
                 <h4 style={{ color: 'var(--accent-primary)', marginBottom: '16px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>CẤU HÌNH ROBUX</h4>

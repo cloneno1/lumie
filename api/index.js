@@ -321,8 +321,14 @@ const checkDiscordPartnerRole = async (discordId) => {
   const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
   if (!discordId || !BOT_TOKEN) return false;
   
-  const GUILD_ID = '1479294548554416268';
   try {
+    // Fetch configuration from DB settings
+    const guildSetting = await db.settings.getByKey('discord_guild_id');
+    const roleSetting = await db.settings.getByKey('discord_partner_role_id');
+    
+    const GUILD_ID = guildSetting?.value || '1479294548554416268';
+    const PARTNER_ROLE_ID = roleSetting?.value || '1479294548554416273';
+    
     // 1. Get member roles
     const memberRes = await axios.get(`https://discord.com/api/guilds/${GUILD_ID}/members/${discordId}`, {
       headers: { Authorization: `Bot ${BOT_TOKEN}` }
@@ -331,15 +337,18 @@ const checkDiscordPartnerRole = async (discordId) => {
     if (!memberRes) return false;
     const userRoles = memberRes.data.roles;
 
-    // 2. Get guild roles to find the ID of "partner" role
+    // Check for the specific role ID
+    if (userRoles.includes(PARTNER_ROLE_ID)) return true;
+
+    // Fallback: search by name "partner" just in case
     const rolesRes = await axios.get(`https://discord.com/api/guilds/${GUILD_ID}/roles`, {
       headers: { Authorization: `Bot ${BOT_TOKEN}` }
     });
 
-    const partnerRole = rolesRes.data.find((r) => r.name.toLowerCase() === 'partner');
-    if (!partnerRole) return false;
+    const partnerRole = rolesRes.data.find((r) => r.name.toLowerCase() === 'partner' || r.id === PARTNER_ROLE_ID);
+    if (partnerRole && userRoles.includes(partnerRole.id)) return true;
 
-    return userRoles.includes(partnerRole.id);
+    return false;
   } catch (err) {
     console.error('[DISCORD_PARTNER_CHECK_ERROR]', err.message);
     return false;
@@ -1828,7 +1837,9 @@ router.get('/settings/public', async (req, res) => {
       price_discord_nitro_1y: publicData.price_discord_nitro_1y || '1890000',
       price_discord_basic_1m: publicData.price_discord_basic_1m || '89000',
       price_discord_basic_1y: publicData.price_discord_basic_1y || '850000',
-      partner_discount_percent: publicData.partner_discount_percent || '20'
+      partner_discount_percent: publicData.partner_discount_percent || '20',
+      discord_guild_id: publicData.discord_guild_id || '1479294548554416268',
+      discord_partner_role_id: publicData.discord_partner_role_id || '1479294548554416273'
     };
 
     cachedPublicSettings = finalSettings;
