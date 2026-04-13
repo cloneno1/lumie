@@ -37,14 +37,17 @@ const Products: React.FC = () => {
   const getPrice = (id: any, defaultPrice: number): number => {
     if (!publicSettings) return defaultPrice;
     
+    let basePrice = defaultPrice;
+    let settingKey = '';
+    
     switch (id) {
-      case 4: return parseInt(publicSettings.price_youtube_1m) || defaultPrice;
-      case 5: return parseInt(publicSettings.price_spotify_1m) || defaultPrice;
-      case 6: return parseInt(publicSettings.price_netflix_1m) || defaultPrice;
-      case 1: return parseInt(publicSettings.price_discord_nitro_1m) || defaultPrice;
-      case 2: return parseInt(publicSettings.price_discord_basic_1m) || defaultPrice;
-      case 'robux-gp': return parseInt(publicSettings.robux_rate_gamepass) || 160;
-      case 'robux-gr': return parseInt(publicSettings.robux_rate_group) || 200;
+      case 4: settingKey = 'price_youtube_1m'; basePrice = parseInt(publicSettings[settingKey]) || defaultPrice; break;
+      case 5: settingKey = 'price_spotify_1m'; basePrice = parseInt(publicSettings[settingKey]) || defaultPrice; break;
+      case 6: settingKey = 'price_netflix_1m'; basePrice = parseInt(publicSettings[settingKey]) || defaultPrice; break;
+      case 1: settingKey = 'price_discord_nitro_1m'; basePrice = parseInt(publicSettings[settingKey]) || defaultPrice; break;
+      case 2: settingKey = 'price_discord_basic_1m'; basePrice = parseInt(publicSettings[settingKey]) || defaultPrice; break;
+      case 'robux-gp': settingKey = 'robux_rate_gamepass'; basePrice = parseInt(publicSettings[settingKey]) || 160; break;
+      case 'robux-gr': settingKey = 'robux_rate_group'; basePrice = parseInt(publicSettings[settingKey]) || 200; break;
       default:
         // Handle variations (3m, 6m, 1y) - rough scaling for now if not explicitly in settings
         if (id === 41) return getPrice(4, 55000) * 3 * 0.9; // 10% disc for 3m
@@ -59,11 +62,32 @@ const Products: React.FC = () => {
         if (id === 62) return getPrice(6, 80000) * 6 * 0.85;
         if (id === 63) return getPrice(6, 80000) * 12 * 0.8;
 
-        if (id === 11) return getPrice(1, 199000) * 12 * 0.8;
-        if (id === 21) return getPrice(2, 89000) * 12 * 0.8;
-        
-        return defaultPrice;
+        if (id === 11) { settingKey = 'price_discord_nitro_1y'; basePrice = parseInt(publicSettings[settingKey]) || getPrice(1, 199000) * 12 * 0.8; }
+        else if (id === 21) { settingKey = 'price_discord_basic_1y'; basePrice = parseInt(publicSettings[settingKey]) || getPrice(2, 89000) * 12 * 0.8; }
+        else return defaultPrice;
     }
+
+    if (user?.is_partner) {
+      if (id === 'robux-gp' && publicSettings.partner_robux_rate_gamepass) {
+        return parseInt(publicSettings.partner_robux_rate_gamepass);
+      }
+      if (id === 'robux-gr' && publicSettings.partner_robux_rate_group) {
+        return parseInt(publicSettings.partner_robux_rate_group);
+      }
+      if (settingKey) {
+        const partnerKey = `partner_${settingKey}`;
+        if (publicSettings[partnerKey]) {
+          return parseInt(publicSettings[partnerKey]);
+        }
+      }
+      
+      if (id !== 'robux-gp' && id !== 'robux-gr' && publicSettings.partner_discount_percent) {
+        const discount = parseInt(publicSettings.partner_discount_percent);
+        return Math.floor(basePrice * (1 - discount / 100));
+      }
+    }
+
+    return basePrice;
   };
 
   const categories = ['All', 'Discord', 'Robux', 'YouTube', 'Spotify', 'Netflix'];

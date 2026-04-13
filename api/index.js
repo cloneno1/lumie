@@ -1168,12 +1168,31 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
     // Fetch dynamic discount from settings
     let discountPercent = 5; // Default 5%
     try {
-      if (['lq', 'ff', 'fo4'].includes(gameId)) {
-        const s = await db.settings.getByKey(`discount_${gameId}`);
+      const gId = gameId || 'hoyoverse';
+      const isGarenaGame = ['lq', 'ff', 'fo4'].includes(gId);
+      
+      if (isGarenaGame) {
+        const s = await db.settings.getByKey(`discount_${gId}`);
         if (s) discountPercent = parseInt(s.value);
       } else {
         const s = await db.settings.getByKey('discount_hoyoverse');
         if (s) discountPercent = parseInt(s.value);
+        else discountPercent = 0; // Hoyoverse default is often 0
+      }
+
+      // Partner Logic Backend
+      if (user.is_partner) {
+        const partnerConfigKey = isGarenaGame ? `partner_discount_${gId}` : 'partner_discount_hoyoverse';
+        const partnerSet = await db.settings.getByKey(partnerConfigKey);
+        
+        if (partnerSet && partnerSet.value) {
+           discountPercent = parseInt(partnerSet.value); // Use specific override
+        } else {
+           const partnerGlobal = await db.settings.getByKey('partner_discount_percent');
+           if (partnerGlobal && partnerGlobal.value) {
+             discountPercent = discountPercent + parseInt(partnerGlobal.value); // Add global %
+           }
+        }
       }
     } catch (e) { console.error('Error fetching discount setting:', e); }
 
