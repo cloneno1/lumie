@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -34,6 +34,7 @@ const AdminDashboard: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Modal states
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
@@ -113,6 +114,10 @@ const AdminDashboard: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [activeTab, selectedChatUser]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages.length]);
 
   const handleOpenBalanceModal = (user: any) => {
     setBalanceTargetUser(user);
