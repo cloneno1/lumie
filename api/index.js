@@ -1575,79 +1575,67 @@ const refreshRankingsInBackground = async () => {
   rankingCache.isRefreshing = true;
   
   try {
-    const now = Date.now();
-    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const now = new Date();
+    // Precise Month Start (Day 1, 00:00:00)
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    // 1. Fetch EVERYTHING needed for accurate aggregation - LIMIT to last 1000 for performance
-    const [txRes, orderRes, userRes] = await Promise.all([
-      supabase.from('transactions').select('*').in('status', ['1', 1]).order('created_at', { ascending: false }).limit(1000),
-      supabase.from('orders').select('*').eq('status', 'completed').eq('product_id', 'donation').order('created_at', { ascending: false }).limit(1000),
-      supabase.from('users').select('id, username, avatar, total_topup')
+    // 1. Parallel targeted fetching - MUCH faster than fetching all users
+    const [topTotalRes, monthlyTxRes, monthlyDonationRes, latestActivityRes] = await Promise.all([
+      // Top 10 All Time directly from DB
+      supabase.from('users').select('id, username, avatar, total_topup').gt('total_topup', 0).order('total_topup', { ascending: false }).limit(10),
+      // Monthly transactions (Bank/Card)
+      supabase.from('transactions').select('user_id, amount, created_at').in('status', ['1', 1]).gte('created_at', monthStart).limit(2000),
+      // Monthly donations
+      supabase.from('orders').select('user_id, total, created_at').eq('status', 'completed').eq('product_id', 'donation').gte('created_at', monthStart).limit(2000),
+      // Latest users for name mapping
+      supabase.from('users').select('id, username, avatar').order('last_active', { ascending: false }).limit(500)
     ]);
 
-    const txData = txRes.data || [];
-    const donationData = orderRes.data || [];
-    const userData = userRes.data || [];
-    
     const nameMap = {};
-    userData.forEach(u => { nameMap[u.id] = { username: u.username, avatar: u.avatar, total_topup: u.total_topup || 0 }; });
+    (latestActivityRes.data || []).forEach(u => { nameMap[u.id] = u; });
+    (topTotalRes.data || []).forEach(u => { nameMap[u.id] = u; });
 
-    const aggregateRanking = (records, filterFn = null) => {
+    const aggregateToMap = (records, field = 'amount') => {
       const map = {};
       records.forEach(r => {
-        const time = new Date(r.created_at).getTime();
-        if (filterFn && !filterFn(time)) return;
         const uid = r.user_id || r.userId;
         if (!uid) return;
-        
-        // Prioritize 'total' for orders (donation money) and 'amount' for transactions (bank money)
-        // CRITICAL: Handle NULL values from Supabase safely
-        let moneyAmt = 0;
-        if (r.total !== undefined && r.total !== null) moneyAmt = parseInt(r.total);
-        else if (r.amount !== undefined && r.amount !== null) moneyAmt = parseInt(r.amount);
-        
-        if (!isNaN(moneyAmt) && moneyAmt > 0) {
-          map[uid] = (map[uid] || 0) + moneyAmt;
+        const amt = parseInt(r[field] || 0);
+        if (!isNaN(amt) && amt > 0) {
+          map[uid] = (map[uid] || 0) + amt;
         }
       });
       return map;
     };
 
-    // Combine Tx and Donations for accurate time-based boards
-    const allRecords = [...txData, ...donationData];
+    const monthlyMap = aggregateToMap([...(monthlyTxRes.data || []), ...(monthlyDonationRes.data || []).map(d => ({...d, amount: d.total}))]);
     
-    // For "Total", we use the user's total_topup column BUT we ensure it's at least as high as current transactions
-    const totalMap = aggregateRanking(allRecords);
-    const weeklyMap = aggregateRanking(allRecords, (t) => t >= weekAgo);
-    const monthlyMap = aggregateRanking(allRecords, (t) => t >= monthAgo);
-
-    const mapToRankList = (map) => {
+    // Helper to enrich and sort
+    const finalizeRankList = (map) => {
       return Object.entries(map)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10) // Only top 10
-        .map(([uid, amt]) => {
-          const u = nameMap[uid];
-          return { id: uid, username: u?.username || 'Gấu Lumie', amount: amt, avatar: u?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}` };
-        });
+        .map(([id, amount]) => ({
+          id,
+          username: nameMap[id]?.username || 'Khách hàng',
+          avatar: nameMap[id]?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}`,
+          amount
+        }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 10);
     };
-
-    // For the "Total" board specifically, we prioritize the aggregated total if higher than DB column
-    const finalTotalList = Object.entries(nameMap).map(([uid, u]) => {
-      const aggAmt = totalMap[uid] || 0;
-      const dbAmt = u.total_topup || 0;
-      return { id: uid, username: u.username, amount: Math.max(aggAmt, dbAmt), avatar: u.avatar };
-    }).filter(u => u.amount > 0).sort((a, b) => b.amount - a.amount).slice(0, 10);
 
     rankingCache.data = {
-      total: finalTotalList,
-      weekly: mapToRankList(weeklyMap),
-      monthly: mapToRankList(monthlyMap),
-      topDonors: mapToRankList(aggregateRanking(donationData))
+      total: (topTotalRes.data || []).map(u => ({
+        id: u.id,
+        username: u.username,
+        avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`,
+        amount: u.total_topup || 0
+      })),
+      monthly: finalizeRankList(monthlyMap),
+      topDonors: finalizeRankList(aggregateToMap(monthlyDonationRes.data || [], 'total'))
     };
-    rankingCache.lastUpdated = now;
+    rankingCache.lastUpdated = Date.now();
   } catch (err) {
-    console.error('[BG_REFRESH] Fatal Error:', err.message);
+    console.error('[RANKING_OPTIMIZE] Error:', err.message);
   } finally {
     rankingCache.isRefreshing = false;
   }
