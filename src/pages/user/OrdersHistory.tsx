@@ -94,9 +94,10 @@ const OrdersHistory: React.FC = () => {
           background: 'radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%)', zIndex: -1 
         }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ 
-            background: 'var(--primary-gradient)', padding: '16px', borderRadius: '18px', 
-            boxShadow: '0 10px 20px rgba(16,185,129,0.2)', color: 'white' 
+          <div className="hover-scale" style={{ 
+            background: 'var(--primary-gradient)', padding: '16px', borderRadius: '20px', 
+            boxShadow: 'var(--glass-glow)', color: 'white',
+            border: '1px solid rgba(255,255,255,0.2)'
           }}>
             <Package size={32} strokeWidth={2.5} />
           </div>
@@ -152,12 +153,13 @@ const OrdersHistory: React.FC = () => {
                 }}
               >
                 {/* Product Icon & Info */}
-                <div style={{ 
-                  width: '60px', height: '60px', borderRadius: '16px', 
-                  background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)'
+                <div className="hover-scale" style={{ 
+                  width: '64px', height: '64px', borderRadius: '20px', 
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2))', border: '1px solid var(--glass-border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)',
+                  boxShadow: 'inset 0 2px 10px rgba(255,255,255,0.05)'
                 }}>
-                  <Package size={28} />
+                  <Package size={30} strokeWidth={1.5} />
                 </div>
 
                 <div style={{ minWidth: 0 }}>
@@ -295,23 +297,34 @@ const OrdersHistory: React.FC = () => {
                 placeholder="Ví dụ: Giao hàng nhanh, uy tín, gói dùng rất ổn định..."
                 style={{ 
                   width: '100%', minHeight: '140px', padding: '20px', 
-                  background: 'rgba(255,255,255,0.03)', border: '2px solid var(--glass-border)',
-                  borderRadius: '20px', color: 'white', resize: 'none', fontSize: '15px', transition: 'all 0.3s'
+                  background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,255,255,0.15)',
+                  borderRadius: '20px', color: 'white', resize: 'none', fontSize: '15px', transition: 'all 0.3s',
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--accent-primary)';
+                  e.target.style.background = 'rgba(255,255,255,0.12)';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(0, 242, 254, 0.2)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.15)';
+                  e.target.style.background = 'rgba(255,255,255,0.08)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
 
             <button 
               disabled={submitting}
               onClick={handleSubmitFeedback}
-              className="btn btn-primary" 
+              className="btn btn-primary hover-scale" 
               style={{ 
-                width: '100%', padding: '18px', borderRadius: '18px', fontSize: '1.1rem', fontWeight: 900,
-                boxShadow: '0 10px 20px -5px rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px'
+                width: '100%', padding: '18px', borderRadius: '20px', fontSize: '1.2rem', fontWeight: 900,
+                boxShadow: '0 10px 25px rgba(0, 242, 254, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                background: 'var(--primary-gradient)', border: '1px solid rgba(255,255,255,0.1)'
               }}
             >
-              {submitting ? 'ĐANG GỬI...' : <><Check size={22} strokeWidth={3} /> GỬI ĐÁNH GIÁ</>}
+              {submitting ? 'ĐANG GỬI...' : <><Check size={24} strokeWidth={3} /> GỬI ĐÁNH GIÁ</>}
             </button>
           </div>
         </div>

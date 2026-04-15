@@ -58,12 +58,12 @@ const AdminDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+      const a_b = '/internal-sys-mz9';
       
       const fetchSafe = async (url: string) => {
         try {
-          const res = await api.get(url, adminHeaders);
+          // Token is already automatically attached by axios intercepter
+          const res = await api.get(url);
           return res.data;
         } catch (err) {
           console.error(`Fetch error for ${url}:`, err);
@@ -99,14 +99,13 @@ const AdminDashboard: React.FC = () => {
     let interval: any;
     if (activeTab === 'chats') {
       interval = setInterval(async () => {
-        const a_b = '/internal' + '-sys-' + 'mz9';
-        const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
+        const a_b = '/internal-sys-mz9';
         try {
-          const res = await api.get(`${a_b}/chats`, adminHeaders);
+          const res = await api.get(`${a_b}/chats`);
           setChatSessions(res.data || []);
           
           if (selectedChatUser) {
-             const msgRes = await api.get(`${a_b}/chats/${selectedChatUser.user_id}`, adminHeaders);
+             const msgRes = await api.get(`${a_b}/chats/${selectedChatUser.user_id}`);
              setChatMessages(msgRes.data || []);
           }
         } catch (e) {}
@@ -127,9 +126,8 @@ const AdminDashboard: React.FC = () => {
     if (isNaN(amount)) return showNotification('Số tiền không hợp lệ.', 'error');
 
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/b-up-s`, { userId: balanceTargetUser.id, amount, action: 'add' }, adminHeaders);
+      const a_b = '/internal-sys-mz9';
+      await api.post(`${a_b}/b-up-s`, { userId: balanceTargetUser.id, amount, action: 'add' });
       showNotification('Cập nhật số dư thành công!', 'success');
       setIsBalanceModalOpen(false);
       fetchData();
@@ -140,9 +138,8 @@ const AdminDashboard: React.FC = () => {
 
   const handleUpdateOrderStatus = async (orderId: string, status: string, note?: string) => {
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/o-stat-s`, { orderId, status, note }, adminHeaders);
+      const a_b = '/internal-sys-mz9';
+      await api.post(`${a_b}/o-stat-s`, { orderId, status, note });
       
       if (status === 'cancelled') {
         const order = orders.find(o => o.id === orderId);
@@ -153,7 +150,7 @@ const AdminDashboard: React.FC = () => {
             amount: order.total, 
             action: 'add',
             reason: `Hoàn tiền đơn #${orderId}: ${note || 'Bị hủy bởi admin'}`
-          }, adminHeaders);
+          });
           showNotification('Đã hủy đơn và hoàn tiền cho người dùng.', 'success');
         }
       }
@@ -182,9 +179,8 @@ const AdminDashboard: React.FC = () => {
   const handleSelectChat = async (session: any) => {
     setSelectedChatUser(session);
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      const res = await api.get(`${a_b}/chats/${session.user_id}`, adminHeaders);
+      const a_b = '/internal-sys-mz9';
+      const res = await api.get(`${a_b}/chats/${session.user_id}`);
       setChatMessages(res.data);
     } catch (err) {
       showNotification('Không thể tải tin nhắn.', 'error');
@@ -195,11 +191,10 @@ const AdminDashboard: React.FC = () => {
     if (!newMessage.trim() || !selectedChatUser) return;
     setIsSending(true);
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/chats/${selectedChatUser.user_id}/send`, { message: newMessage }, adminHeaders);
+      const a_b = '/internal-sys-mz9';
+      await api.post(`${a_b}/chats/${selectedChatUser.user_id}/send`, { message: newMessage });
       setNewMessage('');
-      const res = await api.get(`${a_b}/chats/${selectedChatUser.user_id}`, adminHeaders);
+      const res = await api.get(`${a_b}/chats/${selectedChatUser.user_id}`);
       setChatMessages(res.data);
     } catch (err) {
       showNotification('Lỗi khi gửi tin nhắn.', 'error');
@@ -228,9 +223,8 @@ const AdminDashboard: React.FC = () => {
     });
     if (!confirmed) return;
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/ban-u-s`, { userId, banned: !currentBannedStatus }, adminHeaders);
+      const a_b = '/internal-sys-mz9';
+      await api.post(`${a_b}/ban-u-s`, { userId, banned: !currentBannedStatus });
       fetchData();
     } catch (err) {
       showNotification('Lỗi khi khóa/mở khóa người dùng.', 'error');
@@ -245,9 +239,8 @@ const AdminDashboard: React.FC = () => {
   const saveRole = async (newRole: string) => {
     if (!editingUser) return;
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/u-role-s`, { userId: editingUser.id, role: newRole }, adminHeaders);
+      const a_b = '/internal-sys-mz9';
+      await api.post(`${a_b}/u-role-s`, { userId: editingUser.id, role: newRole });
       showNotification('Cập nhật vai trò thành công!', 'success');
       setIsRoleModalOpen(false);
       fetchData();
@@ -264,9 +257,8 @@ const AdminDashboard: React.FC = () => {
   const handleSaveSetting = async () => {
     if (!editingSetting) return;
     try {
-      const a_b = '/internal' + '-sys-' + 'mz9';
-      const adminHeaders = { headers: { 'x-admin-secret': import.meta.env.VITE_ADMIN_PATH_SECRET || 'lumie_adm_2024' } };
-      await api.post(`${a_b}/settings/update`, { key: editingSetting.key, value: editingSetting.value }, adminHeaders);
+      const a_b = '/internal-sys-mz9';
+      await api.post(`${a_b}/settings/update`, { key: editingSetting.key, value: editingSetting.value });
       showNotification('Cập nhật cài đặt thành công!', 'success');
       setIsSettingModalOpen(false);
       fetchData();

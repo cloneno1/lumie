@@ -73,6 +73,18 @@ export const db = {
       if (error) throw error;
       return data;
     },
+    updateAtomicBalance: async (id, updates, expectedBalance) => {
+      let query = supabase.from('users').update(updates).eq('id', id);
+      if (expectedBalance !== undefined) {
+        query = query.eq('balance', expectedBalance);
+      }
+      const { data, error } = await query.select().single();
+      if (error) {
+        if (error.code === 'PGRST116') throw new Error('RACE_CONDITION');
+        throw error;
+      }
+      return data;
+    },
     delete: async (id) => {
       const { error } = await supabase.from('users').delete().eq('id', id);
       if (error) throw error;

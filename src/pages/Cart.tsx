@@ -66,8 +66,8 @@ const Cart: React.FC = () => {
     return (
       <div className="container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="glass-card animate-fade-in" style={{ padding: '60px', textAlign: 'center', maxWidth: '500px' }}>
-          <div style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-            <CheckCircle2 size={48} color="#10b981" />
+          <div style={{ width: '80px', height: '80px', background: 'rgba(0, 242, 254, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 0 20px rgba(0,242,254,0.15)' }}>
+            <CheckCircle2 size={48} color="#00f2fe" />
           </div>
           <h2 style={{ fontSize: '2rem', marginBottom: '16px' }}>Thanh toán thành công!</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>Đơn hàng của bạn đang được xử lý. Bạn sẽ được chuyển đến trang lịch sử đơn hàng trong giây lát.</p>

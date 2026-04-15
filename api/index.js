@@ -14,6 +14,8 @@ import { calculateVipLevel, VIP_LEVELS } from './vip-utils.js';
 import { GACHA_REWARDS, rollGacha } from './gacha-utils.js';
 import webpush from 'web-push';
 
+import { jobQueue } from './services/queueService.js';
+
 // --- PUSH NOTIFICATIONS SETUP ---
 const setupWebPush = async () => {
   try {
@@ -50,58 +52,17 @@ const initVapid = async () => {
 };
 initVapid();
 
-// In-memory cache for faster push notification delivery (Map of userId -> Array of subscriptions)
-const subscriptionCache = new Map();
-
-const sendPush = async (userId, payload) => {
-  try {
-    let subs = subscriptionCache.get(userId);
-    
-    if (!subs) {
-      const subSetting = await db.settings.getByKey(`push_sub_list_${userId}`);
-      if (subSetting && subSetting.value) {
-        subs = typeof subSetting.value === 'string' ? JSON.parse(subSetting.value) : subSetting.value;
-        if (!Array.isArray(subs)) subs = [subs];
-        subscriptionCache.set(userId, subs);
-      }
-    }
-
-    if (subs && Array.isArray(subs)) {
-      // Send to all devices
-      const results = await Promise.allSettled(subs.map(sub => 
-        webpush.sendNotification(sub, JSON.stringify(payload))
-      ));
-      
-      // Clean up invalid subscriptions
-      const validSubs = subs.filter((_, index) => {
-        const res = results[index];
-        if (res.status === 'rejected') {
-          return res.reason.statusCode !== 410 && res.reason.statusCode !== 404;
-        }
-        return true;
-      });
-
-      if (validSubs.length !== subs.length) {
-        subscriptionCache.set(userId, validSubs);
-        await db.settings.update(`push_sub_list_${userId}`, JSON.stringify(validSubs));
-      }
-    }
-  } catch (err) {
-    console.error('Push broadcast error:', err.message);
-  }
-};
-
-// Wrap notification creation to include push
 const originalNotify = db.notifications.create;
 db.notifications.create = async (notification) => {
   const result = await originalNotify(notification);
   if (result) {
     const userId = notification.userId || notification.user_id;
-    sendPush(userId, {
+    jobQueue.add('SEND_PUSH_NOTIFICATION', { userId, data: {
       title: notification.title,
       body: notification.content,
-      url: '/profile/orders' // Default url
-    }).catch(e => console.error('Push async error:', e));
+      icon: '/icon.png',
+      badge: '/badge.png'
+    }});
   }
   return result;
 };
@@ -112,15 +73,15 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Multer config for order attachments (High Limit: 500MB as requested)
+// Multer config for order attachments (Optimized limit: 20MB for large scale safety)
 const orderUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 }
+  limits: { fileSize: 20 * 1024 * 1024 }
 });
 
 const app = express();
-app.use(express.json({ limit: '500mb' }));
-app.use(express.urlencoded({ limit: '500mb', extended: true }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
 // Trust proxy for rate-limiting (ESSENTIAL for Vercel/proxies)
 app.set('trust proxy', 1);
@@ -167,25 +128,29 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Middleware: Authenticate Admin
+// Middleware: Authenticate Admin & Staff
 const authenticateAdmin = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   
-  // Stealth Mode: If secret header is wrong, return 404 to look like the route doesn't exist
-  const adminSecretHeader = req.headers['x-admin-secret'];
-  if (adminSecretHeader !== ADMIN_SECRET) {
-    return res.status(404).send('Not Found'); // No clue it exists
-  }
-
-  if (!token) return res.status(404).send('Not Found'); // Still hide it
+  if (!token) return res.status(404).send('Not Found');
 
   jwt.verify(token, SECRET_KEY, async (err, decoded) => {
-    if (err) return res.status(404).send('Not Found'); // Keep hiding
+    if (err) return res.status(404).send('Not Found');
     const user = await db.users.getById(decoded.id);
-    if (!user || user.role !== 'admin') {
-      return res.status(404).send('Not Found'); // Hide even from regular users
+    
+    // Allow admin for everything, moderators and supporters for specific staff operations
+    const staffRoles = ['admin', 'moderator', 'supporter'];
+    if (!user || !staffRoles.includes(user.role)) {
+      return res.status(404).send('Not Found');
     }
+    
+    // Logic check: only admin can modify balance or settings
+    const criticalRoutes = ['/b-up-s', '/u-role-s', '/settings/update'];
+    if (criticalRoutes.some(path => req.path.includes(path)) && user.role !== 'admin') {
+      return res.status(404).send('Not Found');
+    }
+
     req.user = user;
     next();
   });
@@ -1049,26 +1014,48 @@ router.post('/internal/bank-sync', async (req, res) => {
     }
 
     // 5. Cộng tiền (An toàn hơn: Thử cập nhật VIP, nếu lỗi cột thì chỉ cộng tiền)
-    const rechargeAmt = finalAmount;
-    const newBalance = (user.balance || 0) + rechargeAmt;
-    const newVipPoints = (user.vip_points || 0) + rechargeAmt;
-    const newTotalTopup = (user.total_topup || 0) + rechargeAmt;
-    const { currentLevelData } = calculateVipLevel(newVipPoints);
-    const newVipLevel = currentLevelData.level;
-    rankingCache.lastUpdated = 0; // Clear leaderboard cache on success🛡️⚡🏆✨
-    
-    try {
-      await db.users.update(user.id, { 
-        balance: newBalance,
-        vip_points: newVipPoints,
-        vip_level: newVipLevel,
-        total_topup: newTotalTopup
-      });
-    } catch (dbErr) {
-      console.warn('[BANK_SYNC_WARN] Lỗi cập nhật cột VIP (Có thể chưa chạy SQL):', dbErr.message);
-      // Fallback: Chỉ cộng tiền vào tài khoản để khách không bị mất tiền
-      await db.users.update(user.id, { balance: newBalance });
+    let success = false;
+    let attempts = 0;
+    while (!success && attempts < 3) {
+      try {
+        // Lấy dữ liệu mới nhất nếu không phải lần đầu
+        if (attempts > 0) user = await db.users.getById(user.id);
+        
+        const newBalance = (user.balance || 0) + finalAmount;
+        const newVipPoints = (user.vip_points || 0) + finalAmount;
+        const newTotalTopup = (user.total_topup || 0) + finalAmount;
+        const { currentLevelData } = calculateVipLevel(newVipPoints);
+        const newVipLevel = currentLevelData.level;
+        
+        try {
+          await db.users.updateAtomicBalance(user.id, { 
+            balance: newBalance,
+            vip_points: newVipPoints,
+            vip_level: newVipLevel,
+            total_topup: newTotalTopup
+          }, user.balance);
+        } catch (dbErr) {
+          if (dbErr.message === 'RACE_CONDITION') throw dbErr;
+          console.warn('[BANK_SYNC_WARN] Lỗi cập nhật cột VIP (Có thể chưa chạy SQL):', dbErr.message);
+          // Fallback: Chỉ cộng tiền vào tài khoản để khách không bị mất tiền
+          await db.users.updateAtomicBalance(user.id, { balance: newBalance }, user.balance);
+        }
+        success = true;
+      } catch (err) {
+        if (err.message === 'RACE_CONDITION') {
+          attempts++;
+        } else {
+          throw err;
+        }
+      }
     }
+
+    if (!success) {
+       console.error('[BANK_SYNC_ERROR] Không thể cộng tiền, vượt quá lượt retry.');
+       return res.status(500).json({ message: 'Vui lòng thử lại' });
+    }
+
+    rankingCache.lastUpdated = 0; // Clear leaderboard cache on success🛡️⚡🏆✨
 
     const rechargeId = transactionId !== '{not_id}' ? transactionId : `vcb_${Date.now()}`;
     await db.transactions.create({
@@ -1116,7 +1103,7 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
   try {
     const { productId, productName, price, amount, options } = req.body;
     const userId = req.user.id;
-    const user = await db.users.getById(userId);
+    let user = await db.users.getById(userId);
 
     if (!user || user.balance < price * amount) return res.status(400).json({ message: 'Số dư không đủ.' });
 
@@ -1126,11 +1113,6 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
     // Only set 'completed' for donations automatically
     const status = isDonation ? 'completed' : 'pending';
 
-    const order = await db.orders.create({
-      userId, username: user.username, productId, productName, price,
-      amount, options, total: spent, status
-    });
-    
     const updates = { 
       balance: user.balance - spent 
     };
@@ -1140,7 +1122,24 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
       updates.vip_points = (user.vip_points || 0) + spent;
       const { currentLevelData } = calculateVipLevel(updates.vip_points);
       updates.vip_level = currentLevelData.level;
-      
+    }
+
+    try {
+      // Atomic balance deduction
+      await db.users.updateAtomicBalance(userId, updates, user.balance);
+    } catch (e) {
+      if (e.message === 'RACE_CONDITION') {
+         return res.status(409).json({ message: 'Lỗi đồng bộ dữ liệu. Vui lòng thử lại.' });
+      }
+      throw e;
+    }
+
+    const order = await db.orders.create({
+      userId, username: user.username, productId, productName, price,
+      amount, options, total: spent, status
+    });
+
+    if (isDonation) {
       // Recognition notification
       await db.notifications.create({
         userId,
@@ -1152,7 +1151,6 @@ router.post('/orders/create', authenticateToken, async (req, res) => {
       rankingCache.lastUpdated = 0; // Trigger leaderboard refresh
     }
 
-    await db.users.update(userId, updates);
     res.json({ message: 'Đặt hàng thành công!', order });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -1209,6 +1207,16 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
     const isGarena = ['lq', 'ff', 'fo4'].includes(gameId);
     const displayPackage = isGarena ? `Gói ${price.toLocaleString()}đ` : `${amount} ${unit}`;
 
+    try {
+      // Trừ tiền bằng cách atomic lock
+      await db.users.updateAtomicBalance(userId, { balance: user.balance - finalPrice }, user.balance);
+    } catch (e) {
+      if (e.message === 'RACE_CONDITION') {
+         return res.status(409).json({ message: 'Lỗi đồng bộ dữ liệu. Vui lòng thử lại.' });
+      }
+      throw e;
+    }
+
     // Ghi nhận đơn hàng
     const order = await db.orders.create({
       userId,
@@ -1227,11 +1235,6 @@ router.post('/orders/game-topup', authenticateToken, async (req, res) => {
         originalPrice: price,
         ...formData
       }
-    });
-
-    // Trừ tiền
-    await db.users.update(userId, {
-      balance: user.balance - finalPrice
     });
 
     // Thông báo cho người dùng

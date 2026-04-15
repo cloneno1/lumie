@@ -376,7 +376,12 @@ function AppContent() {
             <Route path="/profile/settings" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AccountSettings />)} />
             
             <Route path="/cart" element={<Cart />} />
-            <Route path="/admin" element={loading ? <Loading fullScreen message="Đang tải dữ liệu người dùng..." /> : (!user ? <Navigate to="/login" replace /> : <AdminDashboard />)} />
+            <Route path="/admin/*" element={
+              loading ? <Loading fullScreen message="Đang xác thực bảo mật..." /> : 
+              (user && ['admin', 'moderator', 'supporter'].includes(user.role) 
+                ? <AdminDashboard /> 
+                : <Navigate to="/" replace />)
+            } />
           </Routes>
         </Suspense>
         )}

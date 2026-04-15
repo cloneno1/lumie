@@ -40,8 +40,8 @@ const RobuxGroup: React.FC = () => {
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 500 * 1024 * 1024) {
-        showNotification('File quá lớn! Giới hạn 500MB.', 'error');
+      if (file.size > 20 * 1024 * 1024) {
+        showNotification('File quá lớn! Giới hạn 20MB.', 'error');
         return;
       }
       setSelectedFile(file);
@@ -233,21 +233,21 @@ const RobuxGroup: React.FC = () => {
             </div>
 
             {/* Photo Upload Functionality */}
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 600, fontSize: '14px' }}>Tải ảnh đính kèm (Lên đến 500MB)</label>
+            <div className="form-group hover-scale">
+              <label className="form-label" style={{ fontWeight: 600, fontSize: '14px' }}>Tải ảnh đính kèm (Lên đến 20MB)</label>
               <input type="file" id="file-upload" hidden onChange={onFileChange} accept="image/*,video/*" />
               <label htmlFor="file-upload" className="glass-card" style={{ 
-                display: 'block', border: '2px dashed rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '30px',
+                display: 'block', border: '2px dashed rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '30px',
                 textAlign: 'center', cursor: 'pointer', color: 'var(--text-muted)', transition: 'all 0.2s', position: 'relative', overflow: 'hidden'
               }}>
                 {previewUrl ? (
                   <div style={{ position: 'relative' }}>
-                    <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
-                    <div style={{ marginTop: '10px', color: '#10b981', fontWeight: 600 }}>File: {selectedFile?.name}</div>
+                    <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', boxShadow: 'var(--glass-glow)' }} />
+                    <div style={{ marginTop: '10px', color: 'var(--accent-primary)', fontWeight: 600 }}>File: {selectedFile?.name}</div>
                   </div>
                 ) : (
                   <>
-                    <ImageIcon size={24} style={{ marginBottom: '10px', opacity: 0.5 }} />
+                    <ImageIcon size={24} style={{ marginBottom: '10px', opacity: 0.5, color: 'var(--accent-primary)' }} />
                     <div style={{ fontSize: '12px' }}>Bấm để chọn ảnh/video hoặc kéo thả vào đây</div>
                   </>
                 )}
@@ -260,28 +260,30 @@ const RobuxGroup: React.FC = () => {
             </div>
 
             {/* Order Summary */}
-            <div style={{ 
+            <div className="hover-scale" style={{ 
               marginTop: '10px', padding: '20px', borderRadius: '16px', 
-              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' 
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))', 
+              border: '1px solid var(--glass-border)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Số lượng Robux:</span>
-                <span style={{ fontWeight: 800, color: '#10b981' }}>{Number(robuxAmount).toLocaleString()} R$</span>
+                <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>{Number(robuxAmount).toLocaleString()} R$</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Thành tiền:</span>
-                <span style={{ fontWeight: 900, fontSize: '1.2rem', color: '#10b981' }}>{totalPrice.toLocaleString()} VNĐ</span>
+                <span style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--accent-primary)' }}>{totalPrice.toLocaleString()} VNĐ</span>
               </div>
             </div>
 
             <button 
-              className="btn btn-primary" 
+              className="btn btn-primary hover-scale" 
               onClick={handleBuy}
               disabled={loading}
               style={{ 
-                height: '56px', borderRadius: '16px', background: '#10b981', 
-                border: 'none', fontSize: '1.1rem', fontWeight: 800,
-                boxShadow: '0 10px 25px rgba(16, 185, 129, 0.3)'
+                height: '56px', borderRadius: '16px', background: 'var(--primary-gradient)', 
+                border: 'none', fontSize: '1.2rem', fontWeight: 800,
+                boxShadow: '0 10px 25px rgba(0, 242, 254, 0.4)'
               }}
             >
               {loading ? <Loader2 size={24} className="spin" /> : 'Thanh Toán Ngay'}

@@ -13,5 +13,34 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Lumie Guard: Anti-Tamper & Inspection Protection
+      (function() {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return;
+        
+        // Disable Right Click
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Disable common developer keys (F12, I, J, U)
+        document.addEventListener('keydown', e => {
+          if (
+            e.keyCode === 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || 
+            (e.ctrlKey && e.keyCode === 85)
+          ) {
+            e.preventDefault();
+            return false;
+          }
+        });
+
+        // Simple Layout Detection for DevTools
+        setInterval(() => {
+          const threshold = 160;
+          if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+            // Optional: Block UI or show warning if devtools are likely open
+          }
+        }, 1000);
+      })();
+    </script>
   </body>
 </html>
