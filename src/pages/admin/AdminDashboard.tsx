@@ -535,40 +535,147 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
         ) : activeTab === 'chats' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', minHeight: '600px' }}>
-            <div style={{ borderRight: '1px solid var(--glass-border)', padding: '20px', overflowY: 'auto' }}>
-               <h4 style={{ marginBottom: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>CUỘC TRÒ CHUYỆN</h4>
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                 {chatSessions.length === 0 ? <p style={{ textAlign: 'center', marginTop: '40px' }}>Chưa có tin nhắn</p> : chatSessions.map(session => (
-                    <div key={session.user_id} onClick={() => handleSelectChat(session)} style={{ padding: '12px', borderRadius: '12px', cursor: 'pointer', background: selectedChatUser?.user_id === session.user_id ? 'rgba(255,255,255,0.05)' : 'transparent', border: selectedChatUser?.user_id === session.user_id ? '1px solid var(--glass-border)' : '1px solid transparent', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                         {session.users?.avatar ? <img src={session.users.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : <User size={18} />}
+          <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', minHeight: '650px', background: 'rgba(0,0,0,0.2)', borderRadius: '20px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+            {/* Sidebar: Chat Sessions */}
+            <div style={{ borderRight: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column' }}>
+               <div style={{ padding: '24px', borderBottom: '1px solid var(--glass-border)' }}>
+                 <h4 style={{ margin: 0, fontSize: '0.8rem', letterSpacing: '1px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Hỗ trợ khách hàng</h4>
+               </div>
+               <div className="chat-scroll-hide" style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                   {chatSessions.length === 0 ? (
+                     <div style={{ textAlign: 'center', marginTop: '40px', color: 'var(--text-muted)', fontSize: '13px' }}>Chưa có tin nhắn nào</div>
+                   ) : chatSessions.map(session => (
+                      <div 
+                        key={session.user_id} 
+                        onClick={() => handleSelectChat(session)} 
+                        style={{ 
+                          padding: '12px 16px', 
+                          borderRadius: '14px', 
+                          cursor: 'pointer', 
+                          background: selectedChatUser?.user_id === session.user_id ? 'rgba(0, 242, 254, 0.1)' : 'transparent', 
+                          border: '1px solid',
+                          borderColor: selectedChatUser?.user_id === session.user_id ? 'rgba(0, 242, 254, 0.2)' : 'transparent',
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '12px',
+                          transition: 'all 0.2s'
+                        }}
+                        className="hover-scale"
+                      >
+                        <div style={{ 
+                          width: '42px', 
+                          height: '42px', 
+                          borderRadius: '12px', 
+                          background: 'var(--primary-gradient)', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          boxShadow: selectedChatUser?.user_id === session.user_id ? '0 0 15px rgba(0, 242, 254, 0.2)' : 'none'
+                        }}>
+                           {session.users?.avatar ? (
+                             <img src={session.users.avatar} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+                           ) : (
+                             <User size={20} color="black" />
+                           )}
+                        </div>
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {session.users?.username || 'Khách hàng'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ID: {String(session.user_id).slice(0, 8)}</div>
+                        </div>
+                        {selectedChatUser?.user_id === session.user_id && (
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)' }}></div>
+                        )}
                       </div>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{session.users?.username || 'Khách hàng'}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{String(session.user_id).slice(0, 8)}</div>
-                      </div>
-                    </div>
-                 ))}
+                   ))}
+                 </div>
                </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+            {/* Main: Chat Messages */}
+            <div style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.1)' }}>
               {selectedChatUser ? (
                 <>
-                  <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--glass-border)', fontWeight: 700 }}>{selectedChatUser.users?.username}</div>
-                  <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {chatMessages.map(m => (
-                      <div key={m.id} style={{ maxWidth: '80%', padding: '12px 16px', borderRadius: '16px', fontSize: '14px', alignSelf: m.sender_role === 'staff' ? 'flex-end' : 'flex-start', background: m.sender_role === 'staff' ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.05)', color: 'white' }}>
-                        {m.message}
-                      </div>
-                    ))}
+                  <div style={{ 
+                    padding: '18px 24px', 
+                    borderBottom: '1px solid var(--glass-border)', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></div>
+                      <span style={{ fontWeight: 800, fontSize: '16px' }}>{selectedChatUser.users?.username}</span>
+                    </div>
                   </div>
-                  <div style={{ padding: '20px', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '12px' }}>
-                    <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Nhập phản hồi..." style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', color: 'white' }} />
-                    <button onClick={handleSendMessage} disabled={isSending || !newMessage.trim()} className="btn btn-primary" style={{ width: '48px', height: '48px', padding: 0 }}><Send size={18} /></button>
+
+                  <div className="chat-scroll-hide" style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {chatMessages.map(m => {
+                      const isStaff = m.sender_role === 'staff';
+                      return (
+                        <div key={m.id} className="chat-message-pop" style={{ 
+                          maxWidth: '75%', 
+                          padding: '12px 18px', 
+                          borderRadius: isStaff ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
+                          fontSize: '14px', 
+                          alignSelf: isStaff ? 'flex-end' : 'flex-start', 
+                          background: isStaff ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.08)', 
+                          color: isStaff ? 'black' : 'white',
+                          fontWeight: isStaff ? 600 : 400,
+                          boxShadow: isStaff ? '0 4px 15px rgba(0, 242, 254, 0.2)' : 'none',
+                          border: !isStaff ? '1px solid rgba(255,255,255,0.1)' : 'none'
+                        }}>
+                          {m.message}
+                          <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '4px', textAlign: isStaff ? 'right' : 'left' }}>
+                            {new Date(m.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
                   </div>
+
+                  <form 
+                    onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+                    style={{ padding: '20px 24px', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '12px', background: 'rgba(255,255,255,0.01)' }}
+                  >
+                    <input 
+                      type="text" 
+                      value={newMessage} 
+                      onChange={(e) => setNewMessage(e.target.value)} 
+                      placeholder="Nhập nội dung phản hồi..." 
+                      style={{ 
+                        flex: 1, 
+                        padding: '14px 20px', 
+                        borderRadius: '16px', 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'white',
+                        outline: 'none',
+                        transition: 'all 0.3s'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+                      onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                    />
+                    <button 
+                      type="submit"
+                      disabled={isSending || !newMessage.trim()} 
+                      className="btn btn-primary" 
+                      style={{ width: '52px', height: '52px', padding: 0, borderRadius: '16px' }}
+                    >
+                      <Send size={20} />
+                    </button>
+                  </form>
                 </>
-              ) : <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}><p>Chọn một cuộc hội thoại</p></div>}
+              ) : (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
+                  <MessageCircle size={64} strokeWidth={1} style={{ marginBottom: '16px' }} />
+                  <p style={{ fontSize: '15px' }}>Chọn một cuộc hội thoại từ danh sách bên trái</p>
+                </div>
+              )}
             </div>
           </div>
         ) : activeTab === 'users' ? (
